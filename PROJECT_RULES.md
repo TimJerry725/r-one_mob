@@ -2,18 +2,19 @@
 
 ## 1. Project Overview
 - **Name**: Charger Asset Management System
-- **Framework**: React Native
-- **Design System**: Material 3
+- **Framework**: React Native (Expo)
+- **Design System**: Custom Futuristic / Sci-Fi UI
 - **Theming**:
-  - **Modes**: Light, Dark
-  - **Implementation**: Use Material 3 Dynamic Color schemes
-  - **Provider**: React Native Paper Provider or ConfigProvider equivalent
+  - **Mode**: Dark Mode Only (Cyberpunk/Sci-Fi aesthetics)
+  - **Key Elements**: Neons (Cyan, Magenta), Deep Blacks, Glassmorphism, Holo-effects.
+  - **Implementation**: Custom Theme Context + Expo Linear Gradient + Expo Blur.
 
 ## 2. Architecture Rules
-- Strictly use Material 3 components for both Light and Dark modes.
-- Zero custom CSS: leverage theme-aware styling (`useTheme` hook).
-- Ensure high-performance responsiveness across Phone and Tablet.
-- Code must be modular, type-safe (TypeScript), and professional.
+- **No Material 3**: Avoid standard Material Design components.
+- **Visuals**: Use gradients, blurs, and glowing effects for UI elements.
+- **Typography**: Tech-inspired fonts (System monospaced or similar).
+- **Responsiveness**: Ensure high-performance responsiveness.
+- **Code**: Modular, type-safe (TypeScript).
 
 ## 3. User Roles
 
