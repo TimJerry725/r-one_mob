@@ -1,24 +1,35 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { COLORS, FONTS } from '../styles/futurist';
 
+import { useTheme } from '../context/ThemeContext';
+
 interface GlassCardProps {
     children: React.ReactNode;
-    style?: ViewStyle;
+    style?: StyleProp<ViewStyle>;
     intensity?: number;
 }
 
 export const GlassCard: React.FC<GlassCardProps> = ({ children, style, intensity = 20 }) => {
+    const { colors, isDark } = useTheme();
+
     return (
-        <View style={[styles.container, style]}>
-            <BlurView intensity={intensity} tint="dark" style={styles.blur}>
+        <View style={[
+            styles.container,
+            {
+                borderColor: colors.border,
+                backgroundColor: isDark ? 'rgba(10, 10, 20, 0.6)' : 'rgba(255, 255, 255, 0.6)'
+            },
+            style
+        ]}>
+            <BlurView intensity={intensity} tint={isDark ? "dark" : "light"} style={styles.blur}>
                 <View style={styles.content}>
                     {children}
                 </View>
                 {/* Corner Accents */}
-                <View style={styles.cornerTopLeft} />
-                <View style={styles.cornerBottomRight} />
+                <View style={[styles.cornerTopLeft, { borderColor: colors.primary }]} />
+                <View style={[styles.cornerBottomRight, { borderColor: colors.primary }]} />
             </BlurView>
         </View>
     );

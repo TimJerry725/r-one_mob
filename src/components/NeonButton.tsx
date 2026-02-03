@@ -1,44 +1,45 @@
-import React, { useEffect } from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withTiming,
-    withRepeat,
-    withSequence
-} from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, FONTS } from '../styles/futurist';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '../context/ThemeContext';
 
 interface NeonButtonProps {
     title: string;
     onPress: () => void;
     style?: ViewStyle;
     variant?: 'primary' | 'secondary' | 'danger';
+    animate?: boolean;
 }
 
-export const NeonButton: React.FC<NeonButtonProps> = ({ title, onPress, style, variant = 'primary' }) => {
-    const glowOpacity = useSharedValue(0.5);
+export const NeonButton: React.FC<NeonButtonProps> = ({ title, onPress, style, variant = 'primary', animate = true }) => {
+    const { colors } = useTheme();
+    const glowOpacity = useRef(new Animated.Value(0.5)).current;
 
-    const baseColor = variant === 'secondary' ? COLORS.secondary : variant === 'danger' ? COLORS.danger : COLORS.primary;
+    const baseColor = variant === 'secondary' ? colors.secondary : variant === 'danger' ? colors.danger : colors.primary;
 
     useEffect(() => {
-        glowOpacity.value = withRepeat(
-            withSequence(
-                withTiming(0.8, { duration: 1500 }),
-                withTiming(0.4, { duration: 1500 })
-            ),
-            -1,
-            true
-        );
-    }, []);
+        if (!animate) {
+            glowOpacity.setValue(1);
+            return;
+        }
 
-    const animatedGlow = useAnimatedStyle(() => ({
-        opacity: glowOpacity.value,
-        shadowColor: baseColor,
-        shadowRadius: glowOpacity.value * 20,
-    }));
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(glowOpacity, {
+                    toValue: 0.8,
+                    duration: 1500,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(glowOpacity, {
+                    toValue: 0.4,
+                    duration: 1500,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, [animate]);
 
     const handlePress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -46,15 +47,23 @@ export const NeonButton: React.FC<NeonButtonProps> = ({ title, onPress, style, v
     };
 
     return (
-        <Animated.View style={[styles.wrapper, animatedGlow, style]}>
+        <Animated.View style={[
+            styles.wrapper,
+            style,
+            {
+                opacity: glowOpacity,
+                shadowColor: baseColor,
+                shadowRadius: 10,
+            }
+        ]}>
             <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
                 <LinearGradient
-                    colors={[baseColor + '40', 'transparent']} // Hex+Alpha
+                    colors={[baseColor, baseColor]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={[styles.container, { borderColor: baseColor }]}
                 >
-                    <Text style={[styles.text, { color: baseColor }]}>{title}</Text>
+                    <Text style={[styles.text, { color: colors.white }]}>{title}</Text>
                 </LinearGradient>
             </TouchableOpacity>
         </Animated.View>

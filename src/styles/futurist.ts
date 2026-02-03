@@ -1,45 +1,65 @@
 import { StyleSheet, Platform } from 'react-native';
 
-export const COLORS = {
-    background: '#050510',
-    surface: 'rgba(20, 20, 40, 0.7)',
-    surfaceHighlight: 'rgba(40, 40, 80, 0.5)',
-    primary: '#00F0FF', // Cyber Cyan
-    secondary: '#FF00FF', // Neon Magenta
+export const DARK_COLORS = {
+    background: '#0D0D12',
+    surface: '#1A1A24',
+    surfaceHighlight: '#262636',
+    primary: '#E23151',
+    primaryLight: '#FF4D6D',
+    secondary: '#C4D661',
+    danger: '#FF6B6B',
+    success: '#4ADE80',
+    warning: '#FFD166',
+    text: '#FFFFFF',
+    textSecondary: '#A0A0B0',
+    border: 'rgba(255, 255, 255, 0.1)',
+    white: '#FFFFFF',
+    black: '#000000',
     onBackground: '#FFFFFF',
-    onSurface: '#E0E0E0',
-    success: '#00FF9D',
-    warning: '#FFEA00',
-    danger: '#FF2A6D',
-    border: 'rgba(0, 240, 255, 0.3)',
+    onSurface: '#FFFFFF',
 };
+
+export const LIGHT_COLORS = {
+    background: '#F2F2F7',
+    surface: '#FFFFFF',
+    surfaceHighlight: '#E5E5EA',
+    primary: '#E23151',
+    primaryLight: '#FF4D6D',
+    secondary: '#C4D661',
+    danger: '#FF3B30',
+    success: '#34C759',
+    warning: '#FFCC00',
+    text: '#000000',
+    textSecondary: '#8E8E93',
+    border: 'rgba(0, 0, 0, 0.1)',
+    white: '#FFFFFF',
+    black: '#000000',
+    onBackground: '#000000',
+    onSurface: '#000000',
+};
+
+export const COLORS = DARK_COLORS; // Fallback
+
 
 export const FONTS = {
     h1: {
-        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: '700' as '700',
-        color: COLORS.onBackground,
-        letterSpacing: 1.5,
+        color: '#FFFFFF',
     },
     h2: {
-        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: '600' as '600',
-        color: COLORS.primary,
-        letterSpacing: 1.2,
-        textTransform: 'uppercase' as 'uppercase',
+        color: '#FFFFFF',
     },
     body: {
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-        fontSize: 16,
-        color: COLORS.onSurface,
+        fontSize: 14,
+        color: '#A0A0B0',
     },
     label: {
-        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
         fontSize: 12,
         fontWeight: '700' as '700',
-        color: 'rgba(255, 255, 255, 0.6)',
+        color: '#A0A0B0',
         textTransform: 'uppercase' as 'uppercase',
     },
 };
@@ -53,16 +73,8 @@ export const COMMON_STYLES = StyleSheet.create({
         backgroundColor: COLORS.surface,
         borderColor: COLORS.border,
         borderWidth: 1,
-        borderRadius: 16,
+        borderRadius: 24,
         padding: 20,
-        marginBottom: 16,
         overflow: 'hidden',
-    },
-    glowBox: {
-        shadowColor: COLORS.primary,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.8,
-        shadowRadius: 10,
-        elevation: 5,
     },
 });
