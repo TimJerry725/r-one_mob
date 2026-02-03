@@ -3,20 +3,55 @@ import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 
 export const AssetScanScreen = () => {
     const navigation = useNavigation<any>();
     const { colors, isDark } = useTheme();
     const [cpid, setCpid] = useState('');
-    const [hasError, setHasError] = useState(true); // Showing error as in reference image
+    const [permission, requestPermission] = useCameraPermissions();
+    const [scanned, setScanned] = useState(false);
+    const [isTorchOn, setIsTorchOn] = useState(false);
+    const [hasError, setHasError] = useState(false);
+
+    if (!permission) {
+        // Camera permissions are still loading.
+        return <View style={[styles.container, { backgroundColor: '#000' }]} />;
+    }
+
+    if (!permission.granted) {
+        // Camera permissions are not granted yet.
+        return (
+            <View style={[styles.container, { backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: '#FFF', marginBottom: 20 }}>We need your permission to show the camera</Text>
+                <TouchableOpacity onPress={requestPermission} style={{ padding: 10, backgroundColor: colors.primary, borderRadius: 5 }}>
+                    <Text style={{ color: '#FFF' }}>Grant Permission</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    const handleBarCodeScanned = ({ type, data }: { type: string, data: string }) => {
+        setScanned(true);
+        setCpid(data);
+        // Reset scanned state after a delay or upon user action
+        setTimeout(() => setScanned(false), 2000);
+    };
 
     return (
-        <View style={[styles.container, { backgroundColor: '#000' }]}>
+        <View style={styles.container}>
+            <CameraView
+                style={StyleSheet.absoluteFill}
+                facing="back"
+                enableTorch={isTorchOn}
+                onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+            />
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.scrollContent}>
                     {/* Top Card */}
-                    <View style={[styles.topCard, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+                    <BlurView intensity={80} tint="dark" style={[styles.topCard, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
                         <Text style={[styles.topCardTitle, { color: '#FFF' }]}>Scan QR Code</Text>
                         <Text style={[styles.topCardSubtitle, { color: 'rgba(255,255,255,0.6)' }]}>or enter CPID manually</Text>
 
@@ -34,13 +69,10 @@ export const AssetScanScreen = () => {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    </View>
+                    </BlurView>
 
-                    {/* Scan Frame Area */}
                     <View style={styles.scanContainer}>
-                        <View style={[styles.scanFrame, { borderColor: colors.primary }]}>
-                            {/* Scanning area content would go here */}
-                        </View>
+                        <View style={[styles.scanFrame, { borderColor: colors.primary }]} />
 
                         {hasError && (
                             <Text style={[styles.errorText, { color: colors.primary }]}>
@@ -50,12 +82,15 @@ export const AssetScanScreen = () => {
                     </View>
 
                     {/* Bottom Controls */}
-                    <View style={[styles.bottomControlsCard, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
-                        <TouchableOpacity style={styles.controlBtnItem}>
+                    <BlurView intensity={80} tint="dark" style={[styles.bottomControlsCard, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
+                        <TouchableOpacity
+                            style={styles.controlBtnItem}
+                            onPress={() => setIsTorchOn(!isTorchOn)}
+                        >
                             <View style={styles.controlCircle}>
-                                <Ionicons name="flash-off" size={24} color={colors.primary} />
+                                <Ionicons name={isTorchOn ? "flash" : "flash-off"} size={24} color={colors.primary} />
                             </View>
-                            <Text style={styles.controlText}>Flash Off</Text>
+                            <Text style={styles.controlText}>Flash {isTorchOn ? "On" : "Off"}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.controlBtnItem}>
@@ -64,7 +99,7 @@ export const AssetScanScreen = () => {
                             </View>
                             <Text style={styles.controlText}>Help</Text>
                         </TouchableOpacity>
-                    </View>
+                    </BlurView>
                 </View>
 
                 {/* Bottom Navigation Bar */}
@@ -87,8 +122,8 @@ export const AssetScanScreen = () => {
                         <Ionicons name="person-outline" size={24} color="#666" />
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
-        </View>
+            </SafeAreaView >
+        </View >
     );
 };
 
@@ -107,6 +142,7 @@ const styles = StyleSheet.create({
         padding: 24,
         alignItems: 'center',
         marginBottom: 40,
+        overflow: 'hidden',
     },
     topCardTitle: {
         fontSize: 22,
@@ -151,6 +187,12 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderRadius: 30, // Rounded as in reference
         backgroundColor: 'transparent',
+        overflow: 'hidden', // Ensure camera stays within bounds
+    },
+    camera: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
     },
     errorText: {
         marginTop: 20,
@@ -165,6 +207,7 @@ const styles = StyleSheet.create({
         gap: 40,
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
     },
     controlBtnItem: {
         alignItems: 'center',
@@ -204,9 +247,5 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 20,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
     },
 });
