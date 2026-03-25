@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useContext, useState } from 'react';
 import { DARK_COLORS, LIGHT_COLORS } from '../styles/futurist';
 
-type ThemeMode = 'light' | 'dark' | 'system';
+type ThemeMode = 'light' | 'dark';
 
 type ThemeContextType = {
     mode: ThemeMode;
@@ -14,12 +13,9 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const systemScheme = useColorScheme();
-    const [mode, setMode] = useState<ThemeMode>('system');
+    const [mode, setMode] = useState<ThemeMode>('light');
 
-    const isSystemDark = systemScheme === 'dark';
-    const isDark = mode === 'system' ? isSystemDark : mode === 'dark';
-
+    const isDark = mode === 'dark';
     const colors = isDark ? DARK_COLORS : LIGHT_COLORS;
 
     return (

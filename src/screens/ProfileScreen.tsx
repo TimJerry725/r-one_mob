@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -8,87 +8,61 @@ import { FONTS } from '../styles/futurist';
 export const ProfileScreen = () => {
     const { colors, mode, setMode } = useTheme();
 
-    const ThemeOption = ({ label, value, icon }: { label: string, value: 'light' | 'dark' | 'system', icon: any }) => (
+    const ThemeOption = ({ label, value, icon }: { label: string; value: 'light' | 'dark'; icon: any }) => (
         <TouchableOpacity
+            onPress={() => setMode(value)}
             style={[
                 styles.themeOption,
                 {
                     backgroundColor: mode === value ? colors.primary : colors.surfaceHighlight,
-                    borderColor: colors.border
-                }
+                    borderColor: mode === value ? colors.primary : colors.border,
+                },
             ]}
-            onPress={() => setMode(value)}
         >
-            <Ionicons
-                name={icon}
-                size={20}
-                color={mode === value ? colors.white : colors.textSecondary}
-            />
-            <Text style={[
-                styles.themeOptionText,
-                { color: mode === value ? colors.white : colors.textSecondary }
-            ]}>
-                {label}
-            </Text>
+            <Ionicons name={icon} size={20} color={mode === value ? colors.white : colors.text} />
+            <Text style={[styles.themeOptionText, { color: mode === value ? colors.white : colors.text }]}>{label}</Text>
         </TouchableOpacity>
     );
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.header}>
-                    <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
-                </View>
+                <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                    <Text style={[styles.pageLabel, { color: colors.textSecondary }]}>Profile</Text>
+                    <Text style={[styles.pageTitle, { color: colors.text }]}>Technician settings</Text>
 
-                <ScrollView contentContainerStyle={styles.content}>
-
-                    {/* User Profile Card */}
-                    <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <View style={[styles.avatar, { backgroundColor: colors.surfaceHighlight }]}>
-                            <Ionicons name="person" size={40} color={colors.primary} />
+                    <View style={[styles.profileCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                        <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                            <Text style={[styles.avatarText, { color: colors.white }]}>T</Text>
                         </View>
-                        <View style={styles.profileInfo}>
+                        <View style={{ flex: 1 }}>
                             <Text style={[styles.name, { color: colors.text }]}>Tim User</Text>
-                            <Text style={[styles.email, { color: colors.textSecondary }]}>tim@irissuite.com</Text>
+                            <Text style={[styles.role, { color: colors.textSecondary }]}>Field technician</Text>
+                            <Text style={[styles.metaText, { color: colors.textSecondary }]}>18 works cached on this device</Text>
                         </View>
                     </View>
 
-                    {/* Appearance Section */}
-                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>APPEARANCE</Text>
-
-                    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Text style={[styles.cardLabel, { color: colors.text }]}>Theme</Text>
-
-                        <View style={styles.themeSelector}>
-                            <ThemeOption label="Light" value="light" icon="sunny" />
-                            <ThemeOption label="Dark" value="dark" icon="moon" />
-                            <ThemeOption label="System" value="system" icon="phone-portrait" />
+                    <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Theme</Text>
+                        <View style={styles.themeRow}>
+                            <ThemeOption label="Light" value="light" icon="sunny-outline" />
+                            <ThemeOption label="Dark" value="dark" icon="moon-outline" />
                         </View>
                     </View>
 
-                    {/* Other Settings placeholders */}
-                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>GENERAL</Text>
-
-                    <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <View style={styles.menuRow}>
-                            <Ionicons name="notifications-outline" size={22} color={colors.text} />
-                            <Text style={[styles.menuText, { color: colors.text }]}>Notifications</Text>
+                    <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                        <View style={styles.syncRow}>
+                            <Ionicons name="cloud-done-outline" size={20} color={colors.success} />
+                            <Text style={[styles.syncTitle, { color: colors.text }]}>Last sync 09:24</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <View style={styles.menuRow}>
-                            <Ionicons name="shield-checkmark-outline" size={22} color={colors.text} />
-                            <Text style={[styles.menuText, { color: colors.text }]}>Privacy & Security</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                    </TouchableOpacity>
+                        <Text style={[styles.syncCopy, { color: colors.textSecondary }]}>
+                            Upload queue is healthy for the current shift.
+                        </Text>
+                    </View>
 
                     <TouchableOpacity style={[styles.logoutButton, { borderColor: colors.danger }]}>
-                        <Text style={[styles.logoutText, { color: colors.danger }]}>Log Out</Text>
+                        <Text style={[styles.logoutText, { color: colors.danger }]}>End shift</Text>
                     </TouchableOpacity>
-
                 </ScrollView>
             </SafeAreaView>
         </View>
@@ -102,108 +76,102 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
     },
-    header: {
-        paddingHorizontal: 20,
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0)', // Invisible for now
-    },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-    },
     content: {
-        padding: 20,
+        padding: 24,
+        paddingBottom: 36,
+    },
+    pageLabel: {
+        ...FONTS.label,
+        marginBottom: 6,
+    },
+    pageTitle: {
+        ...FONTS.h1,
+        marginBottom: 18,
     },
     profileCard: {
+        borderRadius: 18,
+        padding: 18,
         flexDirection: 'row',
-        alignItems: 'center',
-        padding: 20,
-        borderRadius: 20,
-        marginBottom: 30,
-        borderWidth: 1,
+        gap: 14,
+        marginBottom: 16,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 5,
     },
     avatar: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
+        width: 68,
+        height: 68,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 20,
     },
-    profileInfo: {
-        flex: 1,
+    avatarText: {
+        ...FONTS.h2,
+        fontSize: 28,
     },
     name: {
-        fontSize: 20,
-        fontWeight: 'bold',
+        ...FONTS.h2,
         marginBottom: 4,
     },
-    email: {
-        fontSize: 14,
+    role: {
+        ...FONTS.body,
+        marginBottom: 6,
     },
-    sectionTitle: {
-        fontSize: 12,
-        fontWeight: '700',
-        marginBottom: 10,
-        marginLeft: 4,
-        letterSpacing: 1,
+    metaText: {
+        ...FONTS.caption,
     },
     card: {
-        padding: 20,
-        borderRadius: 20,
-        marginBottom: 24,
-        borderWidth: 1,
-    },
-    cardLabel: {
-        fontSize: 16,
-        fontWeight: '600',
+        borderRadius: 18,
+        padding: 18,
         marginBottom: 16,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 5,
     },
-    themeSelector: {
+    sectionTitle: {
+        ...FONTS.h3,
+        marginBottom: 14,
+    },
+    themeRow: {
         flexDirection: 'row',
         gap: 10,
     },
     themeOption: {
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 12,
+        minHeight: 70,
         borderRadius: 12,
         borderWidth: 1,
-        gap: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
     },
     themeOptionText: {
+        ...FONTS.caption,
         fontSize: 12,
-        fontWeight: '600',
     },
-    menuItem: {
+    syncRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        borderRadius: 16,
-        borderWidth: 1,
-        marginBottom: 12,
+        gap: 10,
+        marginBottom: 10,
     },
-    menuRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
+    syncTitle: {
+        ...FONTS.bodyStrong,
     },
-    menuText: {
-        fontSize: 16,
-        fontWeight: '500',
+    syncCopy: {
+        ...FONTS.body,
     },
     logoutButton: {
-        marginTop: 20,
-        padding: 16,
-        borderRadius: 16,
+        minHeight: 56,
+        borderRadius: 14,
         borderWidth: 1,
         alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 4,
     },
     logoutText: {
-        fontWeight: '600',
-        fontSize: 16,
+        ...FONTS.bodyStrong,
     },
 });

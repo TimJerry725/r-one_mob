@@ -4,41 +4,89 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
+import { ASSETS } from '../data/fieldDemo';
+import { FONTS } from '../styles/futurist';
+
+const getAssetMatch = (value: string) =>
+    ASSETS.find((item) => {
+        const query = value.trim().toLowerCase();
+        if (!query) {
+            return false;
+        }
+        return item.cpid.toLowerCase().includes(query) || item.serial.toLowerCase().includes(query);
+    });
 
 export const AssetScanScreen = () => {
     const navigation = useNavigation<any>();
-    const { colors, isDark } = useTheme();
+    const { colors } = useTheme();
     const [cpid, setCpid] = useState('');
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [isTorchOn, setIsTorchOn] = useState(false);
     const [hasError, setHasError] = useState(false);
 
+    const matchedAsset = getAssetMatch(cpid);
+
+    const handleBarcodeScanned = ({ data }: { data: string }) => {
+        setScanned(true);
+        setCpid(data);
+        setHasError(!getAssetMatch(data));
+        setTimeout(() => setScanned(false), 1400);
+    };
+
     if (!permission) {
-        // Camera permissions are still loading.
-        return <View style={[styles.container, { backgroundColor: '#000' }]} />;
+        return <View style={[styles.container, { backgroundColor: colors.background }]} />;
     }
 
     if (!permission.granted) {
-        // Camera permissions are not granted yet.
         return (
-            <View style={[styles.container, { backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
-                <Text style={{ color: '#FFF', marginBottom: 20 }}>We need your permission to show the camera</Text>
-                <TouchableOpacity onPress={requestPermission} style={{ padding: 10, backgroundColor: colors.primary, borderRadius: 5 }}>
-                    <Text style={{ color: '#FFF' }}>Grant Permission</Text>
-                </TouchableOpacity>
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
+                <SafeAreaView style={styles.safeArea}>
+                    <View style={styles.fallbackContent}>
+                        <Text style={[styles.fallbackTitle, { color: colors.text }]}>Camera access needed for barcode scan</Text>
+                        <Text style={[styles.fallbackCopy, { color: colors.textSecondary }]}>
+                            Manual CPID entry still works offline if the camera is unavailable.
+                        </Text>
+
+                        <View style={[styles.manualCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                            <TextInput
+                                style={[styles.manualInput, { color: colors.text, backgroundColor: colors.cardAlt, shadowColor: colors.shadow }]}
+                                placeholder="Enter CPID or serial"
+                                placeholderTextColor={colors.textSecondary}
+                                value={cpid}
+                                onChangeText={(value) => {
+                                    setCpid(value);
+                                    setHasError(value.length > 0 && !getAssetMatch(value));
+                                }}
+                            />
+                            <TouchableOpacity onPress={requestPermission} style={[styles.primaryButton, { backgroundColor: colors.primary }]}>
+                                <Text style={[styles.primaryButtonText, { color: colors.white }]}>Grant camera access</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {matchedAsset ? (
+                            <TouchableOpacity
+                                onPress={() =>
+                                    matchedAsset.linkedWorkOrderId
+                                        ? navigation.navigate('TaskDetails', { taskId: matchedAsset.linkedWorkOrderId })
+                                        : undefined
+                                }
+                                style={[styles.resultCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
+                            >
+                                <Text style={[styles.resultTitle, { color: colors.text }]}>{matchedAsset.model}</Text>
+                                <Text style={[styles.resultMeta, { color: colors.textSecondary }]}>
+                                    {matchedAsset.cpid} • {matchedAsset.location}
+                                </Text>
+                            </TouchableOpacity>
+                        ) : hasError ? (
+                            <Text style={[styles.errorText, { color: colors.danger }]}>No cached asset matched that code.</Text>
+                        ) : null}
+                    </View>
+                </SafeAreaView>
             </View>
         );
     }
-
-    const handleBarCodeScanned = ({ type, data }: { type: string, data: string }) => {
-        setScanned(true);
-        setCpid(data);
-        // Reset scanned state after a delay or upon user action
-        setTimeout(() => setScanned(false), 2000);
-    };
 
     return (
         <View style={styles.container}>
@@ -46,206 +94,331 @@ export const AssetScanScreen = () => {
                 style={StyleSheet.absoluteFill}
                 facing="back"
                 enableTorch={isTorchOn}
-                onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+                onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
             />
+
+            <View style={[styles.overlay, { backgroundColor: colors.overlay }]} />
+
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.scrollContent}>
-                    {/* Top Card */}
-                    <BlurView intensity={80} tint="dark" style={[styles.topCard, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-                        <Text style={[styles.topCardTitle, { color: '#FFF' }]}>Scan QR Code</Text>
-                        <Text style={[styles.topCardSubtitle, { color: 'rgba(255,255,255,0.6)' }]}>or enter CPID manually</Text>
+                <View style={styles.header}>
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={styles.backButton}
+                    >
+                        <Ionicons name="chevron-back" size={28} color={colors.text} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.headerLabel, { color: colors.textSecondary }]}>Asset Scan</Text>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>QR, barcode, or manual lookup</Text>
+                    </View>
+                </View>
 
-                        <View style={styles.inputWrapper}>
-                            <View style={styles.inputContainer}>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Enter CPID"
-                                    placeholderTextColor="#999"
-                                    value={cpid}
-                                    onChangeText={setCpid}
-                                />
-                                <TouchableOpacity style={[styles.searchBtn, { backgroundColor: colors.primary }]}>
-                                    <Ionicons name="search" size={20} color="#FFF" />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </BlurView>
+                <View style={styles.scanArea}>
+                    <View style={[styles.scanFrame, { borderColor: colors.primary }]}>
+                        <View style={[styles.scanCorner, styles.scanCornerTopLeft, { borderColor: colors.primary }]} />
+                        <View style={[styles.scanCorner, styles.scanCornerTopRight, { borderColor: colors.primary }]} />
+                        <View style={[styles.scanCorner, styles.scanCornerBottomLeft, { borderColor: colors.primary }]} />
+                        <View style={[styles.scanCorner, styles.scanCornerBottomRight, { borderColor: colors.primary }]} />
+                    </View>
+                    <Text style={[styles.scanHint, { color: colors.white }]}>Align charger code inside the frame</Text>
+                </View>
 
-                    <View style={styles.scanContainer}>
-                        <View style={[styles.scanFrame, { borderColor: colors.primary }]} />
+                <View style={[styles.bottomSheet, { backgroundColor: colors.overlayStrong, shadowColor: colors.shadow }]}>
+                    <Text style={[styles.sheetTitle, { color: colors.text }]}>Manual entry</Text>
+                    <Text style={[styles.sheetCopy, { color: colors.textSecondary }]}>
+                        Use CPID or serial number when the code label is dirty or damaged.
+                    </Text>
 
-                        {hasError && (
-                            <Text style={[styles.errorText, { color: colors.primary }]}>
-                                Invalid QR code. Please try again.
-                            </Text>
-                        )}
+                    <View style={[styles.inputRow, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                        <TextInput
+                            style={[styles.input, { color: colors.text }]}
+                            placeholder="CPID or serial"
+                            placeholderTextColor={colors.textSecondary}
+                            value={cpid}
+                            onChangeText={(value) => {
+                                setCpid(value);
+                                setHasError(value.length > 0 && !getAssetMatch(value));
+                            }}
+                        />
+                        <TouchableOpacity
+                            style={[styles.searchButton, { backgroundColor: colors.primary }]}
+                            onPress={() => setHasError(cpid.length > 0 && !getAssetMatch(cpid))}
+                        >
+                            <Ionicons name="search" size={20} color={colors.white} />
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Bottom Controls */}
-                    <BlurView intensity={80} tint="dark" style={[styles.bottomControlsCard, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-                        <TouchableOpacity
-                            style={styles.controlBtnItem}
-                            onPress={() => setIsTorchOn(!isTorchOn)}
-                        >
-                            <View style={styles.controlCircle}>
-                                <Ionicons name={isTorchOn ? "flash" : "flash-off"} size={24} color={colors.primary} />
+                    {matchedAsset ? (
+                        <View style={[styles.resultCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                            <View style={styles.resultHeader}>
+                                <View>
+                                    <Text style={[styles.resultTitle, { color: colors.text }]}>{matchedAsset.model}</Text>
+                                    <Text style={[styles.resultMeta, { color: colors.textSecondary }]}>
+                                        {matchedAsset.cpid} • {matchedAsset.location}
+                                    </Text>
+                                </View>
+                                <View style={[styles.statusBadge, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
+                                    <Text style={[styles.statusBadgeText, { color: colors.success }]}>{matchedAsset.status}</Text>
+                                </View>
                             </View>
-                            <Text style={styles.controlText}>Flash {isTorchOn ? "On" : "Off"}</Text>
-                        </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.controlBtnItem}>
-                            <View style={styles.controlCircle}>
-                                <Ionicons name="information" size={24} color={colors.primary} />
-                            </View>
-                            <Text style={styles.controlText}>Help</Text>
-                        </TouchableOpacity>
-                    </BlurView>
-                </View>
-
-                {/* Bottom Navigation Bar */}
-                <View style={[styles.bottomNav, { backgroundColor: '#000', borderTopColor: 'rgba(255,255,255,0.1)' }]}>
-                    <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('MainTabs', { screen: 'Map' })}>
-                        <Ionicons name="map-outline" size={24} color="#666" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('MainTabs', { screen: 'Work' })}>
-                        <Ionicons name="briefcase-outline" size={24} color="#666" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.navItem} onPress={() => { }}>
-                        <View style={[styles.visionNavBtn, { backgroundColor: colors.primary }]}>
-                            <Ionicons name="qr-code" size={24} color="#FFF" />
+                            <TouchableOpacity
+                                onPress={() =>
+                                    matchedAsset.linkedWorkOrderId
+                                        ? navigation.navigate('TaskDetails', { taskId: matchedAsset.linkedWorkOrderId })
+                                        : navigation.goBack()
+                                }
+                                style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+                            >
+                                <Text style={[styles.primaryButtonText, { color: colors.white }]}>
+                                    {matchedAsset.linkedWorkOrderId ? 'Open linked work' : 'Use asset'}
+                                </Text>
+                            </TouchableOpacity>
                         </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.navItem}>
-                        <Ionicons name="search-outline" size={24} color="#666" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}>
-                        <Ionicons name="person-outline" size={24} color="#666" />
-                    </TouchableOpacity>
+                    ) : hasError ? (
+                        <Text style={[styles.errorText, { color: colors.danger }]}>No cached asset matched that code.</Text>
+                    ) : null}
+
+                    <View style={styles.controlRow}>
+                        <TouchableOpacity
+                            onPress={() => setIsTorchOn((value) => !value)}
+                            style={[styles.controlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                        >
+                            <Ionicons name={isTorchOn ? 'flash' : 'flash-off'} size={20} color={colors.primary} />
+                            <Text style={[styles.controlButtonText, { color: colors.text }]}>
+                                {isTorchOn ? 'Torch on' : 'Torch off'}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => setCpid(ASSETS[0].cpid)}
+                            style={[styles.controlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                        >
+                            <Ionicons name="albums-outline" size={20} color={colors.primary} />
+                            <Text style={[styles.controlButtonText, { color: colors.text }]}>Recent asset</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </SafeAreaView >
-        </View >
+            </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    safeArea: { flex: 1 },
-    scrollContent: {
+    container: {
         flex: 1,
-        paddingHorizontal: 20,
+    },
+    safeArea: {
+        flex: 1,
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingHorizontal: 16,
+        paddingTop: 8,
+    },
+    backButton: {
+        minWidth: 28,
+        minHeight: 28,
+        marginLeft: -6,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    topCard: {
-        width: '100%',
-        borderRadius: 24,
-        padding: 24,
-        alignItems: 'center',
-        marginBottom: 40,
-        overflow: 'hidden',
-    },
-    topCardTitle: {
-        fontSize: 22,
-        fontWeight: '700',
+    headerLabel: {
+        ...FONTS.label,
         marginBottom: 4,
     },
-    topCardSubtitle: {
-        fontSize: 14,
-        marginBottom: 20,
+    headerTitle: {
+        ...FONTS.h3,
     },
-    inputWrapper: {
-        width: '100%',
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        backgroundColor: '#FFF',
-        borderRadius: 12,
-        padding: 6,
-        alignItems: 'center',
-    },
-    input: {
+    scanArea: {
         flex: 1,
-        height: 44,
-        paddingHorizontal: 12,
-        fontSize: 16,
-        color: '#000',
-    },
-    searchBtn: {
-        width: 44,
-        height: 41,
-        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    scanContainer: {
-        alignItems: 'center',
-        marginBottom: 60,
+        paddingHorizontal: 24,
     },
     scanFrame: {
-        width: 260,
-        height: 260,
-        borderWidth: 3,
-        borderRadius: 30, // Rounded as in reference
-        backgroundColor: 'transparent',
-        overflow: 'hidden', // Ensure camera stays within bounds
+        width: 280,
+        height: 280,
+        borderRadius: 24,
+        borderWidth: 2,
+        position: 'relative',
     },
-    camera: {
+    scanCorner: {
+        position: 'absolute',
+        width: 46,
+        height: 46,
+        borderColor: '#FFFFFF',
+    },
+    scanCornerTopLeft: {
+        top: -2,
+        left: -2,
+        borderTopWidth: 5,
+        borderLeftWidth: 5,
+        borderTopLeftRadius: 22,
+    },
+    scanCornerTopRight: {
+        top: -2,
+        right: -2,
+        borderTopWidth: 5,
+        borderRightWidth: 5,
+        borderTopRightRadius: 22,
+    },
+    scanCornerBottomLeft: {
+        bottom: -2,
+        left: -2,
+        borderBottomWidth: 5,
+        borderLeftWidth: 5,
+        borderBottomLeftRadius: 22,
+    },
+    scanCornerBottomRight: {
+        bottom: -2,
+        right: -2,
+        borderBottomWidth: 5,
+        borderRightWidth: 5,
+        borderBottomRightRadius: 22,
+    },
+    scanHint: {
+        ...FONTS.bodyStrong,
+        marginTop: 18,
+    },
+    bottomSheet: {
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 18,
+        gap: 12,
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.12,
+        shadowRadius: 18,
+        elevation: 12,
+    },
+    sheetTitle: {
+        ...FONTS.h3,
+    },
+    sheetCopy: {
+        ...FONTS.body,
+    },
+    inputRow: {
+        minHeight: 56,
+        borderRadius: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingLeft: 14,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
+    },
+    input: {
+        ...FONTS.body,
         flex: 1,
-        width: '100%',
-        height: '100%',
+        paddingVertical: 14,
+    },
+    searchButton: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 4,
+    },
+    resultCard: {
+        borderRadius: 14,
+        padding: 16,
+        gap: 12,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 5,
+    },
+    resultHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    resultTitle: {
+        ...FONTS.h3,
+        marginBottom: 4,
+    },
+    resultMeta: {
+        ...FONTS.body,
+    },
+    statusBadge: {
+        minHeight: 34,
+        borderRadius: 10,
+        borderWidth: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 12,
+        alignSelf: 'flex-start',
+    },
+    statusBadgeText: {
+        ...FONTS.label,
+        fontSize: 11,
+    },
+    primaryButton: {
+        minHeight: 54,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 16,
+    },
+    primaryButtonText: {
+        ...FONTS.bodyStrong,
+    },
+    controlRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    controlButton: {
+        flex: 1,
+        minHeight: 52,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 8,
+    },
+    controlButtonText: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
     },
     errorText: {
-        marginTop: 20,
-        fontSize: 16,
-        fontWeight: '600',
-        textAlign: 'center',
+        ...FONTS.bodyStrong,
     },
-    bottomControlsCard: {
-        flexDirection: 'row',
-        borderRadius: 30,
-        padding: 20,
-        gap: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-    },
-    controlBtnItem: {
-        alignItems: 'center',
-    },
-    controlCircle: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#FFF',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    controlText: {
-        color: '#FFF',
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    bottomNav: {
-        flexDirection: 'row',
-        height: 80,
-        borderTopWidth: 1,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingBottom: 10,
-    },
-    navItem: {
+    fallbackContent: {
         flex: 1,
-        alignItems: 'center',
         justifyContent: 'center',
+        padding: 24,
     },
-    visionNavBtn: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
+    fallbackTitle: {
+        ...FONTS.h1,
+        marginBottom: 10,
+    },
+    fallbackCopy: {
+        ...FONTS.body,
+        marginBottom: 18,
+    },
+    manualCard: {
+        borderRadius: 16,
+        padding: 16,
+        gap: 12,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 5,
+    },
+    manualInput: {
+        minHeight: 54,
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        ...FONTS.body,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
     },
 });

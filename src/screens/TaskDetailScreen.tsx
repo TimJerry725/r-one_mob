@@ -1,835 +1,901 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, LayoutAnimation, Platform, UIManager, KeyboardAvoidingView, Modal } from 'react-native';
+import {
+    StyleSheet,
+    View,
+    Text,
+    TouchableOpacity,
+    ScrollView,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    Modal,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
-import { NeonButton } from '../components/NeonButton';
-import { GlassCard } from '../components/GlassCard';
+import { ACTIVITY_LOG, CHECKLIST_TEMPLATE, getWorkOrderById } from '../data/fieldDemo';
+import { FONTS } from '../styles/futurist';
+import { getServiceTypeColors } from '../styles/workTypeColors';
 
-if (Platform.OS === 'android') {
-    if (UIManager.setLayoutAnimationEnabledExperimental) {
-        UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-}
-
-// --- Types ---
-type DataType = 'text' | 'number' | 'media' | 'multiple_choice' | 'radio' | '3_phase' | 'none' | 'date' | 'dropdown';
-
-interface ChecklistItemData {
+type ChecklistStateItem = {
     id: string;
     label: string;
-    type: DataType;
-    options?: string[]; // For dropdown, radio, multiple_choice
-    value?: any;
-    completed: boolean;
-}
-
-// --- Mock Data ---
-const MOCK_CHECKLIST: ChecklistItemData[] = [
-    { id: '1', label: 'Check network connectivity', type: 'none', completed: false },
-    { id: '2', label: 'Record Intake Temperature', type: 'number', completed: false, value: '' },
-    { id: '3', label: 'Technician Name', type: 'text', completed: false, value: '' },
-    { id: '4', label: 'Select Reason for Visit', type: 'dropdown', options: ['Routine Maintenance', 'Emergency Repair', 'Installation', 'Audit'], completed: false, value: '' },
-    { id: '5', label: 'Safety Checks (Select all that apply)', type: 'multiple_choice', options: ['Gloves', 'Helmet', 'Insulated Tools', 'Goggles'], completed: false, value: [] },
-    { id: '6', label: 'Charger Condition', type: 'radio', options: ['Good', 'Damaged', 'Needs Cleaning'], completed: false, value: '' },
-    { id: '7', label: 'Measure 3-Phase Voltage', type: '3_phase', completed: false, value: { r: '', y: '', b: '' } },
-    { id: '8', label: 'Installation Date', type: 'date', completed: false, value: '' },
-    { id: '9', label: 'Capture Site Photos', type: 'media', completed: false, value: [] },
-];
-
-const MOCK_ACTIVITIES = [
-    {
-        id: '1',
-        user: 'Mathew',
-        action: 'reassigned the work',
-        date: '28 May 2024',
-        details: 'Serial number: FHV982389 has been assigned with Cp id: 16388802, Station name: Kohapur Railway Station',
-        type: 'timeline'
-    },
-    {
-        id: '2',
-        user: 'John Abraham',
-        action: 'Commented',
-        date: '28 May 2024',
-        comment: 'Replaced the SDR module',
-        type: 'comment'
-    },
-    {
-        id: '3',
-        user: 'Mathew',
-        action: 'reassigned the work',
-        date: '28 May 2024',
-        details: 'Serial number: FHV982389 has been assigned with Cp id: 16388802, Station name: Kohapur Railway Station',
-        type: 'timeline'
-    },
-    {
-        id: '4',
-        user: 'John Abraham',
-        action: 'Commented',
-        date: '28 May 2024',
-        comment: 'Replaced the SDR module',
-        type: 'comment'
-    }
-];
-
-// --- Components ---
-
-// Minimal Clean Tab
-const MinimalTab = ({ active, label, onPress }: any) => {
-    const { colors } = useTheme();
-    return (
-        <TouchableOpacity
-            onPress={onPress}
-            style={[
-                styles.tabItem,
-                active && { backgroundColor: colors.surfaceHighlight }
-            ]}
-        >
-            <Text style={[
-                styles.tabText,
-                { color: active ? colors.text : colors.textSecondary, fontWeight: active ? '700' : '500' }
-            ]}>
-                {label}
-            </Text>
-        </TouchableOpacity>
-    );
+    type: 'toggle' | 'text' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'media';
+    required: boolean;
+    options?: string[];
+    value: string | number | string[];
 };
 
-// Dynamic Input Renderer
-const DynamicInput = ({ item, onChange }: { item: ChecklistItemData, onChange: (val: any) => void }) => {
-    const { colors, isDark } = useTheme();
-    const [expanded, setExpanded] = useState(false); // For Dropdown
+const buildChecklistState = (): ChecklistStateItem[] =>
+    CHECKLIST_TEMPLATE.map((item) => ({
+        ...item,
+        value: item.type === 'photo' || item.type === 'media' ? 0 : '',
+    }));
 
+const isComplete = (item: ChecklistStateItem) => {
+    if (item.type === 'not_applicable') return String(item.value).length > 0;
+    if (item.type === 'photo' || item.type === 'media') {
+        return Number(item.value) > 0;
+    }
+    if (item.type === 'multiselect') {
+        return String(Array.isArray(item.value) ? item.value.join(', ') : item.value).trim().length > 0;
+    }
+    return String(item.value).trim().length > 0;
+};
+
+const getChecklistPlaceholder = (item: ChecklistStateItem) => {
     switch (item.type) {
-        case 'text':
-            return (
-                <TextInput
-                    style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                    placeholder="Enter text..."
-                    placeholderTextColor={colors.textSecondary}
-                    value={item.value}
-                    onChangeText={onChange}
-                />
-            );
-        case 'number':
-            return (
-                <TextInput
-                    style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                    placeholder="0.00"
-                    placeholderTextColor={colors.textSecondary}
-                    keyboardType="numeric"
-                    value={item.value}
-                    onChangeText={onChange}
-                />
-            );
         case 'date':
-            return (
-                <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <TextInput
-                        style={[styles.inputFlex, { color: colors.text }]}
-                        placeholder="DD/MM/YYYY"
-                        placeholderTextColor={colors.textSecondary}
-                        value={item.value}
-                        onChangeText={onChange}
-                    />
-                    <Ionicons name="calendar" size={20} color={colors.primary} />
-                </View>
-            );
-        case '3_phase':
-            const phases = item.value || { r: '', y: '', b: '' };
-            return (
-                <View style={styles.phaseContainer}>
-                    {['R', 'Y', 'B'].map((phase) => (
-                        <View key={phase} style={{ flex: 1 }}>
-                            <Text style={[styles.phaseLabel, { color: phase === 'R' ? colors.danger : phase === 'Y' ? colors.warning : '#4da6ff' }]}>{phase}-Phase</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border, textAlign: 'center' }]}
-                                placeholder="0V"
-                                placeholderTextColor={colors.textSecondary}
-                                keyboardType="numeric"
-                                value={phases[phase.toLowerCase()]}
-                                onChangeText={(text) => onChange({ ...phases, [phase.toLowerCase()]: text })}
-                            />
-                        </View>
-                    ))}
-                </View>
-            );
-        case 'dropdown':
-            return (
-                <View>
-                    <TouchableOpacity
-                        style={[styles.dropdownHeader, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                        onPress={() => setExpanded(!expanded)}
-                    >
-                        <Text style={{ color: item.value ? colors.text : colors.textSecondary }}>
-                            {item.value || 'Select an option'}
-                        </Text>
-                        <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={20} color={colors.textSecondary} />
-                    </TouchableOpacity>
-                    {expanded && item.options && (
-                        <View style={[styles.dropdownList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            {item.options.map((opt) => (
-                                <TouchableOpacity
-                                    key={opt}
-                                    style={[styles.dropdownItem, item.value === opt && { backgroundColor: isDark ? colors.surfaceHighlight : colors.background }]}
-                                    onPress={() => {
-                                        onChange(opt);
-                                        setExpanded(false);
-                                    }}
-                                >
-                                    <Text style={{ color: colors.text }}>{opt}</Text>
-                                    {item.value === opt && <Ionicons name="checkmark" size={16} color={colors.primary} />}
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    )}
-                </View>
-            );
+            return 'Enter date';
+        case 'number':
+            return 'Enter value';
+        case 'toggle':
+            return 'Enter status';
         case 'radio':
-            return (
-                <View style={styles.radioGroup}>
-                    {item.options?.map((opt) => (
-                        <TouchableOpacity
-                            key={opt}
-                            style={[
-                                styles.radioRow,
-                                item.value === opt && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }
-                            ]}
-                            onPress={() => onChange(opt)}
-                        >
-                            <View style={[styles.radioOuter, { borderColor: item.value === opt ? colors.primary : colors.textSecondary }]}>
-                                {item.value === opt && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
-                            </View>
-                            <Text style={[styles.radioText, { color: colors.text }]}>{opt}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            );
-        case 'multiple_choice':
-            const currentSelection = item.value || [];
-            return (
-                <View style={styles.checkGroup}>
-                    {item.options?.map((opt) => {
-                        const isSelected = currentSelection.includes(opt);
-                        return (
-                            <TouchableOpacity
-                                key={opt}
-                                style={styles.checkRow}
-                                onPress={() => {
-                                    if (isSelected) {
-                                        onChange(currentSelection.filter((i: string) => i !== opt));
-                                    } else {
-                                        onChange([...currentSelection, opt]);
-                                    }
-                                }}
-                            >
-                                <View style={[
-                                    styles.checkboxSquare,
-                                    { borderColor: isSelected ? colors.primary : colors.textSecondary, backgroundColor: isSelected ? colors.primary : 'transparent' }
-                                ]}>
-                                    {isSelected && <Ionicons name="checkmark" size={12} color={colors.white} />}
-                                </View>
-                                <Text style={[styles.checkText, { color: colors.text }]}>{opt}</Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-            );
-        case 'media':
-            return (
-                <TouchableOpacity style={[styles.uploadBox, { borderColor: colors.primary, backgroundColor: colors.primary + '10' }]}>
-                    <Ionicons name="camera" size={24} color={colors.primary} />
-                    <Text style={[styles.uploadText, { color: colors.primary }]}>Capture Photo / Video</Text>
-                </TouchableOpacity>
-            );
-        case 'none':
+            return 'Enter response';
+        case 'multiselect':
+            return 'Enter selections';
+        case 'not_applicable':
+            return 'Enter N/A if not applicable';
         default:
-            return null;
+            return 'Add measured values or notes';
     }
 };
 
-const ActivityItem = ({ item, isLast, showTimeline }: { item: any, isLast: boolean, showTimeline: boolean }) => {
-    const { colors, isDark } = useTheme();
-    const isComment = item.type === 'comment';
-
-    return (
-        <View style={styles.activityCardWrapper}>
-            {/* Timeline Line */}
-            {showTimeline && (
-                <View style={styles.timelineContainer}>
-                    <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />
-                    <View style={[styles.timelineDot, { backgroundColor: item.type === 'timeline' ? colors.primary : colors.success }]} />
-                </View>
-            )}
-
-            <View style={[styles.activityCard, { backgroundColor: colors.surface, flex: 1 }]}>
-                <View style={styles.activityHeader}>
-                    <View style={styles.activityUserRow}>
-                        <View style={[styles.activityAvatar, { backgroundColor: item.user.startsWith('M') ? colors.success : colors.primary }]}>
-                            <Text style={styles.activityAvatarText}>{item.user[0]}</Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
-                                    <Text style={[styles.activityUser, { color: colors.text }]}>{item.user}{' '}</Text>
-                                    <Text style={[styles.activityAction, { color: colors.textSecondary }]}>{item.action}</Text>
-                                </View>
-                                <Text style={[styles.activityDate, { color: colors.textSecondary }]}>{item.date}</Text>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-
-                {isComment && (
-                    <View style={styles.commentRow}>
-                        <View style={[styles.commentBadge, { backgroundColor: colors.primary + '20' }]}>
-                            <Text style={[styles.commentBadgeText, { color: colors.primary }]}>Commented</Text>
-                        </View>
-                        <Text style={[styles.commentText, { color: colors.text }]}>{item.comment}</Text>
-                    </View>
-                )}
-
-                {item.details && (
-                    <View style={[styles.activityDetailBox, { backgroundColor: isDark ? colors.background : '#F8F9FA' }]}>
-                        <Text style={[styles.activityDetailText, { color: colors.textSecondary }]}>{item.details}</Text>
-                    </View>
-                )}
-            </View>
-        </View>
-    );
-};
-
-// Checkbox Row
-const SurveyStep = ({
-    item,
-    onToggle,
-    onUpdate
-}: {
-    item: ChecklistItemData,
-    onToggle: () => void,
-    onUpdate: (val: any) => void
-}) => {
-    const { colors } = useTheme();
-
-    return (
-        <View style={[styles.stepCard, { backgroundColor: colors.surface }]}>
-            <TouchableOpacity onPress={onToggle} style={styles.stepHeader}>
-                <View style={[styles.stepCircle, {
-                    borderColor: item.completed ? colors.success : colors.border,
-                    backgroundColor: item.completed ? colors.success : 'transparent'
-                }]}>
-                    {item.completed && <Ionicons name="checkmark" size={14} color="#FFF" />}
-                </View>
-                <Text style={[styles.stepLabel, { color: colors.text, flex: 1 }]}>
-                    {item.label}
-                </Text>
-            </TouchableOpacity>
-            {item.type !== 'none' && (
-                <View style={styles.stepBody}>
-                    <DynamicInput item={item} onChange={onUpdate} />
-                </View>
-            )}
-        </View>
-    );
-};
+type DetailTab = 'Tasks' | 'Activities';
+type ActivityFilter = 'All' | 'Comment' | 'Activity';
 
 export const TaskDetailScreen = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     const { colors, isDark } = useTheme();
-    const [activeTab, setActiveTab] = useState('Worklist');
-    const [items, setItems] = useState<ChecklistItemData[]>(MOCK_CHECKLIST);
-    const [showHeaderDropdown, setShowHeaderDropdown] = useState(false);
-    const [activityFilter, setActivityFilter] = useState('All');
+    const workOrder = getWorkOrderById(route.params?.taskId);
+    const typeColors = getServiceTypeColors(workOrder.type, isDark);
+    const [items, setItems] = useState<ChecklistStateItem[]>(buildChecklistState);
+    const [signatureCaptured, setSignatureCaptured] = useState(false);
+    const [completionNote, setCompletionNote] = useState('');
+    const [mediaModalVisible, setMediaModalVisible] = useState(false);
+    const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
+    const [actionModalVisible, setActionModalVisible] = useState(false);
+    const [activeTab, setActiveTab] = useState<DetailTab>('Tasks');
+    const [activityFilter, setActivityFilter] = useState<ActivityFilter>('All');
 
-    const handleToggle = (id: string) => {
-        setItems(prev => prev.map(item =>
-            item.id === id ? { ...item, completed: !item.completed } : item
-        ));
-    };
+    const requiredItems = items.filter((item) => item.required);
+    const completedRequired = requiredItems.filter(isComplete).length;
+    const readyToComplete = completedRequired === requiredItems.length && signatureCaptured;
+    const filteredActivities = ACTIVITY_LOG.filter((item) => {
+        if (activityFilter === 'All') {
+            return true;
+        }
+        if (activityFilter === 'Comment') {
+            return item.type === 'comment';
+        }
+        return item.type !== 'comment';
+    });
 
-    const handleUpdate = (id: string, value: any) => {
-        setItems(prev => prev.map(item => {
-            if (item.id !== id) return item;
-
-            let isComplete = false;
-
-            // Auto-completion logic based on type
-            switch (item.type) {
-                case 'text':
-                case 'number':
-                case 'date':
-                case 'dropdown':
-                case 'radio':
-                    // Check if string is not empty
-                    isComplete = !!value && value.toString().trim().length > 0;
-                    break;
-                case 'multiple_choice':
-                case 'media':
-                    // Check if array has items
-                    isComplete = Array.isArray(value) && value.length > 0;
-                    break;
-                case '3_phase':
-                    // Check all phases are filled
-                    isComplete = !!value.r && !!value.y && !!value.b;
-                    break;
-                case 'none':
-                    // Keep existing state for manual toggles
-                    isComplete = item.completed;
-                    break;
-                default:
-                    isComplete = !!value;
-            }
-
-            return { ...item, value, completed: isComplete };
-        }));
+    const updateItem = (id: string, value: string | number | string[]) => {
+        setItems((current) => current.map((item) => (item.id === id ? { ...item, value } : item)));
     };
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <SafeAreaView style={styles.safeArea}>
-
-                {/* Header */}
                 <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-                            <Ionicons name="arrow-back" size={24} color={colors.text} />
-                        </TouchableOpacity>
-                        <View style={{ flex: 1, justifyContent: 'center' }}>
-                            <Text style={[styles.headerTitle, { color: colors.text, textAlign: 'left' }]} numberOfLines={1}>Pune Central Station</Text>
-                        </View>
-                        <TouchableOpacity
-                            style={[styles.headerActionBtn, { borderColor: colors.border }]}
-                            onPress={() => setShowHeaderDropdown(!showHeaderDropdown)}
-                        >
-                            <Text style={[styles.headerActionText, { color: colors.textSecondary }]}>Action</Text>
-                            <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
-                        </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={styles.backButton}
+                    >
+                        <Ionicons name="chevron-back" size={28} color={colors.text} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text numberOfLines={1} style={[styles.headerTitle, { color: colors.text }]}>{workOrder.siteName}</Text>
                     </View>
-                    <View style={{ paddingLeft: 12 }}>
-                        <TouchableOpacity style={styles.iconBtn}>
-                            <Ionicons name="share-outline" size={22} color={colors.text} />
-                        </TouchableOpacity>
-                    </View>
-
-                    {showHeaderDropdown && (
-                        <View style={[styles.headerDropdownMenu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <TouchableOpacity style={styles.headerDropdownItem} onPress={() => setShowHeaderDropdown(false)}>
-                                <Text style={{ color: colors.text, fontSize: 14 }}>Submit for review</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={[styles.headerDropdownItem, { borderTopWidth: 1, borderTopColor: colors.border }]} onPress={() => setShowHeaderDropdown(false)}>
-                                <Text style={{ color: colors.text, fontSize: 14 }}>Forward</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
+                    <TouchableOpacity 
+                        onPress={() => setActionModalVisible(true)}
+                        style={[styles.actionBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                    >
+                        <Text style={[styles.actionBtnText, { color: colors.text }]}>Action</Text>
+                        <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
                 </View>
 
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-                    {/* Project Info Card - Now matches TaskCard style */}
-                    <View style={[styles.projectCard, { backgroundColor: colors.surface }]}>
-                        <View style={styles.projectHeader}>
-                            <Text style={[styles.projectName, { color: colors.text }]}>Crimson Moon - DC installation</Text>
-                        </View>
-
-                        <View style={styles.idRow}>
-                            <View style={[styles.idBadge, { backgroundColor: colors.surfaceHighlight }]}>
-                                <Text style={[styles.idText, { color: colors.textSecondary }]}>CPID: </Text>
-                                <Text style={[styles.idValue, { color: colors.text }]}>CP-100239</Text>
-                            </View>
-                            <View style={[styles.idBadge, { backgroundColor: colors.surfaceHighlight }]}>
-                                <Text style={[styles.idText, { color: colors.textSecondary }]}>Station: </Text>
-                                <Text style={[styles.idValue, { color: colors.text }]}>Pune Central Station</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.addressRow}>
-                            <Ionicons name="location-outline" size={14} color={colors.primary} />
-                            <Text style={[styles.addressText, { color: colors.textSecondary }]} numberOfLines={1}>
-                                123 Tech Park, Hinjewadi, Pune, MH
+                <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                    <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                        <Text style={[styles.jobTitle, { color: colors.text }]}>{workOrder.title}</Text>
+                        <View style={styles.locationRow}>
+                            <Text style={[styles.jobAddress, { color: colors.textSecondary, flex: 1 }]}>
+                                {workOrder.address}
                             </Text>
-                            <TouchableOpacity style={[styles.directionBtn, { backgroundColor: colors.primary + '20' }]}>
-                                <Ionicons name="navigate" size={14} color={colors.primary} />
+                            <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.primary + '15' }]}>
+                                <Ionicons name="navigate" size={16} color={colors.primary} />
                             </TouchableOpacity>
                         </View>
 
-
-
-                        <View style={styles.metaRow}>
-                            <View style={styles.metaItem}>
-                                <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-                                <Text style={[styles.metaText, { color: colors.textSecondary }]}>Oct 01, 2024 - Oct 31, 2024</Text>
+                        <View style={styles.chipRow}>
+                            <View style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                <Text style={[styles.heroChipText, { color: colors.textSecondary }]}>{workOrder.assetId}</Text>
+                            </View>
+                            <View style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                <Text style={[styles.heroChipText, { color: colors.textSecondary }]}>{workOrder.siteName}</Text>
                             </View>
                         </View>
 
-                        <View style={styles.assigneeChipsRow}>
-                            {['Tony Ware', 'Sarah J.', 'Mike B.'].map((name, index) => (
-                                <View
-                                    key={index}
+                        <View style={styles.chipRow}>
+                            <View style={[styles.heroChip, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
+                                <Text style={[styles.heroChipText, { color: typeColors.tintText }]}>{workOrder.type}</Text>
+                            </View>
+                            {workOrder.type === 'Installation' ? (
+                                <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+                                    <Text style={[styles.heroChipText, { color: colors.primary }]}>{workOrder.stage}</Text>
+                                </View>
+                            ) : null}
+                        </View>
+
+                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
+                        <View style={styles.chipRow}>
+                            {workOrder.technicians.map((tech, idx) => {
+                                const isLead = idx === 0;
+                                return (
+                                    <View key={tech} style={[styles.heroChip, { backgroundColor: isLead ? colors.primary : colors.primary + '15', borderColor: colors.primary }]}>
+                                        <Text style={[styles.heroChipText, { color: isLead ? colors.white : colors.primary }]}>
+                                            {isLead ? `Lead: ${tech}` : tech}
+                                        </Text>
+                                    </View>
+                                );
+                            })}
+                            <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+                                <Text style={[styles.heroChipText, { color: colors.primary }]}>Approver: Dispatch</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    <View style={[styles.tabSwitch, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                        {(['Tasks', 'Activities'] as const).map((tab) => {
+                            const isSelected = activeTab === tab;
+                            return (
+                                <TouchableOpacity
+                                    key={tab}
+                                    onPress={() => setActiveTab(tab)}
                                     style={[
-                                        styles.assigneeChip,
-                                        { backgroundColor: index === 0 ? colors.primary : colors.primary + '20' }
+                                        styles.tabButton,
+                                        { backgroundColor: isSelected ? colors.surface : 'transparent' },
                                     ]}
                                 >
-                                    <Text style={[styles.assigneeChipText, { color: index === 0 ? colors.white : colors.primary }]}>{name}</Text>
-                                </View>
-                            ))}
-                        </View>
-
-
-
-                        <View style={styles.creatorSection}>
-                            <View style={styles.creatorItem}>
-                                <Text style={[styles.creatorLabel, { color: colors.textSecondary }]}>Created by</Text>
-                                <Text style={[styles.creatorValue, { color: colors.text }]}>Admin User</Text>
-                            </View>
-                            <View style={styles.creatorItem}>
-                                <Text style={[styles.creatorLabel, { color: colors.textSecondary }]}>Assigned by</Text>
-                                <Text style={[styles.creatorValue, { color: colors.text }]}>John Doe</Text>
-                            </View>
-                        </View>
+                                    <Text style={[styles.tabButtonText, { color: isSelected ? colors.text : colors.textSecondary }]}>
+                                        {tab}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
 
-                    <View style={[styles.tabSegment, { backgroundColor: colors.surface }]}>
-                        <MinimalTab active={activeTab === 'Worklist'} label="Worklist" onPress={() => setActiveTab('Worklist')} />
-                        <MinimalTab active={activeTab === 'Activities'} label="Activities" onPress={() => setActiveTab('Activities')} />
-                    </View>
+                    {activeTab === 'Tasks' ? (
+                        <>
+                            <View style={styles.listColumn}>
+                                {items.map((item) => (
+                                    <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                                        <View style={styles.stepHeader}>
+                                            <View style={[styles.stepIcon, { backgroundColor: isComplete(item) ? colors.success : colors.surfaceHighlight }]}>
+                                                <Ionicons
+                                                    name={isComplete(item) ? 'checkmark' : 'ellipse-outline'}
+                                                    size={18}
+                                                    color={isComplete(item) ? colors.white : colors.textSecondary}
+                                                />
+                                            </View>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
+                                                <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
+                                                    {item.required ? 'Required before completion' : 'Optional'}
+                                                </Text>
+                                            </View>
+                                        </View>
 
-                    {activeTab === 'Worklist' && (
-                        <View style={styles.workListContainer}>
+                                        {item.type === 'photo' || item.type === 'media' ? (
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    setActiveMediaId(item.id);
+                                                    setMediaModalVisible(true);
+                                                }}
+                                                style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                            >
+                                                <FontAwesome name="paperclip" size={18} color={colors.primary} />
+                                                <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
+                                            </TouchableOpacity>
+                                        ) : item.type === 'text' ? (
+                                            <TextInput
+                                                multiline
+                                                placeholder={getChecklistPlaceholder(item)}
+                                                placeholderTextColor={colors.textSecondary}
+                                                style={[styles.notesInput, { color: colors.text, backgroundColor: colors.cardAlt, shadowColor: colors.shadow }]}
+                                                value={String(item.value)}
+                                                onChangeText={(value) => updateItem(item.id, value)}
+                                            />
+                                        ) : (
+                                            <TextInput
+                                                keyboardType={item.type === 'number' ? 'numeric' : 'default'}
+                                                placeholder={getChecklistPlaceholder(item)}
+                                                placeholderTextColor={colors.textSecondary}
+                                                style={[styles.inputSingle, { color: colors.text, backgroundColor: colors.cardAlt, shadowColor: colors.shadow }]}
+                                                value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value)}
+                                                onChangeText={(value) => updateItem(item.id, value)}
+                                            />
+                                        )}
 
-                            {items.map(item => (
-                                <SurveyStep
-                                    key={item.id}
-                                    item={item}
-                                    onToggle={() => handleToggle(item.id)}
-                                    onUpdate={(val) => handleUpdate(item.id, val)}
-                                />
-                            ))}
-                        </View>
-                    )}
-
-                    {activeTab === 'Activities' && (
-                        <View style={styles.activitiesContainer}>
-                            {/* Inner Filters */}
-                            <View style={styles.activityFilters}>
-                                {['All', 'Comments', 'Timeline'].map((f) => (
-                                    <TouchableOpacity
-                                        key={f}
-                                        onPress={() => setActivityFilter(f)}
-                                        style={[
-                                            styles.activityFilterBtn,
-                                            { backgroundColor: f === activityFilter ? colors.primary : colors.surfaceHighlight }
-                                        ]}
-                                    >
-                                        <Text style={[
-                                            styles.activityFilterText,
-                                            { color: f === activityFilter ? colors.white : colors.textSecondary }
-                                        ]}>{f}</Text>
-                                    </TouchableOpacity>
+                                        {item.options?.length ? (
+                                            <Text style={[styles.stepHint, { color: colors.textSecondary }]}>
+                                                {item.options.join(', ')}
+                                            </Text>
+                                        ) : null}
+                                    </View>
                                 ))}
                             </View>
 
-                            {/* Activity List */}
-                            {MOCK_ACTIVITIES
-                                .filter(act => {
-                                    if (activityFilter === 'All') return true;
-                                    if (activityFilter === 'Comments' && act.type === 'comment') return true;
-                                    if (activityFilter === 'Timeline' && act.type === 'timeline') return true;
-                                    return false;
-                                })
-                                .map((activity, index, arr) => (
-                                    <ActivityItem
-                                        key={activity.id}
-                                        item={activity}
-                                        isLast={index === arr.length - 1}
-                                        showTimeline={activityFilter === 'Timeline' || activityFilter === 'All'}
-                                    />
-                                ))}
-
-                            {/* Completion Comments Section */}
-                            <View style={[styles.completionSection, { backgroundColor: 'rgba(255,255,255,0.02)', borderColor: colors.border }]}>
-                                <Text style={[styles.completionTitle, { color: colors.textSecondary }]}>Work completion comments</Text>
-                                <View style={[styles.completionInputContainer, { borderColor: colors.border }]}>
-                                    <TextInput
-                                        style={[styles.completionInput, { color: colors.text }]}
-                                        placeholder="Enter comments..."
-                                        placeholderTextColor={colors.textSecondary}
-                                        multiline
-                                        numberOfLines={4}
-                                    />
-                                </View>
+                            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Customer Sign-off</Text>
+                            <View style={[styles.signatureCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                                <Text style={[styles.signatureTitle, { color: colors.text }]}>Signature</Text>
+                                <Text style={[styles.signatureCopy, { color: colors.textSecondary }]}>
+                                    Capture customer confirmation before marking the work complete.
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => setSignatureCaptured((current) => !current)}
+                                    style={[
+                                        styles.signatureButton,
+                                        {
+                                            backgroundColor: signatureCaptured ? colors.success : colors.surfaceHighlight,
+                                            borderColor: signatureCaptured ? colors.success : colors.border,
+                                        },
+                                    ]}
+                                >
+                                    <Ionicons name={signatureCaptured ? 'checkmark-circle' : 'create-outline'} size={20} color={colors.white} />
+                                    <Text style={[styles.signatureButtonText, { color: colors.white }]}>
+                                        {signatureCaptured ? 'Signature stored' : 'Capture signature'}
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
 
-                        </View>
-                    )}
+                            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Completion Note</Text>
+                            <TextInput
+                                multiline
+                                placeholder="Summarize findings and follow-up actions."
+                                placeholderTextColor={colors.textSecondary}
+                                style={[styles.completionInput, { color: colors.text, backgroundColor: colors.surface, shadowColor: colors.shadow }]}
+                                value={completionNote}
+                                onChangeText={setCompletionNote}
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <View style={styles.filterRow}>
+                                {(['All', 'Comment', 'Activity'] as const).map((filter) => {
+                                    const isSelected = activityFilter === filter;
+                                    return (
+                                        <TouchableOpacity
+                                            key={filter}
+                                            onPress={() => setActivityFilter(filter)}
+                                            style={[
+                                                styles.filterChip,
+                                                {
+                                                    backgroundColor: isSelected ? colors.primary + '14' : colors.surface,
+                                                    borderColor: isSelected ? colors.primary : colors.border,
+                                                },
+                                            ]}
+                                        >
+                                            <Text style={[styles.filterChipText, { color: isSelected ? colors.primary : colors.textSecondary }]}>
+                                                {filter}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
 
-                    <View style={{ height: 100 }} />
+                            <View style={styles.activityList}>
+                                {filteredActivities.map((activity, index) => {
+                                    const isComment = activity.type === 'comment';
+                                    const isStatus = activity.type === 'status';
+                                    const badgeColor = isComment ? colors.primary : isStatus ? colors.success : colors.textSecondary;
+                                    const badgeBackground = isComment ? colors.primary + '14' : isStatus ? colors.success + '14' : colors.surfaceHighlight;
+                                    const badgeLabel = isComment ? 'Comment' : 'Activity';
+                                    const markerIcon = isComment ? 'comment' : isStatus ? 'check-circle' : 'refresh';
+                                    const isFirst = index === 0;
+                                    const isLast = index === filteredActivities.length - 1;
+
+                                    return (
+                                        <View key={activity.id} style={styles.timelineRow}>
+                                            <View style={styles.timelineRail}>
+                                                {!isFirst ? (
+                                                    <View
+                                                        style={[
+                                                            styles.timelineLineTop,
+                                                            { backgroundColor: colors.border },
+                                                        ]}
+                                                    />
+                                                ) : null}
+                                                <View style={[styles.timelineMarkerWrap, { backgroundColor: colors.background }]}>
+                                                    <FontAwesome name={markerIcon} size={16} color={badgeColor} />
+                                                </View>
+                                                {!isLast ? (
+                                                    <View
+                                                        style={[
+                                                            styles.timelineLineBottom,
+                                                            { backgroundColor: colors.border },
+                                                        ]}
+                                                    />
+                                                ) : null}
+                                            </View>
+                                            <View style={styles.timelineContent}>
+                                                <View style={styles.activityTopRow}>
+                                                    <Text style={[styles.activityTitle, { color: colors.text }]}>{activity.title}</Text>
+                                                    <Text style={[styles.activityTime, { color: colors.textSecondary }]}>{activity.time}</Text>
+                                                </View>
+                                                <View style={[styles.activityBadge, { backgroundColor: badgeBackground, borderColor: badgeColor }]}>
+                                                    <Text style={[styles.activityBadgeText, { color: badgeColor }]}>{badgeLabel}</Text>
+                                                </View>
+                                                <Text style={[styles.activityDetail, { color: colors.textSecondary }]}>{activity.detail}</Text>
+                                            </View>
+                                        </View>
+                                    );
+                                })}
+                                {filteredActivities.length === 0 ? (
+                                    <View style={[styles.emptyStateCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                                        <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No matching items</Text>
+                                        <Text style={[styles.emptyStateCopy, { color: colors.textSecondary }]}>
+                                            Try another activity filter.
+                                        </Text>
+                                    </View>
+                                ) : null}
+                            </View>
+                        </>
+                    )}
                 </ScrollView>
 
-                {/* Footer */}
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    keyboardVerticalOffset={0}
                     style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
                 >
-                    <NeonButton
-                        title={activeTab === 'Worklist' ? "Complete Task" : "Submit for review"}
+                    <TouchableOpacity
                         onPress={() => navigation.goBack()}
-                        style={{ width: '100%' }}
-                        animate={false}
-                    />
+                        style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                    >
+                        <Text style={[styles.footerButtonText, { color: colors.text }]}>Save</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        disabled={!readyToComplete}
+                        onPress={() => navigation.goBack()}
+                        style={[
+                            styles.footerButton,
+                            {
+                                backgroundColor: readyToComplete ? colors.primary : colors.surfaceHighlight,
+                                borderColor: readyToComplete ? colors.primary : colors.border,
+                                opacity: readyToComplete ? 1 : 0.55,
+                            },
+                        ]}
+                    >
+                        <Text style={[styles.footerPrimaryText, { color: readyToComplete ? colors.white : colors.textSecondary }]}>
+                            Mark Complete
+                        </Text>
+                    </TouchableOpacity>
                 </KeyboardAvoidingView>
 
+                <TouchableOpacity 
+                    style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000' }]} 
+                    activeOpacity={0.9}
+                    onPress={() => navigation.navigate('CreateTask', { 
+                        fromDetail: true,
+                        prefill: {
+                            serviceType: workOrder.type,
+                            siteName: workOrder.siteName,
+                            stageName: 'Inspection',
+                            checklistName: 'Pedestal Repair'
+                        }
+                    })}
+                >
+                    <Ionicons name="add" size={32} color={colors.white} />
+                </TouchableOpacity>
+                <Modal visible={mediaModalVisible} transparent animationType="fade">
+                    <View style={styles.modalOverlay}>
+                        <View style={[styles.bottomSheetInner, { backgroundColor: colors.background, paddingBottom: 40 }]}>
+                            <Text style={[styles.sheetTitle, { color: colors.textSecondary }]}>Add Attachment</Text>
+                            
+                            <TouchableOpacity style={[styles.sheetOption, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => { setMediaModalVisible(false); if(activeMediaId) updateItem(activeMediaId, Number(items.find(i=>i.id===activeMediaId)?.value||0)+1); }}>
+                                <FontAwesome name="camera" size={20} color={colors.primary} style={styles.sheetIcon} />
+                                <Text style={[styles.sheetOptionText, { color: colors.text }]}>Take Photo</Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity style={[styles.sheetOption, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => { setMediaModalVisible(false); if(activeMediaId) updateItem(activeMediaId, Number(items.find(i=>i.id===activeMediaId)?.value||0)+1); }}>
+                                <FontAwesome name="video-camera" size={20} color={colors.primary} style={styles.sheetIcon} />
+                                <Text style={[styles.sheetOptionText, { color: colors.text }]}>Record Video</Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity style={styles.sheetOption} onPress={() => { setMediaModalVisible(false); if(activeMediaId) updateItem(activeMediaId, Number(items.find(i=>i.id===activeMediaId)?.value||0)+1); }}>
+                                <FontAwesome name="paperclip" size={20} color={colors.primary} style={styles.sheetIcon} />
+                                <Text style={[styles.sheetOptionText, { color: colors.text }]}>Attach File</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.sheetCancel, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]} onPress={() => setMediaModalVisible(false)}>
+                                <Text style={[styles.sheetCancelText, { color: colors.text }]}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+                <Modal visible={actionModalVisible} transparent animationType="fade">
+                    <TouchableOpacity style={[styles.modalOverlay, { justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 16 }]} activeOpacity={1} onPress={() => setActionModalVisible(false)}>
+                        <View style={[{ backgroundColor: colors.surface, borderRadius: 12, padding: 8, minWidth: 200, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 16, elevation: 8 }]}>
+                            <TouchableOpacity onPress={() => { setActionModalVisible(false); if(readyToComplete) navigation.goBack(); }} style={[{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                                <Ionicons name="checkmark-circle-outline" size={20} color={readyToComplete ? colors.success : colors.textSecondary} style={{ marginRight: 10 }} />
+                                <Text style={[{ color: readyToComplete ? colors.text : colors.textSecondary, ...FONTS.body }]}>Mark Complete</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => { setActionModalVisible(false); }} style={[{ flexDirection: 'row', alignItems: 'center', padding: 12 }]}>
+                                <Ionicons name="arrow-redo-outline" size={20} color={colors.primary} style={{ marginRight: 10 }} />
+                                <Text style={[{ color: colors.text, ...FONTS.body }]}>Forward</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
             </SafeAreaView>
-        </View >
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    safeArea: { flex: 1 },
+    container: {
+        flex: 1,
+    },
+    safeArea: {
+        flex: 1,
+    },
     header: {
+        minHeight: 60,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
         paddingHorizontal: 16,
-        height: 56,
         borderBottomWidth: 1,
+        gap: 12,
     },
-    headerTitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        lineHeight: 24, // Consistent with icons
-    },
-    headerActionBtn: {
+    actionBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingVertical: 8,
         borderRadius: 8,
         borderWidth: 1,
         gap: 6,
     },
-    headerActionText: {
+    actionBtnText: {
+        ...FONTS.bodyStrong,
         fontSize: 13,
-        fontWeight: '600',
     },
-    headerDropdownMenu: {
-        position: 'absolute',
-        top: 54,
-        right: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        width: 160,
-        zIndex: 100,
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-    },
-    headerDropdownItem: {
-        padding: 12,
-    },
-    iconBtn: { padding: 4 },
-    scrollContent: { padding: 16 },
-    projectCard: {
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 12,
-    },
-    projectHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 12,
-    },
-    projectName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    idRow: {
-        flexDirection: 'row',
-        gap: 8,
-        marginBottom: 12,
-        flexWrap: 'wrap',
-    },
-    idBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-        flexDirection: 'row',
-    },
-    idText: {
-        fontSize: 11,
-    },
-    idValue: {
-        fontSize: 11,
-        fontWeight: '700',
-    },
-    addressRow: {
-        flexDirection: 'row',
+    backButton: {
+        minWidth: 28,
+        minHeight: 28,
         alignItems: 'center',
-        gap: 6,
-        marginBottom: 12,
+        justifyContent: 'center',
+        marginLeft: -6,
     },
-    addressText: {
-        flex: 1,
-        fontSize: 12,
-    },
-    directionBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+    iconButton: {
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    divider: {
-        height: 1,
-        marginBottom: 12,
+    headerTitle: {
+        ...FONTS.h3,
     },
-    creatorSection: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 12,
+    content: {
+        padding: 16,
+        paddingBottom: 24,
     },
-    creatorItem: {
-        flex: 1,
+    heroCard: {
+        borderRadius: 18,
+        padding: 18,
+        marginBottom: 16,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 5,
     },
-    creatorLabel: {
-        fontSize: 10,
-        textTransform: 'uppercase',
-        fontWeight: '700',
-        marginBottom: 2,
+    jobTitle: {
+        ...FONTS.h2,
+        marginBottom: 6,
     },
-    creatorValue: {
-        fontSize: 12,
-        fontWeight: '600',
+    jobAddress: {
+        ...FONTS.body,
     },
-    metaRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 12,
-    },
-    metaItem: {
+    locationRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 14,
     },
-    metaText: {
-        fontSize: 13,
+    navButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    assigneeChipsRow: {
+    chipRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
+        gap: 10,
+        marginBottom: 14,
     },
-    assigneeChip: {
+    heroChip: {
+        minHeight: 28,
+        borderRadius: 10,
+        borderWidth: 1,
+        justifyContent: 'center',
         paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
     },
-    assigneeChipText: {
-        fontSize: 11,
-        fontWeight: '700',
+    heroChipText: {
+        ...FONTS.label,
+        fontSize: 10,
     },
-    tabSegment: { flexDirection: 'row', borderRadius: 12, padding: 4, marginBottom: 12 },
-    tabItem: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
-    tabText: { fontSize: 14 },
-
-    // Activities
-    activitiesContainer: { paddingBottom: 20 },
-    activityFilters: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-    activityFilterBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12 },
-    activityFilterText: { fontSize: 12, fontWeight: '600' },
-    activityCardWrapper: { flexDirection: 'row', gap: 12 },
-    timelineContainer: { width: 20, alignItems: 'center' },
-    timelineLine: { position: 'absolute', top: 0, bottom: -12, width: 2 },
-    timelineDot: { width: 10, height: 10, borderRadius: 5, marginTop: 18, zIndex: 1 },
-    activityCard: { borderRadius: 12, padding: 12, marginBottom: 12 },
-    activityHeader: { marginBottom: 8 },
-    activityUserRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    activityAvatar: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    activityAvatarText: { color: '#FFF', fontWeight: 'bold', fontSize: 11 },
-    activityUser: { fontWeight: '700', fontSize: 13 },
-    activityAction: { fontSize: 13 },
-    activityDate: { fontSize: 11 },
-    activityDetailBox: { borderRadius: 8, padding: 10, marginTop: 8 },
-    activityDetailText: { fontSize: 12, lineHeight: 18 },
-    commentRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 },
-    commentBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-    commentBadgeText: { fontSize: 10, fontWeight: 'bold' },
-    commentText: { fontSize: 13, flex: 1 },
-
-    // Completion Section
-    completionSection: { marginTop: 8, padding: 16, borderRadius: 12 },
-    completionTitle: { fontSize: 13, fontWeight: '700', marginBottom: 10 },
-    completionInputContainer: { borderWidth: 1, borderRadius: 8, padding: 10, minHeight: 80 },
-    completionInput: { fontSize: 13, textAlignVertical: 'top' },
-
-    workListContainer: { marginTop: 8 },
-    sectionHeaderTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 16 },
-
-    // Checkbox Step
-    // Checklist Cards
-    stepCard: {
+    heroSubLabel: {
+        ...FONTS.label,
+        fontSize: 10,
+        marginBottom: 8,
+        marginTop: 4,
+    },
+    tabSwitch: {
+        minHeight: 48,
         borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        marginBottom: 12,
-    },
-    stepHeader: {
+        borderWidth: 1,
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
+        padding: 4,
+        gap: 4,
+        marginBottom: 16,
     },
-    stepCircle: {
+    tabButton: {
+        flex: 1,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tabButtonText: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+    },
+    sectionLabel: {
+        ...FONTS.label,
+        marginBottom: 10,
+    },
+    listColumn: {
+        gap: 12,
+        marginBottom: 14,
+    },
+    filterRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 14,
+    },
+    filterChip: {
+        minHeight: 36,
+        borderRadius: 10,
+        borderWidth: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 12,
+    },
+    filterChipText: {
+        ...FONTS.label,
+        fontSize: 11,
+    },
+    activityList: {
+        marginBottom: 14,
+    },
+    timelineRow: {
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'flex-start',
+        minHeight: 92,
+    },
+    timelineRail: {
+        width: 38,
+        alignItems: 'center',
+        position: 'relative',
+        alignSelf: 'stretch',
+    },
+    timelineLineTop: {
+        position: 'absolute',
+        top: 0,
+        bottom: 45,
+        width: 2,
+    },
+    timelineLineBottom: {
+        position: 'absolute',
+        top: 23,
+        bottom: 0,
+        width: 2,
+    },
+    timelineMarkerWrap: {
         width: 24,
         height: 24,
         borderRadius: 12,
-        borderWidth: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 7,
+        zIndex: 1,
+    },
+    timelineContent: {
+        flex: 1,
+        paddingBottom: 18,
+    },
+    activityTopRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 10,
+        marginBottom: 6,
+    },
+    activityTitle: {
+        ...FONTS.bodyStrong,
+        flex: 1,
+    },
+    activityTime: {
+        ...FONTS.label,
+        fontSize: 10,
+    },
+    activityBadge: {
+        alignSelf: 'flex-start',
+        minHeight: 24,
+        borderRadius: 8,
+        borderWidth: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 8,
+    },
+    activityBadgeText: {
+        ...FONTS.label,
+        fontSize: 10,
+    },
+    activityDetail: {
+        ...FONTS.body,
+        marginTop: 8,
+    },
+    emptyStateCard: {
+        borderRadius: 16,
+        padding: 16,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 5,
+    },
+    emptyStateTitle: {
+        ...FONTS.bodyStrong,
+        marginBottom: 4,
+    },
+    emptyStateCopy: {
+        ...FONTS.body,
+    },
+    stepCard: {
+        borderRadius: 16,
+        padding: 16,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 5,
+    },
+    stepHeader: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 14,
+    },
+    stepIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    stepLabel: {
-        fontSize: 15,
-        fontWeight: '600',
+    stepTitle: {
+        ...FONTS.h3,
+        marginBottom: 4,
     },
-    stepBody: {
-        marginTop: 10,
+    stepMeta: {
+        ...FONTS.caption,
     },
-
-    // Inputs
-    input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
-    inputContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 8, paddingHorizontal: 12 },
-    inputFlex: { flex: 1, paddingVertical: 10, fontSize: 14 },
-
-    // 3 Phase
-    phaseContainer: { flexDirection: 'row', gap: 10 },
-    phaseLabel: { fontSize: 10, marginBottom: 4, textAlign: 'center', fontWeight: 'bold' },
-
-    // Dropdown
-    dropdownHeader: { borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    dropdownList: { borderWidth: 1, borderRadius: 8, marginTop: 4, overflow: 'hidden' },
-    dropdownItem: { padding: 12, flexDirection: 'row', justifyContent: 'space-between' },
-
-    // Radio
-    radioGroup: { gap: 8 },
-    radioRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderWidth: 1, borderColor: 'transparent', borderRadius: 8 },
-    radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-    radioInner: { width: 10, height: 10, borderRadius: 5 },
-    radioText: { fontSize: 14 },
-
-    // Multiple Choice
-    checkGroup: { gap: 8 },
-    checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },
-    checkboxSquare: { width: 18, height: 18, borderRadius: 4, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-    checkText: { fontSize: 14 },
-
-    // Media
-    uploadBox: { borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, height: 80, alignItems: 'center', justifyContent: 'center', gap: 8 },
-    uploadText: { fontSize: 14, fontWeight: '500' },
-
-    placeholderContainer: { padding: 40, alignItems: 'center' },
-    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
+    stepHint: {
+        ...FONTS.caption,
+        marginTop: 8,
+    },
+    inlineActions: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    choiceButton: {
+        flex: 1,
+        minHeight: 50,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    choiceText: {
+        ...FONTS.bodyStrong,
+    },
+    optionColumn: {
+        gap: 10,
+    },
+    optionButton: {
+        minHeight: 52,
+        borderRadius: 12,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    optionText: {
+        ...FONTS.bodyStrong,
+        flex: 1,
+        marginRight: 8,
+    },
+    notesInput: {
+        minHeight: 110,
+        borderRadius: 12,
+        padding: 14,
+        textAlignVertical: 'top',
+        ...FONTS.body,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
+    },
+    inputSingle: {
+        minHeight: 52,
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        ...FONTS.body,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
+    },
+    captureButton: {
+        minHeight: 54,
+        borderRadius: 12,
+        borderWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        paddingHorizontal: 14,
+    },
+    captureButtonText: {
+        ...FONTS.bodyStrong,
+        textAlign: 'center',
+    },
+    signatureCard: {
+        borderRadius: 16,
+        padding: 18,
+        marginBottom: 14,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 18,
+        elevation: 5,
+    },
+    signatureTitle: {
+        ...FONTS.h3,
+        marginBottom: 8,
+    },
+    signatureCopy: {
+        ...FONTS.body,
+        marginBottom: 14,
+    },
+    signatureButton: {
+        minHeight: 54,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 10,
+    },
+    signatureButtonText: {
+        ...FONTS.bodyStrong,
+    },
+    completionInput: {
+        minHeight: 120,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 14,
+        textAlignVertical: 'top',
+        ...FONTS.body,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
+    },
+    footer: {
+        flexDirection: 'row',
+        gap: 10,
+        padding: 16,
+        borderTopWidth: 1,
+    },
+    footerButton: {
+        flex: 1,
+        minHeight: 56,
+        borderRadius: 14,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    footerButtonText: {
+        ...FONTS.bodyStrong,
+    },
+    footerPrimaryText: {
+        ...FONTS.bodyStrong,
+    },
+    fab: {
+        position: 'absolute',
+        bottom: 86,
+        right: 20,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 10,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    bottomSheetInner: {
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        paddingTop: 32,
+    },
+    sheetTitle: {
+        ...FONTS.label,
+        marginBottom: 16,
+    },
+    sheetOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        minHeight: 56,
+    },
+    sheetIcon: {
+        width: 32,
+    },
+    sheetOptionText: {
+        ...FONTS.bodyStrong,
+        fontSize: 16,
+    },
+    sheetCancel: {
+        marginTop: 24,
+        minHeight: 52,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    sheetCancelText: {
+        ...FONTS.bodyStrong,
+    },
 });

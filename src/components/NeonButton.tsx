@@ -1,8 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, FONTS } from '../styles/futurist';
+import React from 'react';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { FONTS, RADIUS } from '../styles/futurist';
 import { useTheme } from '../context/ThemeContext';
 
 interface NeonButtonProps {
@@ -13,81 +12,65 @@ interface NeonButtonProps {
     animate?: boolean;
 }
 
-export const NeonButton: React.FC<NeonButtonProps> = ({ title, onPress, style, variant = 'primary', animate = true }) => {
+export const NeonButton: React.FC<NeonButtonProps> = ({
+    title,
+    onPress,
+    style,
+    variant = 'primary',
+}) => {
     const { colors } = useTheme();
-    const glowOpacity = useRef(new Animated.Value(0.5)).current;
 
-    const baseColor = variant === 'secondary' ? colors.secondary : variant === 'danger' ? colors.danger : colors.primary;
-
-    useEffect(() => {
-        if (!animate) {
-            glowOpacity.setValue(1);
-            return;
-        }
-
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(glowOpacity, {
-                    toValue: 0.8,
-                    duration: 1500,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(glowOpacity, {
-                    toValue: 0.4,
-                    duration: 1500,
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-    }, [animate]);
+    const variantStyles = {
+        primary: {
+            backgroundColor: colors.primary,
+            borderColor: colors.primary,
+            textColor: colors.white,
+        },
+        secondary: {
+            backgroundColor: colors.surfaceHighlight,
+            borderColor: colors.border,
+            textColor: colors.text,
+        },
+        danger: {
+            backgroundColor: colors.danger,
+            borderColor: colors.danger,
+            textColor: colors.white,
+        },
+    }[variant];
 
     const handlePress = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        Haptics.selectionAsync();
         onPress();
     };
 
     return (
-        <Animated.View style={[
-            styles.wrapper,
-            style,
-            {
-                opacity: glowOpacity,
-                shadowColor: baseColor,
-                shadowRadius: 10,
-            }
-        ]}>
-            <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
-                <LinearGradient
-                    colors={[baseColor, baseColor]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[styles.container, { borderColor: baseColor }]}
-                >
-                    <Text style={[styles.text, { color: colors.white }]}>{title}</Text>
-                </LinearGradient>
-            </TouchableOpacity>
-        </Animated.View>
+        <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={handlePress}
+            style={[
+                styles.container,
+                {
+                    backgroundColor: variantStyles.backgroundColor,
+                    borderColor: variantStyles.borderColor,
+                },
+                style,
+            ]}
+        >
+            <Text style={[styles.text, { color: variantStyles.textColor }]}>{title}</Text>
+        </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
-    wrapper: {
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 1,
-        elevation: 8,
-    },
     container: {
-        borderWidth: 2,
-        borderRadius: 8, // Sharper corners for sci-fi look
-        paddingVertical: 14,
-        paddingHorizontal: 24,
+        minHeight: 56,
+        borderRadius: RADIUS.lg,
+        borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        paddingHorizontal: 20,
     },
     text: {
-        ...FONTS.h2,
-        fontSize: 16,
-        letterSpacing: 2,
+        ...FONTS.h3,
     },
 });

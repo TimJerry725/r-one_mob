@@ -1,577 +1,500 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, Alert, TouchableOpacity, ScrollView } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { COLORS, FONTS } from '../styles/futurist';
-import { GlassCard } from '../components/GlassCard';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
+import { useTheme } from '../context/ThemeContext';
+import { WORK_ORDERS } from '../data/fieldDemo';
+import { FONTS } from '../styles/futurist';
+import { getServiceTypeColors, ServiceType } from '../styles/workTypeColors';
 
-const API_KEY = 'AIzaSyAOcbvs0MtHhAiHevyu63o1kkp7OXHfVRY';
+const DEFAULT_REGION: Region = {
+    latitude: 18.5314,
+    longitude: 73.8446,
+    latitudeDelta: 0.12,
+    longitudeDelta: 0.12,
+};
 
 const DARK_MAP_STYLE = [
-    {
-        "elementType": "geometry",
-        "stylers": [{ "color": "#212121" }]
-    },
-    {
-        "elementType": "labels.icon",
-        "stylers": [{ "visibility": "off" }]
-    },
-    {
-        "elementType": "labels.text.fill",
-        "stylers": [{ "color": "#757575" }]
-    },
-    {
-        "elementType": "labels.text.stroke",
-        "stylers": [{ "color": "#212121" }]
-    },
-    {
-        "featureType": "administrative",
-        "elementType": "geometry",
-        "stylers": [{ "color": "#757575" }]
-    },
-    {
-        "featureType": "administrative.country",
-        "elementType": "labels.text.fill",
-        "stylers": [{ "color": "#9e9e9e" }]
-    },
-    {
-        "featureType": "administrative.land_parcel",
-        "stylers": [{ "visibility": "off" }]
-    },
-    {
-        "featureType": "administrative.locality",
-        "elementType": "labels.text.fill",
-        "stylers": [{ "color": "#bdbdbd" }]
-    },
-    {
-        "featureType": "poi",
-        "elementType": "labels.text.fill",
-        "stylers": [{ "color": "#757575" }]
-    },
-    {
-        "featureType": "poi.park",
-        "elementType": "geometry",
-        "stylers": [{ "color": "#181818" }]
-    },
-    {
-        "featureType": "poi.park",
-        "elementType": "labels.text.fill",
-        "stylers": [{ "color": "#616161" }]
-    },
-    {
-        "featureType": "poi.park",
-        "elementType": "labels.text.stroke",
-        "stylers": [{ "color": "#1b1b1b" }]
-    },
-    {
-        "featureType": "road",
-        "elementType": "geometry.fill",
-        "stylers": [{ "color": "#2c2c2c" }]
-    },
-    {
-        "featureType": "road",
-        "elementType": "labels.text.fill",
-        "stylers": [{ "color": "#8a8a8a" }]
-    },
-    {
-        "featureType": "road.arterial",
-        "elementType": "geometry",
-        "stylers": [{ "color": "#373737" }]
-    },
-    {
-        "featureType": "road.highway",
-        "elementType": "geometry",
-        "stylers": [{ "color": "#3c3c3c" }]
-    },
-    {
-        "featureType": "road.highway.controlled_access",
-        "elementType": "geometry",
-        "stylers": [{ "color": "#4e4e4e" }]
-    },
-    {
-        "featureType": "road.local",
-        "elementType": "labels.text.fill",
-        "stylers": [{ "color": "#616161" }]
-    },
-    {
-        "featureType": "transit",
-        "elementType": "labels.text.fill",
-        "stylers": [{ "color": "#757575" }]
-    },
-    {
-        "featureType": "water",
-        "elementType": "geometry",
-        "stylers": [{ "color": "#000000" }]
-    },
-    {
-        "featureType": "water",
-        "elementType": "labels.text.fill",
-        "stylers": [{ "color": "#3d3d3d" }]
-    }
+    { elementType: 'geometry', stylers: [{ color: '#111b23' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#7e92a4' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#111b23' }] },
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#233443' }] },
+    { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#1a2834' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#091118' }] },
 ];
 
-import { useTheme } from '../context/ThemeContext';
+const MAP_CARD_WIDTH = 300;
+const MAP_CARD_GAP = 12;
 
-// Mock nearby stations data
-const NEARBY_STATIONS = [
-    {
-        id: '1',
-        name: 'Pune Central Station',
-        latitude: 18.5314,
-        longitude: 73.8446,
-        workCount: 5,
-        workType: 'Installation',
-        distance: '0.5 km'
-    },
-    {
-        id: '2',
-        name: 'Mumbai Highway Point',
-        latitude: 18.5324,
-        longitude: 73.8456,
-        workCount: 3,
-        workType: 'Maintenance',
-        distance: '1.2 km'
-    },
-    {
-        id: '3',
-        name: 'Skyline Mall Parking',
-        latitude: 18.5304,
-        longitude: 73.8436,
-        workCount: 2,
-        workType: 'Installation',
-        distance: '0.8 km'
-    },
-    {
-        id: '4',
-        name: 'Bangalore Tech Park',
-        latitude: 12.9716,
-        longitude: 77.5946,
-        workCount: 8,
-        workType: 'Installation',
-        distance: '650 km'
-    },
-    {
-        id: '5',
-        name: 'Chennai Marina Station',
-        latitude: 13.0827,
-        longitude: 80.2707,
-        workCount: 4,
-        workType: 'Maintenance',
-        distance: '780 km'
-    },
-    {
-        id: '6',
-        name: 'Hyderabad Hi-Tech City',
-        latitude: 17.4485,
-        longitude: 78.3908,
-        workCount: 6,
-        workType: 'Installation',
-        distance: '560 km'
-    },
-    {
-        id: '7',
-        name: 'Kochi Marine Drive',
-        latitude: 9.9312,
-        longitude: 76.2673,
-        workCount: 3,
-        workType: 'Maintenance',
-        distance: '920 km'
-    },
-    {
-        id: '8',
-        name: 'Mysore Palace Area',
-        latitude: 12.3052,
-        longitude: 76.6551,
-        workCount: 2,
-        workType: 'Installation',
-        distance: '710 km'
-    },
-    {
-        id: '9',
-        name: 'Coimbatore Junction',
-        latitude: 11.0168,
-        longitude: 76.9558,
-        workCount: 5,
-        workType: 'Maintenance',
-        distance: '850 km'
-    },
-    {
-        id: '10',
-        name: 'Visakhapatnam Port',
-        latitude: 17.6868,
-        longitude: 83.2185,
-        workCount: 7,
-        workType: 'Installation',
-        distance: '720 km'
-    },
-    {
-        id: '11',
-        name: 'New Delhi Connaught Place',
-        latitude: 28.6139,
-        longitude: 77.2090,
-        workCount: 12,
-        workType: 'Installation',
-        distance: '1450 km'
-    },
-    {
-        id: '12',
-        name: 'Kolkata Park Street',
-        latitude: 22.5726,
-        longitude: 88.3639,
-        workCount: 6,
-        workType: 'Maintenance',
-        distance: '1950 km'
-    },
-    {
-        id: '13',
-        name: 'Jaipur Pink City',
-        latitude: 26.9124,
-        longitude: 75.7873,
-        workCount: 5,
-        workType: 'Installation',
-        distance: '1200 km'
-    },
-    {
-        id: '14',
-        name: 'Ahmedabad Sabarmati',
-        latitude: 23.0225,
-        longitude: 72.5714,
-        workCount: 9,
-        workType: 'Maintenance',
-        distance: '670 km'
-    },
-    {
-        id: '15',
-        name: 'Lucknow Hazratganj',
-        latitude: 26.8467,
-        longitude: 80.9462,
-        workCount: 4,
-        workType: 'Installation',
-        distance: '1350 km'
-    },
-    {
-        id: '16',
-        name: 'Chandigarh Sector 17',
-        latitude: 30.7333,
-        longitude: 76.7794,
-        workCount: 7,
-        workType: 'Maintenance',
-        distance: '1500 km'
-    },
-    {
-        id: '17',
-        name: 'Guwahati Gateway',
-        latitude: 26.1445,
-        longitude: 91.7362,
-        workCount: 3,
-        workType: 'Installation',
-        distance: '2400 km'
-    },
-    {
-        id: '18',
-        name: 'Bhopal Lake View',
-        latitude: 23.2599,
-        longitude: 77.4126,
-        workCount: 5,
-        workType: 'Maintenance',
-        distance: '850 km'
-    },
-    {
-        id: '19',
-        name: 'Indore Central',
-        latitude: 22.7196,
-        longitude: 75.8577,
-        workCount: 6,
-        workType: 'Installation',
-        distance: '750 km'
-    },
-    {
-        id: '20',
-        name: 'Patna Gandhi Maidan',
-        latitude: 25.5941,
-        longitude: 85.1376,
-        workCount: 4,
-        workType: 'Maintenance',
-        distance: '1700 km'
-    },
-    {
-        id: '21',
-        name: 'Ranchi Main Road',
-        latitude: 23.3441,
-        longitude: 85.3096,
-        workCount: 3,
-        workType: 'Installation',
-        distance: '1650 km'
-    },
-    {
-        id: '22',
-        name: 'Nagpur Sitabuldi',
-        latitude: 21.1458,
-        longitude: 79.0882,
-        workCount: 5,
-        workType: 'Maintenance',
-        distance: '680 km'
-    },
-    {
-        id: '23',
-        name: 'Surat Diamond City',
-        latitude: 21.1702,
-        longitude: 72.8311,
-        workCount: 8,
-        workType: 'Installation',
-        distance: '580 km'
-    },
-    {
-        id: '24',
-        name: 'Vadodara Sayajigunj',
-        latitude: 22.3072,
-        longitude: 73.1812,
-        workCount: 4,
-        workType: 'Maintenance',
-        distance: '620 km'
-    },
-    {
-        id: '25',
-        name: 'Amritsar Golden Temple',
-        latitude: 31.6340,
-        longitude: 74.8723,
-        workCount: 6,
-        workType: 'Installation',
-        distance: '1650 km'
-    },
-    {
-        id: '26',
-        name: 'Dehradun Clock Tower',
-        latitude: 30.3165,
-        longitude: 78.0322,
-        workCount: 3,
-        workType: 'Maintenance',
-        distance: '1400 km'
-    },
-    {
-        id: '27',
-        name: 'Shimla Mall Road',
-        latitude: 31.1048,
-        longitude: 77.1734,
-        workCount: 2,
-        workType: 'Installation',
-        distance: '1550 km'
-    },
-    {
-        id: '28',
-        name: 'Goa Panjim Beach',
-        latitude: 15.4909,
-        longitude: 73.8278,
-        workCount: 5,
-        workType: 'Maintenance',
-        distance: '480 km'
-    },
-    {
-        id: '29',
-        name: 'Thiruvananthapuram Central',
-        latitude: 8.5241,
-        longitude: 76.9366,
-        workCount: 4,
-        workType: 'Installation',
-        distance: '1050 km'
-    },
-    {
-        id: '30',
-        name: 'Varanasi Ghats',
-        latitude: 25.3176,
-        longitude: 82.9739,
-        workCount: 3,
-        workType: 'Maintenance',
-        distance: '1550 km'
-    },
-];
+type StationMapCard = {
+    id: string;
+    siteName: string;
+    count: number;
+    latitude: number;
+    longitude: number;
+    types: ServiceType[];
+};
+
+type StationAccent = {
+    background: string;
+    border: string;
+    text: string;
+    tint: string;
+    tintText: string;
+    pinText: string;
+};
+
+const StationMarkerPin = ({
+    count,
+    accent,
+    active,
+}: {
+    count: number;
+    accent: StationAccent;
+    active: boolean;
+}) => {
+    const label = count > 99 ? '99+' : String(count);
+    const fontSize = label.length > 2 ? 11 : label.length > 1 ? 12 : 14;
+
+    return (
+        <View style={[styles.markerWrap, active && styles.markerPinActive]}>
+            <Svg width={52} height={68} viewBox="0 0 60 78">
+                <Path
+                    d="M30 5C17.3 5 7 15.1 7 27.5c0 15.8 15.2 28.9 21.4 39.2.7 1.1 2.3 1.1 3 0C37.8 56.4 53 43.3 53 27.5 53 15.1 42.7 5 30 5Z"
+                    fill={accent.background}
+                    stroke={active ? '#FFFFFF' : accent.border}
+                    strokeWidth={2.75}
+                    strokeLinejoin="round"
+                />
+                <Path
+                    d="M30 10C20.1 10 12 17.9 12 27.5c0 10.2 7.8 18.7 18 18.7s18-8.5 18-18.7C48 17.9 39.9 10 30 10Z"
+                    fill="#FFFFFF"
+                    opacity={0.16}
+                />
+                <Circle cx="30" cy="27.5" r="13" fill="#FFFFFF" />
+                <Circle cx="30" cy="27.5" r="11.5" fill="#FFFFFF" stroke={accent.border} strokeWidth={1.25} />
+                <SvgText
+                    x="30"
+                    y="31.5"
+                    fill={accent.pinText}
+                    fontSize={fontSize}
+                    fontWeight="700"
+                    textAnchor="middle"
+                >
+                    {label}
+                </SvgText>
+                <Circle cx="30" cy="27.5" r="17.5" fill="none" stroke="#FFFFFF" strokeOpacity={active ? 0.92 : 0.64} strokeWidth={1.25} />
+            </Svg>
+        </View>
+    );
+};
 
 export const MapScreen = () => {
     const navigation = useNavigation<any>();
     const { colors, isDark } = useTheme();
-    const [location, setLocation] = useState<Location.LocationObject | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const insets = useSafeAreaInsets();
+    const navBarOffset = Math.max(insets.bottom, 12);
+    const bottomRailOffset = navBarOffset + 86; // 78 (tab bar max height) + 8px gap
+    const mapRef = useRef<MapView | null>(null);
+    const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+    const [locationState, setLocationState] = useState<'loading' | 'granted' | 'denied'>('loading');
     const [workStatus, setWorkStatus] = useState<'Away' | 'Working'>('Working');
-    const [selectedStation, setSelectedStation] = useState(NEARBY_STATIONS[0]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedOrderId, setSelectedOrderId] = useState(WORK_ORDERS[0].id);
+
+    const filteredOrders = WORK_ORDERS.filter((item) => {
+        const haystack = `${item.title} ${item.siteName} ${item.address}`.toLowerCase();
+        return haystack.includes(searchQuery.trim().toLowerCase());
+    });
+
+    const activeStationName = WORK_ORDERS.find((item) => item.id === selectedOrderId)?.siteName ?? null;
+
+    const stationCards = useMemo<StationMapCard[]>(() => {
+        const grouped = new Map<string, StationMapCard>();
+        filteredOrders.forEach((item) => {
+            const current = grouped.get(item.siteName);
+            if (current) {
+                current.count += 1;
+                if (!current.types.includes(item.type)) {
+                    current.types.push(item.type);
+                }
+                return;
+            }
+
+            grouped.set(item.siteName, {
+                id: item.siteName,
+                siteName: item.siteName,
+                count: 1,
+                latitude: item.latitude,
+                longitude: item.longitude,
+                types: [item.type],
+            });
+        });
+
+        return Array.from(grouped.values());
+    }, [filteredOrders]);
 
     useEffect(() => {
         (async () => {
-            let { status } = await Location.requestForegroundPermissionsAsync();
+            const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                setErrorMsg('Permission to access location was denied');
-                setLoading(false);
+                setLocationState('denied');
                 return;
             }
 
             try {
-                let location = await Location.getCurrentPositionAsync({});
-                setLocation(location);
-            } catch (error) {
-                setErrorMsg('Error fetching location');
-            } finally {
-                setLoading(false);
+                const current = await Location.getCurrentPositionAsync({});
+                const nextRegion = {
+                    latitude: current.coords.latitude,
+                    longitude: current.coords.longitude,
+                    latitudeDelta: 0.12,
+                    longitudeDelta: 0.12,
+                };
+                setRegion(nextRegion);
+                setLocationState('granted');
+                mapRef.current?.animateToRegion(nextRegion, 600);
+            } catch {
+                setLocationState('denied');
             }
         })();
     }, []);
 
+    useEffect(() => {
+        if (filteredOrders.length === 0) {
+            return;
+        }
 
+        if (!filteredOrders.some((item) => item.id === selectedOrderId)) {
+            setSelectedOrderId(filteredOrders[0].id);
+        }
+    }, [filteredOrders, selectedOrderId]);
 
-    if (loading) {
-        return (
-            <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={[styles.loadingText, { color: colors.primary }]}>INITIALIZING SATELLITE LINK...</Text>
-            </View>
+    const focusStation = (siteName: string) => {
+        const station =
+            stationCards.find((item) => item.siteName === siteName) ??
+            (() => {
+                const fallback = WORK_ORDERS.find((item) => item.siteName === siteName);
+                if (!fallback) {
+                    return null;
+                }
+                return {
+                    id: fallback.siteName,
+                    siteName: fallback.siteName,
+                    count: 1,
+                    latitude: fallback.latitude,
+                    longitude: fallback.longitude,
+                    types: [fallback.type],
+                } satisfies StationMapCard;
+            })();
+
+        const nextOrder =
+            filteredOrders.find((item) => item.siteName === siteName) ??
+            WORK_ORDERS.find((item) => item.siteName === siteName);
+
+        if (!station || !nextOrder) {
+            return;
+        }
+
+        setSelectedOrderId(nextOrder.id);
+        mapRef.current?.animateToRegion(
+            {
+                latitude: station.latitude,
+                longitude: station.longitude,
+                latitudeDelta: 0.08,
+                longitudeDelta: 0.08,
+            },
+            500,
         );
-    }
+    };
 
-    if (errorMsg) {
-        return (
-            <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
-                <Text style={[styles.errorText, { color: colors.danger }]}>{errorMsg}</Text>
-            </View>
-        );
-    }
+    const getStationAccent = (station: StationMapCard) => {
+        if (station.types.length === 1) {
+            const typeColors = getServiceTypeColors(station.types[0], isDark);
+            return {
+                ...typeColors,
+                pinText: typeColors.border,
+            };
+        }
+
+        return {
+            background: colors.primary,
+            border: colors.primary,
+            text: colors.white,
+            tint: colors.primary + '14',
+            tintText: colors.primary,
+            pinText: colors.primary,
+        };
+    };
+
+    const openStationWork = (siteName: string, orderId?: string) => {
+        const nextOrder =
+            orderId
+                ? WORK_ORDERS.find((item) => item.id === orderId)
+                : filteredOrders.find((item) => item.siteName === siteName) ?? WORK_ORDERS.find((item) => item.siteName === siteName);
+
+        if (nextOrder) {
+            setSelectedOrderId(nextOrder.id);
+        }
+
+        navigation.navigate('MainTabs', {
+            screen: 'Work',
+            params: { stationFilter: siteName },
+        });
+    };
+
+    const handleCardScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const rawIndex = event.nativeEvent.contentOffset.x / (MAP_CARD_WIDTH + MAP_CARD_GAP);
+        const index = Math.max(0, Math.min(Math.round(rawIndex), stationCards.length - 1));
+        const station = stationCards[index];
+
+        if (station) {
+            focusStation(station.siteName);
+        }
+    };
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <MapView
+                ref={mapRef}
                 style={styles.map}
-                customMapStyle={isDark ? DARK_MAP_STYLE : []}
                 provider={PROVIDER_GOOGLE}
-                region={location ? {
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                    latitudeDelta: 3.5,
-                    longitudeDelta: 3.5,
-                } : undefined}
-                showsUserLocation={false}
+                initialRegion={region}
+                customMapStyle={isDark ? DARK_MAP_STYLE : []}
+                showsUserLocation={locationState === 'granted'}
                 showsMyLocationButton={false}
             >
-                {/* Station Markers */}
-                {NEARBY_STATIONS.map((station) => (
-                    <Marker
-                        key={station.id}
-                        coordinate={{
-                            latitude: station.latitude,
-                            longitude: station.longitude,
-                        }}
-                        onPress={() => setSelectedStation(station)}
-                    >
-                        <View style={styles.stationMarkerContainer}>
-                            <Ionicons
-                                name="location"
-                                size={40}
-                                color={station.workType === 'Installation' ? colors.success : colors.warning}
-                            />
-                            <View style={[styles.markerCountBadge, {
-                                backgroundColor: station.workType === 'Installation' ? colors.success : colors.warning
-                            }]}>
-                                <Text style={styles.markerCountText}>{station.workCount}</Text>
-                            </View>
-                        </View>
-                    </Marker>
-                ))}
+                {stationCards.map((station) => {
+                    const active = activeStationName === station.siteName;
+                    const accent = getStationAccent(station);
+                    return (
+                        <Marker
+                            key={station.id}
+                            coordinate={{ latitude: station.latitude, longitude: station.longitude }}
+                            anchor={{ x: 0.5, y: 0.95 }}
+                            onPress={() => openStationWork(station.siteName)}
+                        >
+                            <StationMarkerPin count={station.count} accent={accent} active={active} />
+                        </Marker>
+                    );
+                })}
             </MapView>
 
-            {/* Top Header */}
-            <SafeAreaView style={styles.topHeader} pointerEvents="box-none">
-                <View style={[styles.headerContent, { backgroundColor: isDark ? 'rgba(10, 10, 20, 0.85)' : 'rgba(255, 255, 255, 0.85)' }]}>
-                    <View>
-                        <Text style={[styles.greeting, { color: colors.text }]}>Hey Timothy</Text>
-                        <Text style={[styles.subGreeting, { color: colors.textSecondary }]}>Your work for the day</Text>
+            <SafeAreaView style={styles.overlay} edges={['top', 'left', 'right']} pointerEvents="box-none">
+                <View style={styles.topStack}>
+                    <View
+                        style={[
+                            styles.headerPanel,
+                            {
+                                backgroundColor: colors.overlay,
+                                shadowColor: colors.shadow,
+                            },
+                        ]}
+                    >
+                        <View style={styles.headerTopRow}>
+                            <View style={styles.greetingBlock}>
+                                <Text style={[styles.headerTitle, { color: colors.text }]}>Hi Timothy</Text>
+                                <Text style={[styles.headerCopy, { color: colors.textSecondary }]}>Good morning</Text>
+                            </View>
+                            <View
+                                style={[
+                                    styles.statusToggle,
+                                    {
+                                        borderColor: colors.success,
+                                        backgroundColor: isDark ? colors.white : colors.surfaceHighlight,
+                                    },
+                                ]}
+                            >
+                                {(['Away', 'Working'] as const).map((item) => (
+                                    <TouchableOpacity
+                                        key={item}
+                                        onPress={() => setWorkStatus(item)}
+                                        style={[
+                                            styles.statusToggleButton,
+                                            item === 'Away' && workStatus === item && { backgroundColor: isDark ? colors.white : colors.surface },
+                                            item === 'Working' && workStatus === item && { backgroundColor: colors.success },
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.statusToggleText,
+                                                {
+                                                    color:
+                                                        item === 'Working'
+                                                            ? (workStatus === item ? colors.white : colors.success)
+                                                            : (workStatus === item ? colors.text : colors.success),
+                                                },
+                                            ]}
+                                        >
+                                            {item}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
                     </View>
-                    <View style={[styles.statusToggle, { borderColor: colors.success }]}>
-                        <TouchableOpacity
-                            style={[styles.statusBtn, workStatus === 'Away' && { backgroundColor: '#FFF' }]}
-                            onPress={() => setWorkStatus('Away')}
-                        >
-                            <Text style={[styles.statusText, { color: workStatus === 'Away' ? colors.text : colors.success }]}>Away</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.statusBtn, workStatus === 'Working' && { backgroundColor: colors.success }]}
-                            onPress={() => setWorkStatus('Working')}
-                        >
-                            <Text style={[styles.statusText, { color: workStatus === 'Working' ? '#FFF' : colors.success }]}>Working</Text>
-                        </TouchableOpacity>
+
+                    <View
+                        style={[
+                            styles.searchBar,
+                            { backgroundColor: colors.overlay, shadowColor: colors.shadow },
+                        ]}
+                    >
+                        <Ionicons name="search" size={18} color={colors.textSecondary} />
+                        <TextInput
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholder="Search site or work"
+                            placeholderTextColor={colors.textSecondary}
+                            style={[styles.searchInput, { color: isDark ? colors.black : colors.text }]}
+                        />
                     </View>
                 </View>
-            </SafeAreaView>
 
-            {/* Floating Location Button */}
-            <TouchableOpacity
-                style={[styles.locationBtn, { backgroundColor: colors.primary }]}
-                onPress={() => {
-                    // Center map on user location
-                }}
-            >
-                <Ionicons name="locate" size={28} color="#FFF" />
-            </TouchableOpacity>
-
-            {/* Bottom Stations Scroll */}
-            <View style={styles.bottomCardContainer}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.stationsScrollContent}
-                >
-                    {NEARBY_STATIONS.map((station) => (
+                <View style={{ marginBottom: bottomRailOffset }} pointerEvents="box-none">
+                    <View style={{ gap: 12, alignItems: 'flex-end', paddingRight: 16, marginBottom: 16 }} pointerEvents="box-none">
                         <TouchableOpacity
-                            key={station.id}
-                            style={[styles.stationCard, {
-                                backgroundColor: colors.surface,
-                                borderColor: selectedStation.id === station.id ? colors.primary : colors.border
-                            }]}
-                            onPress={() => {
-                                setSelectedStation(station);
-                                // Navigate to Work page filtered by this station
-                                navigation.navigate('MainTabs', {
-                                    screen: 'Work',
-                                    params: { stationFilter: station.name }
-                                });
-                            }}
+                            onPress={() => navigation.navigate('Notification')}
+                            style={[
+                                styles.locateButton,
+                                {
+                                    backgroundColor: isDark ? colors.surface : colors.white,
+                                    position: 'relative',
+                                    right: 0,
+                                    bottom: 0,
+                                    borderColor: colors.border,
+                                    borderWidth: 1,
+                                    shadowColor: colors.shadow,
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.1,
+                                    shadowRadius: 12,
+                                    elevation: 5,
+                                },
+                            ]}
                         >
-                            <View style={styles.stationCardHeader}>
-                                <View style={styles.stationCardInfo}>
-                                    <Text style={[styles.stationCardName, { color: colors.primary }]} numberOfLines={1}>
-                                        {station.name}
-                                    </Text>
-                                    <View style={styles.stationCardBottomRow}>
-                                        <View style={[styles.stationCardTypeBadge, {
-                                            backgroundColor: station.workType === 'Installation' ? colors.success + '20' : colors.warning + '20',
-                                            borderColor: station.workType === 'Installation' ? colors.success : colors.warning,
-                                            borderWidth: 1
-                                        }]}>
-                                            <Text style={[styles.stationCardTypeText, {
-                                                color: station.workType === 'Installation' ? colors.success : colors.warning
-                                            }]}>
-                                                {station.workType}
+                            <Ionicons name="notifications" size={24} color={colors.text} />
+                            <View style={{
+                                position: 'absolute',
+                                top: 4,
+                                right: 6,
+                                minWidth: 18,
+                                height: 18,
+                                borderRadius: 9,
+                                borderWidth: 1.5,
+                                backgroundColor: colors.danger, 
+                                borderColor: isDark ? colors.surface : colors.white,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                paddingHorizontal: 4,
+                            }}>
+                                <Text style={{ color: colors.white, fontSize: 10, fontWeight: '700' }}>3</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => mapRef.current?.animateToRegion(region, 500)}
+                            style={[
+                                styles.locateButton,
+                                {
+                                    backgroundColor: colors.primary,
+                                    position: 'relative',
+                                    right: 0,
+                                    bottom: 0,
+                                    shadowColor: colors.shadow,
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.2,
+                                    shadowRadius: 12,
+                                    elevation: 5,
+                                },
+                            ]}
+                        >
+                            <Ionicons name="locate" size={24} color={colors.white} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.bottomSheet}>
+                    <Text style={[styles.sheetLabel, { color: colors.textSecondary }]}>Nearby Stations</Text>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        snapToInterval={MAP_CARD_WIDTH + MAP_CARD_GAP}
+                        decelerationRate="fast"
+                        onMomentumScrollEnd={handleCardScrollEnd}
+                        contentContainerStyle={styles.sheetScroll}
+                    >
+                        {stationCards.map((station) => {
+                            const active = activeStationName === station.siteName;
+                            const accent = getStationAccent(station);
+                            return (
+                                <TouchableOpacity
+                                    key={station.id}
+                                    activeOpacity={0.92}
+                                    onPress={() => openStationWork(station.siteName)}
+                                    style={[
+                                        styles.jobCard,
+                                        {
+                                            backgroundColor: active ? colors.surface : colors.overlayStrong,
+                                            borderColor: active ? accent.border : accent.border + '55',
+                                            shadowColor: colors.shadow,
+                                        },
+                                    ]}
+                                >
+                                    <View style={styles.stationCardRow}>
+                                        <View style={styles.stationCardInfo}>
+                                            <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={2}>
+                                                {station.siteName}
                                             </Text>
+                                            <View style={styles.typeChipRow}>
+                                                {station.types.map((type) => {
+                                                    const typeColors = getServiceTypeColors(type, isDark);
+                                                    return (
+                                                        <View
+                                                            key={type}
+                                                            style={[
+                                                                styles.typeChip,
+                                                                {
+                                                                    backgroundColor: typeColors.tint,
+                                                                    borderColor: typeColors.border,
+                                                                },
+                                                            ]}
+                                                        >
+                                                            <Text style={[styles.typeChipText, { color: typeColors.tintText }]}>
+                                                                {type}
+                                                            </Text>
+                                                        </View>
+                                                    );
+                                                })}
+                                            </View>
                                         </View>
-                                        <View style={styles.stationCardMetaItem}>
-                                            <Ionicons name="navigate-outline" size={12} color={colors.textSecondary} />
-                                            <Text style={[styles.stationCardLocation, { color: colors.textSecondary }]}>
-                                                {station.distance}
+                                        <View
+                                            style={[
+                                                styles.stationCountBadge,
+                                                { backgroundColor: accent.background },
+                                            ]}
+                                        >
+                                            <Text style={[styles.stationCountText, { color: accent.text }]}>
+                                                {station.count}
                                             </Text>
                                         </View>
                                     </View>
-                                </View>
-                                <View style={[styles.workCountBadge, {
-                                    borderColor: colors.primary,
-                                    backgroundColor: colors.primary + '10'
-                                }]}>
-                                    <Text style={[styles.workCountNumber, { color: colors.primary }]}>{station.workCount}</Text>
-                                </View>
-                            </View>
-
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+                    {stationCards.length === 0 ? (
+                        <View style={[styles.emptyState, { backgroundColor: colors.overlayStrong, shadowColor: colors.shadow }]}>
+                            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No matching works</Text>
+                            <Text style={[styles.emptyStateCopy, { color: colors.textSecondary }]}>
+                                Try a different site name or clear the search.
+                            </Text>
+                        </View>
+                    ) : null}
+                </View>
+                </View>
+            </SafeAreaView>
         </View>
     );
 };
@@ -579,268 +502,184 @@ export const MapScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
-    },
-    centerContainer: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     map: {
-        flex: 1,
         ...StyleSheet.absoluteFillObject,
     },
-    topHeader: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 20,
-        paddingTop: 10,
-    },
-    headerContent: {
-        flexDirection: 'row',
+    overlay: {
+        flex: 1,
         justifyContent: 'space-between',
-        alignItems: 'center',
+        paddingTop: 8,
+    },
+    topStack: {
+        gap: 8,
+    },
+    headerPanel: {
+        marginHorizontal: 16,
+        borderRadius: 18,
         padding: 16,
-        borderRadius: 16,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 18,
+        elevation: 10,
     },
-    greeting: {
-        fontSize: 24,
-        fontWeight: '700',
+    headerTopRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 12,
     },
-    subGreeting: {
-        fontSize: 14,
-        marginTop: 2,
+    greetingBlock: {
+        flex: 1,
+    },
+    headerTitle: {
+        ...FONTS.h3,
+        marginBottom: 4,
+    },
+    headerCopy: {
+        ...FONTS.caption,
+    },
+    searchBar: {
+        minHeight: 50,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        gap: 8,
+        marginHorizontal: 16,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 18,
+        elevation: 10,
+    },
+    searchInput: {
+        ...FONTS.body,
+        flex: 1,
+        paddingVertical: 0,
     },
     statusToggle: {
-        flexDirection: 'row',
-        borderRadius: 25,
-        borderWidth: 2,
+        minHeight: 50,
+        borderRadius: 12,
         padding: 4,
-        backgroundColor: '#FFF',
+        flexDirection: 'row',
+        borderWidth: 2,
+        minWidth: 154,
     },
-    statusBtn: {
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        borderRadius: 20,
-    },
-    statusText: {
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    locationBtn: {
-        position: 'absolute',
-        bottom: 190,
-        right: 20,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        justifyContent: 'center',
+    statusToggleButton: {
+        flex: 1,
+        borderRadius: 10,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+        justifyContent: 'center',
     },
-    bottomCardContainer: {
+    statusToggleText: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+    },
+    locateButton: {
         position: 'absolute',
-        bottom: 20,
-        left: 0,
-        right: 0,
+        right: 16,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    stationsScrollContent: {
+    notificationDot: {
+        position: 'absolute',
+        top: 12,
+        right: 14,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        borderWidth: 1.5,
+    },
+    bottomSheet: {
+        gap: 10,
+    },
+    sheetLabel: {
+        ...FONTS.label,
+        marginHorizontal: 16,
+    },
+    sheetScroll: {
         paddingHorizontal: 16,
         gap: 12,
     },
-    stationCard: {
-        minWidth: 320,
-        borderRadius: 12,
-        borderWidth: 2,
+    emptyState: {
+        marginHorizontal: 16,
+        marginTop: 10,
+        borderRadius: 14,
         padding: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.12,
+        shadowRadius: 18,
+        elevation: 6,
     },
-    stationCardHeader: {
+    emptyStateTitle: {
+        ...FONTS.h3,
+        marginBottom: 6,
+    },
+    emptyStateCopy: {
+        ...FONTS.body,
+    },
+    jobCard: {
+        width: MAP_CARD_WIDTH,
+        borderRadius: 18,
+        borderWidth: 1.25,
+        padding: 12,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.12,
+        shadowRadius: 20,
+        elevation: 7,
+    },
+    stationCardRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
+        gap: 12,
     },
     stationCardInfo: {
         flex: 1,
-        marginRight: 16,
     },
-    stationCardName: {
-        fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 4,
+    jobCardTitle: {
+        ...FONTS.h3,
     },
-    stationCardLocation: {
-        fontSize: 14,
-        fontWeight: '400',
-    },
-    stationCardBottomRow: {
+    typeChipRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 6,
-        gap: 8,
-    },
-    workCountBadge: {
-        borderWidth: 1.5,
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        minWidth: 60,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    workCountNumber: {
-        fontSize: 28,
-        fontWeight: '700',
-    },
-    stationCardMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    stationCardMetaItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    stationCardMetaText: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    stationCardTypeBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    stationCardTypeText: {
-        fontSize: 11,
-        fontWeight: '700',
-    },
-    loadingText: {
-        ...FONTS.label,
-        marginTop: 20,
-        color: COLORS.primary,
-        letterSpacing: 2,
-    },
-    errorText: {
-        ...FONTS.body,
-        color: COLORS.danger,
-    },
-    infoCard: {
-        width: '100%',
-        borderRadius: 12,
-        borderWidth: 1,
-        padding: 14,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-        gap: 8,
-    },
-    cardTitle: {
-        ...FONTS.label,
-        fontSize: 11,
-        color: COLORS.white,
-    },
-    addressText: {
-        ...FONTS.h2,
-        fontSize: 16,
-        color: COLORS.white,
-        marginBottom: 10,
-    },
-    coordsText: {
-        ...FONTS.label,
-        fontSize: 10,
-        opacity: 0.6,
-    },
-    markerContainer: {
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    markerMy: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: COLORS.primary,
-        zIndex: 2,
-    },
-    markerRing: {
-        position: 'absolute',
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-        opacity: 0.5,
-    },
-    stationMarkerContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    markerCountBadge: {
-        position: 'absolute',
-        top: 8,
-        minWidth: 20,
-        height: 20,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#FFF',
-    },
-    markerCountText: {
-        color: '#FFF',
-        fontSize: 11,
-        fontWeight: '700',
-    },
-    stationInfo: {
-        gap: 8,
-    },
-    stationName: {
-        fontSize: 15,
-        fontWeight: '700',
-        marginBottom: 2,
-    },
-    stationMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
         flexWrap: 'wrap',
+        gap: 6,
+        marginTop: 6,
     },
-    metaItem: {
-        flexDirection: 'row',
+    typeChip: {
+        minHeight: 22,
+        borderRadius: 10,
+        borderWidth: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 8,
+    },
+    typeChipText: {
+        ...FONTS.label,
+        fontSize: 8,
+    },
+    stationCountBadge: {
+        minWidth: 44,
+        height: 44,
+        borderRadius: 12,
         alignItems: 'center',
-        gap: 4,
+        justifyContent: 'center',
     },
-    metaText: {
-        fontSize: 12,
-        fontWeight: '600',
+    stationCountText: {
+        ...FONTS.h2,
     },
-    typeBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
+    markerWrap: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.22,
+        shadowRadius: 8,
+        elevation: 8,
     },
-    typeText: {
-        fontSize: 11,
-        fontWeight: '700',
+    markerPinActive: {
+        transform: [{ scale: 1.04 }],
     },
 });
