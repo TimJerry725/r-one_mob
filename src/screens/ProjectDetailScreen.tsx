@@ -46,14 +46,39 @@ const OrderCard = ({
             style={[styles.orderCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
         >
             <View style={styles.chipRow}>
-                <View style={[styles.typeBadge, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
-                    <Text style={[styles.typeBadgeText, { color: typeColors.tintText }]}>{item.type}</Text>
-                </View>
-                {item.type === 'Installation' ? (
-                    <View style={[styles.typeBadge, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-                        <Text style={[styles.typeBadgeText, { color: colors.primary }]}>{item.stage}</Text>
+                <View style={{ flex: 1, flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                    <View style={[styles.typeBadge, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
+                        <Text style={[styles.typeBadgeText, { color: typeColors.tintText }]}>{item.type}</Text>
                     </View>
-                ) : null}
+                    {item.type === 'Installation' ? (
+                        <View style={[styles.typeBadge, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+                            <Text style={[styles.typeBadgeText, { color: colors.primary }]}>{item.stage}</Text>
+                        </View>
+                    ) : null}
+                </View>
+                <View style={[
+                    styles.statusBadgeInline, 
+                    { 
+                        backgroundColor: item.status === 'Completed' ? colors.success + '15' : 
+                                        item.status === 'Working' ? colors.primary + '15' :
+                                        item.status === 'Under Review' ? colors.secondary + '15' :
+                                        colors.surfaceHighlight,
+                        borderColor: item.status === 'Completed' ? colors.success : 
+                                     item.status === 'Working' ? colors.primary :
+                                     item.status === 'Under Review' ? colors.secondary :
+                                     colors.border
+                    }
+                ]}>
+                    <Text style={[
+                        styles.statusBadgeTextInline, 
+                        { 
+                            color: item.status === 'Completed' ? colors.success : 
+                                   item.status === 'Working' ? colors.primary :
+                                   item.status === 'Under Review' ? colors.secondary :
+                                   colors.textSecondary 
+                        }
+                    ]}>{item.status}</Text>
+                </View>
             </View>
 
             <Text style={[styles.orderTitle, { color: colors.text }]}>{item.title}</Text>
@@ -155,6 +180,7 @@ export const ProjectDetailScreen = () => {
     const route = useRoute<any>();
     const { colors, isDark } = useTheme();
     const [selectedStatuses, setSelectedStatuses] = useState<WorkOrderStatus[]>([]);
+    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
     const [selectedSite, setSelectedSite] = useState<string | null>(route.params?.stationFilter ?? null);
     const [searchQuery, setSearchQuery] = useState('');
     const [stationView, setStationView] = useState(false);
@@ -168,17 +194,31 @@ export const ProjectDetailScreen = () => {
         const query = searchQuery.trim().toLowerCase();
         return WORK_ORDERS.filter((item) => {
             const matchesStatus = selectedStatuses.length === 0 ? true : selectedStatuses.includes(item.status);
+            const matchesType = selectedTypes.length === 0 ? true : selectedTypes.includes(item.type);
             const matchesSite = selectedSite ? item.siteName === selectedSite : true;
             const haystack = `${item.title} ${item.siteName} ${item.address} ${item.type} ${item.stage}`.toLowerCase();
             const matchesSearch = query.length === 0 ? true : haystack.includes(query);
-            return matchesStatus && matchesSite && matchesSearch;
+            return matchesStatus && matchesType && matchesSite && matchesSearch;
         });
-    }, [searchQuery, selectedSite, selectedStatuses]);
+    }, [searchQuery, selectedSite, selectedStatuses, selectedTypes]);
 
     const toggleStatus = (status: WorkOrderStatus) => {
         setSelectedStatuses((current) =>
             current.includes(status) ? current.filter((item) => item !== status) : [...current, status],
         );
+    };
+
+    const toggleType = (type: string) => {
+        setSelectedTypes((current) =>
+            current.includes(type) ? current.filter((item) => item !== type) : [...current, type],
+        );
+    };
+
+    const clearAllFilters = () => {
+        setSelectedStatuses([]);
+        setSelectedTypes([]);
+        setSelectedSite(null);
+        setSearchQuery('');
     };
 
     const stations = useMemo<StationSummary[]>(() => {
@@ -244,7 +284,7 @@ export const ProjectDetailScreen = () => {
                             <View style={styles.filterDropdownContent}>
                                 <Ionicons name="filter" size={16} color={colors.textSecondary} />
                                 <Text style={[styles.filterDropdownText, { color: colors.text }]}>
-                                    {selectedStatuses.length === 0 ? 'All' : `${selectedStatuses.length} selected`}
+                                    {selectedStatuses.length + selectedTypes.length === 0 ? 'All' : `${selectedStatuses.length + selectedTypes.length} selected`}
                                 </Text>
                             </View>
                             <Ionicons
@@ -258,14 +298,16 @@ export const ProjectDetailScreen = () => {
                     {showFilterMenu ? (
                         <View style={[styles.filterMenu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                             <TouchableOpacity
-                                onPress={() => setSelectedStatuses([])}
+                                onPress={clearAllFilters}
                                 style={styles.filterMenuItem}
                             >
-                                <Text style={[styles.filterMenuText, { color: colors.text }]}>All</Text>
-                                {selectedStatuses.length === 0 ? (
-                                    <Ionicons name="checkmark" size={18} color={colors.primary} />
-                                ) : null}
+                                <Text style={[styles.filterMenuText, { color: colors.text }]}>Clear All</Text>
+                                <Ionicons name="refresh-outline" size={18} color={colors.textSecondary} />
                             </TouchableOpacity>
+
+                            <View style={[styles.filterDivider, { backgroundColor: colors.border }]} />
+                            <Text style={[styles.filterHeader, { color: colors.textSecondary }]}>STATUS</Text>
+
                             {STATUS_TABS.map((status) => (
                                 <TouchableOpacity
                                     key={status}
@@ -278,6 +320,21 @@ export const ProjectDetailScreen = () => {
                                     ) : null}
                                 </TouchableOpacity>
                             ))}
+
+                            <View style={[styles.filterDivider, { backgroundColor: colors.border }]} />
+                            <Text style={[styles.filterHeader, { color: colors.textSecondary }]}>TYPE</Text>
+                            {['Installation', 'Maintenance', 'Preventive'].map((type) => (
+                                <TouchableOpacity
+                                    key={type}
+                                    onPress={() => toggleType(type)}
+                                    style={styles.filterMenuItem}
+                                >
+                                    <Text style={[styles.filterMenuText, { color: colors.text }]}>{type}</Text>
+                                    {selectedTypes.includes(type) ? (
+                                        <Ionicons name="checkmark" size={18} color={colors.primary} />
+                                    ) : null}
+                                </TouchableOpacity>
+                            ))}
                         </View>
                     ) : null}
 
@@ -286,7 +343,7 @@ export const ProjectDetailScreen = () => {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.selectedFilterRow}
                     >
-                        {selectedStatuses.length === 0 ? (
+                        {selectedStatuses.length + selectedTypes.length === 0 ? (
                             <View
                                 style={[
                                     styles.selectedChip,
@@ -296,19 +353,34 @@ export const ProjectDetailScreen = () => {
                                 <Text style={[styles.selectedChipText, { color: colors.primary }]}>All</Text>
                             </View>
                         ) : (
-                            selectedStatuses.map((status) => (
-                                <TouchableOpacity
-                                    key={status}
-                                    onPress={() => toggleStatus(status)}
-                                    style={[
-                                        styles.selectedChip,
-                                        { backgroundColor: colors.primary + '14', borderColor: colors.primary },
-                                    ]}
-                                >
-                                    <Text style={[styles.selectedChipText, { color: colors.primary }]}>{status}</Text>
-                                    <Ionicons name="close" size={14} color={colors.primary} />
-                                </TouchableOpacity>
-                            ))
+                            <>
+                                {selectedStatuses.map((status) => (
+                                    <TouchableOpacity
+                                        key={status}
+                                        onPress={() => toggleStatus(status)}
+                                        style={[
+                                            styles.selectedChip,
+                                            { backgroundColor: colors.primary + '14', borderColor: colors.primary },
+                                        ]}
+                                    >
+                                        <Text style={[styles.selectedChipText, { color: colors.primary }]}>{status}</Text>
+                                        <Ionicons name="close" size={14} color={colors.primary} />
+                                    </TouchableOpacity>
+                                ))}
+                                {selectedTypes.map((type) => (
+                                    <TouchableOpacity
+                                        key={type}
+                                        onPress={() => toggleType(type)}
+                                        style={[
+                                            styles.selectedChip,
+                                            { backgroundColor: colors.primary + '14', borderColor: colors.primary },
+                                        ]}
+                                    >
+                                        <Text style={[styles.selectedChipText, { color: colors.primary }]}>{type}</Text>
+                                        <Ionicons name="close" size={14} color={colors.primary} />
+                                    </TouchableOpacity>
+                                ))}
+                            </>
                         )}
                     </ScrollView>
 
@@ -454,6 +526,20 @@ const styles = StyleSheet.create({
     filterMenuText: {
         ...FONTS.bodyStrong,
     },
+    filterHeader: {
+        ...FONTS.label,
+        fontSize: 10,
+        letterSpacing: 1.5,
+        marginLeft: 16,
+        marginTop: 8,
+        marginBottom: 4,
+    },
+    filterDivider: {
+        height: 1,
+        marginHorizontal: 16,
+        marginVertical: 4,
+        opacity: 0.3,
+    },
     selectedFilterRow: {
         gap: 8,
         marginBottom: 14,
@@ -499,7 +585,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 6,
         marginBottom: 8,
-        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    statusBadgeInline: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+        borderWidth: 1,
+        minHeight: 20,
+        justifyContent: 'center',
+    },
+    statusBadgeTextInline: {
+        ...FONTS.label,
+        fontSize: 8,
+        letterSpacing: 0.5,
+        fontWeight: '700',
     },
     typeBadge: {
         minHeight: 24,

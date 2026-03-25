@@ -128,6 +128,7 @@ export const CreateTaskScreen = () => {
 
     const openFlow = (flow: Exclude<CreateFlow, null>) => {
         setSelectedFlow(flow);
+        setAddingTaskForm(false);
 
         if (flow === 'task') {
             setChecklistName('');
@@ -290,6 +291,7 @@ export const CreateTaskScreen = () => {
                                             )}
 
                                             <View style={{ marginTop: 8 }}>
+                                                {addingTaskForm ? (
                                                     <View style={{ marginBottom: 12, gap: 12, padding: 12, backgroundColor: colors.surfaceHighlight, borderRadius: 12 }}>
                                                         <View>
                                                             <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Task title</Text>
@@ -352,6 +354,7 @@ export const CreateTaskScreen = () => {
                                                                     setTaskTitle('');
                                                                     setDataType('Text');
                                                                     setTaskOptions([]);
+                                                                    setShowDataTypeDropdown(false);
                                                                     setAddingTaskForm(false);
                                                                 }}
                                                                 style={{ 
@@ -381,6 +384,7 @@ export const CreateTaskScreen = () => {
                                                             </TouchableOpacity>
                                                         </View>
                                                     </View>
+                                                ) : null}
                                                 <TouchableOpacity 
                                                     style={{
                                                         borderWidth: 1, 
@@ -396,7 +400,7 @@ export const CreateTaskScreen = () => {
                                                     onPress={() => setAddingTaskForm(!addingTaskForm)}
                                                 >
                                                     <Ionicons name="add" size={18} color={colors.text} />
-                                                    <Text style={{ color: colors.text, ...FONTS.bodyStrong }}>Add tasks</Text>
+                                                    <Text style={{ color: colors.text, ...FONTS.bodyStrong }}>{tasks.length > 0 ? 'Add another task' : 'Add task'}</Text>
                                                 </TouchableOpacity>
                                             </View>
                                             </>

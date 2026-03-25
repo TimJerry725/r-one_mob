@@ -2,11 +2,15 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { FONTS } from '../styles/futurist';
 
 export const ProfileScreen = () => {
+    const navigation = useNavigation<any>();
     const { colors, mode, setMode } = useTheme();
+    const { language } = useLanguage();
 
     const ThemeOption = ({ label, value, icon }: { label: string; value: 'light' | 'dark'; icon: any }) => (
         <TouchableOpacity
@@ -28,17 +32,15 @@ export const ProfileScreen = () => {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <SafeAreaView style={styles.safeArea}>
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                    <Text style={[styles.pageLabel, { color: colors.textSecondary }]}>Profile</Text>
-                    <Text style={[styles.pageTitle, { color: colors.text }]}>Technician settings</Text>
+                    <Text style={[styles.pageTitle, { color: colors.text }]}>Profile</Text>
 
                     <View style={[styles.profileCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
                         <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
                             <Text style={[styles.avatarText, { color: colors.white }]}>T</Text>
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={[styles.name, { color: colors.text }]}>Tim User</Text>
+                            <Text style={[styles.name, { color: colors.text }]}>Timothy</Text>
                             <Text style={[styles.role, { color: colors.textSecondary }]}>Field technician</Text>
-                            <Text style={[styles.metaText, { color: colors.textSecondary }]}>18 works cached on this device</Text>
                         </View>
                     </View>
 
@@ -50,18 +52,24 @@ export const ProfileScreen = () => {
                         </View>
                     </View>
 
-                    <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-                        <View style={styles.syncRow}>
-                            <Ionicons name="cloud-done-outline" size={20} color={colors.success} />
-                            <Text style={[styles.syncTitle, { color: colors.text }]}>Last sync 09:24</Text>
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={() => navigation.navigate('Language')}
+                        style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
+                    >
+                        <View style={styles.languageRow}>
+                            <View>
+                                <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 4 }]}>Language</Text>
+                                <Text style={[styles.languageValue, { color: colors.textSecondary }]}>
+                                    {language.flag} {language.label}
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
                         </View>
-                        <Text style={[styles.syncCopy, { color: colors.textSecondary }]}>
-                            Upload queue is healthy for the current shift.
-                        </Text>
-                    </View>
+                    </TouchableOpacity>
 
                     <TouchableOpacity style={[styles.logoutButton, { borderColor: colors.danger }]}>
-                        <Text style={[styles.logoutText, { color: colors.danger }]}>End shift</Text>
+                        <Text style={[styles.logoutText, { color: colors.danger }]}>Log out</Text>
                     </TouchableOpacity>
                 </ScrollView>
             </SafeAreaView>
@@ -79,10 +87,6 @@ const styles = StyleSheet.create({
     content: {
         padding: 24,
         paddingBottom: 36,
-    },
-    pageLabel: {
-        ...FONTS.label,
-        marginBottom: 6,
     },
     pageTitle: {
         ...FONTS.h1,
@@ -118,9 +122,6 @@ const styles = StyleSheet.create({
         ...FONTS.body,
         marginBottom: 6,
     },
-    metaText: {
-        ...FONTS.caption,
-    },
     card: {
         borderRadius: 18,
         padding: 18,
@@ -138,6 +139,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 10,
     },
+    languageRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    languageValue: {
+        ...FONTS.body,
+    },
     themeOption: {
         flex: 1,
         minHeight: 70,
@@ -150,18 +160,6 @@ const styles = StyleSheet.create({
     themeOptionText: {
         ...FONTS.caption,
         fontSize: 12,
-    },
-    syncRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        marginBottom: 10,
-    },
-    syncTitle: {
-        ...FONTS.bodyStrong,
-    },
-    syncCopy: {
-        ...FONTS.body,
     },
     logoutButton: {
         minHeight: 56,

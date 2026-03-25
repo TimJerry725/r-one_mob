@@ -15,6 +15,7 @@ import {
 } from '@expo-google-fonts/red-hat-display';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { SessionProvider } from './src/context/SessionContext';
+import { LanguageProvider } from './src/context/LanguageContext';
 import { ProjectDetailScreen } from './src/screens/ProjectDetailScreen';
 import { TaskDetailScreen } from './src/screens/TaskDetailScreen';
 import { CreateTaskScreen } from './src/screens/CreateTaskScreen';
@@ -23,6 +24,7 @@ import { MapScreen } from './src/screens/MapScreen';
 import { AssetScanScreen } from './src/screens/AssetScanScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { NotificationScreen } from './src/screens/NotificationScreen';
+import { LanguageScreen } from './src/screens/LanguageScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -213,6 +215,7 @@ function AppNavigator() {
         <Stack.Screen name="TaskDetails" component={TaskDetailScreen} />
         <Stack.Screen name="AssetScan" component={AssetScanScreen} />
         <Stack.Screen name="Notification" component={NotificationScreen} />
+        <Stack.Screen name="Language" component={LanguageScreen} />
         <Stack.Screen
           name="CreateTask"
           component={CreateTaskScreen}
@@ -243,7 +246,9 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <SessionProvider>
-          <AppNavigator />
+          <LanguageProvider>
+            <AppNavigator />
+          </LanguageProvider>
         </SessionProvider>
       </ThemeProvider>
     </SafeAreaProvider>

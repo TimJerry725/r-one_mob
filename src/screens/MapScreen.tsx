@@ -349,7 +349,7 @@ export const MapScreen = () => {
                             onChangeText={setSearchQuery}
                             placeholder="Search site or work"
                             placeholderTextColor={colors.textSecondary}
-                            style={[styles.searchInput, { color: isDark ? colors.black : colors.text }]}
+                            style={[styles.searchInput, { color: colors.text }]}
                         />
                     </View>
                 </View>
