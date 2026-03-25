@@ -355,7 +355,10 @@ export const MapScreen = () => {
                 </View>
 
                 <View style={{ marginBottom: bottomRailOffset }} pointerEvents="box-none">
-                    <View style={{ gap: 12, alignItems: 'flex-end', paddingRight: 16, marginBottom: 16 }} pointerEvents="box-none">
+                    <View
+                        style={{ gap: 12, alignItems: 'flex-end', paddingRight: 16, marginBottom: 16 }}
+                        pointerEvents="box-none"
+                    >
                         <TouchableOpacity
                             onPress={() => navigation.navigate('Notification')}
                             style={[
@@ -376,20 +379,22 @@ export const MapScreen = () => {
                             ]}
                         >
                             <Ionicons name="notifications" size={24} color={colors.text} />
-                            <View style={{
-                                position: 'absolute',
-                                top: 4,
-                                right: 6,
-                                minWidth: 18,
-                                height: 18,
-                                borderRadius: 9,
-                                borderWidth: 1.5,
-                                backgroundColor: colors.danger, 
-                                borderColor: isDark ? colors.surface : colors.white,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                paddingHorizontal: 4,
-                            }}>
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    top: 4,
+                                    right: 6,
+                                    minWidth: 18,
+                                    height: 18,
+                                    borderRadius: 9,
+                                    borderWidth: 1.5,
+                                    backgroundColor: colors.danger,
+                                    borderColor: isDark ? colors.surface : colors.white,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    paddingHorizontal: 4,
+                                }}
+                            >
                                 <Text style={{ color: colors.white, fontSize: 10, fontWeight: '700' }}>3</Text>
                             </View>
                         </TouchableOpacity>
@@ -416,83 +421,85 @@ export const MapScreen = () => {
                     </View>
 
                     <View style={styles.bottomSheet}>
-                    <Text style={[styles.sheetLabel, { color: colors.textSecondary }]}>Nearby Stations</Text>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        snapToInterval={MAP_CARD_WIDTH + MAP_CARD_GAP}
-                        decelerationRate="fast"
-                        onMomentumScrollEnd={handleCardScrollEnd}
-                        contentContainerStyle={styles.sheetScroll}
-                    >
-                        {stationCards.map((station) => {
-                            const active = activeStationName === station.siteName;
-                            const accent = getStationAccent(station);
-                            return (
-                                <TouchableOpacity
-                                    key={station.id}
-                                    activeOpacity={0.92}
-                                    onPress={() => openStationWork(station.siteName)}
-                                    style={[
-                                        styles.jobCard,
-                                        {
-                                            backgroundColor: active ? colors.surface : colors.overlayStrong,
-                                            borderColor: active ? accent.border : accent.border + '55',
-                                            shadowColor: colors.shadow,
-                                        },
-                                    ]}
-                                >
-                                    <View style={styles.stationCardRow}>
-                                        <View style={styles.stationCardInfo}>
-                                            <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={2}>
-                                                {station.siteName}
-                                            </Text>
-                                            <View style={styles.typeChipRow}>
-                                                {station.types.map((type) => {
-                                                    const typeColors = getServiceTypeColors(type, isDark);
-                                                    return (
-                                                        <View
-                                                            key={type}
-                                                            style={[
-                                                                styles.typeChip,
-                                                                {
-                                                                    backgroundColor: typeColors.tint,
-                                                                    borderColor: typeColors.border,
-                                                                },
-                                                            ]}
-                                                        >
-                                                            <Text style={[styles.typeChipText, { color: typeColors.tintText }]}>
-                                                                {type}
-                                                            </Text>
-                                                        </View>
-                                                    );
-                                                })}
+                        <Text style={[styles.sheetLabel, { color: colors.textSecondary }]}>Nearby Stations</Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            snapToInterval={MAP_CARD_WIDTH + MAP_CARD_GAP}
+                            decelerationRate="fast"
+                            onMomentumScrollEnd={handleCardScrollEnd}
+                            contentContainerStyle={styles.sheetScroll}
+                        >
+                            {stationCards.map((station) => {
+                                const active = activeStationName === station.siteName;
+                                const accent = getStationAccent(station);
+
+                                return (
+                                    <TouchableOpacity
+                                        key={station.id}
+                                        activeOpacity={0.92}
+                                        onPress={() => openStationWork(station.siteName)}
+                                        style={[
+                                            styles.jobCard,
+                                            {
+                                                backgroundColor: active ? colors.surface : colors.overlayStrong,
+                                                borderColor: active ? accent.border : `${accent.border}55`,
+                                                shadowColor: colors.shadow,
+                                            },
+                                        ]}
+                                    >
+                                        <View style={styles.stationCardRow}>
+                                            <View style={styles.stationCardInfo}>
+                                                <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={2}>
+                                                    {station.siteName}
+                                                </Text>
+                                                <View style={styles.typeChipRow}>
+                                                    {station.types.map((type) => {
+                                                        const typeColors = getServiceTypeColors(type, isDark);
+
+                                                        return (
+                                                            <View
+                                                                key={type}
+                                                                style={[
+                                                                    styles.typeChip,
+                                                                    {
+                                                                        backgroundColor: typeColors.tint,
+                                                                        borderColor: typeColors.border,
+                                                                    },
+                                                                ]}
+                                                            >
+                                                                <Text style={[styles.typeChipText, { color: typeColors.tintText }]}>
+                                                                    {type}
+                                                                </Text>
+                                                            </View>
+                                                        );
+                                                    })}
+                                                </View>
+                                            </View>
+
+                                            <View style={[styles.stationCountBadge, { backgroundColor: accent.background }]}>
+                                                <Text style={[styles.stationCountText, { color: accent.text }]}>{station.count}</Text>
                                             </View>
                                         </View>
-                                        <View
-                                            style={[
-                                                styles.stationCountBadge,
-                                                { backgroundColor: accent.background },
-                                            ]}
-                                        >
-                                            <Text style={[styles.stationCountText, { color: accent.text }]}>
-                                                {station.count}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-                    {stationCards.length === 0 ? (
-                        <View style={[styles.emptyState, { backgroundColor: colors.overlayStrong, shadowColor: colors.shadow }]}>
-                            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No matching works</Text>
-                            <Text style={[styles.emptyStateCopy, { color: colors.textSecondary }]}>
-                                Try a different site name or clear the search.
-                            </Text>
-                        </View>
-                    ) : null}
-                </View>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+
+                        {stationCards.length === 0 ? (
+                            <View
+                                style={[
+                                    styles.emptyState,
+                                    { backgroundColor: colors.overlayStrong, shadowColor: colors.shadow },
+                                ]}
+                            >
+                                <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No matching works</Text>
+                                <Text style={[styles.emptyStateCopy, { color: colors.textSecondary }]}>
+                                    Try a different site name or clear the search.
+                                </Text>
+                            </View>
+                        ) : null}
+                    </View>
                 </View>
             </SafeAreaView>
         </View>
