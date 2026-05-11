@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTheme } from '../context/ThemeContext';
 import { ASSETS } from '../data/fieldDemo';
-import { FONTS } from '../styles/futurist';
+import { FONTS, getInputShellStyle } from '../styles/futurist';
 
 const getAssetMatch = (value: string) =>
     ASSETS.find((item) => {
@@ -27,6 +27,11 @@ export const AssetScanScreen = () => {
     const [hasError, setHasError] = useState(false);
 
     const matchedAsset = getAssetMatch(cpid);
+    const recentAsset = ASSETS[0];
+
+    const openAssetDetails = (assetId?: string) => {
+        navigation.navigate('AssetDetails', { assetId: assetId ?? recentAsset.id });
+    };
 
     const handleBarcodeScanned = ({ data }: { data: string }) => {
         setScanned(true);
@@ -51,7 +56,7 @@ export const AssetScanScreen = () => {
 
                         <View style={[styles.manualCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
                             <TextInput
-                                style={[styles.manualInput, { color: colors.text, backgroundColor: colors.cardAlt, shadowColor: colors.shadow }]}
+                                style={[styles.manualInput, getInputShellStyle(colors), { color: colors.text }]}
                                 placeholder="Enter CPID or serial"
                                 placeholderTextColor={colors.textSecondary}
                                 value={cpid}
@@ -67,11 +72,7 @@ export const AssetScanScreen = () => {
 
                         {matchedAsset ? (
                             <TouchableOpacity
-                                onPress={() =>
-                                    matchedAsset.linkedWorkOrderId
-                                        ? navigation.navigate('TaskDetails', { taskId: matchedAsset.linkedWorkOrderId })
-                                        : undefined
-                                }
+                                onPress={() => openAssetDetails(matchedAsset.id)}
                                 style={[styles.resultCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
                             >
                                 <Text style={[styles.resultTitle, { color: colors.text }]}>{matchedAsset.model}</Text>
@@ -129,7 +130,7 @@ export const AssetScanScreen = () => {
                         Use CPID or serial number when the code label is dirty or damaged.
                     </Text>
 
-                    <View style={[styles.inputRow, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                    <View style={[styles.inputRow, getInputShellStyle(colors)]}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
                             placeholder="CPID or serial"
@@ -163,15 +164,11 @@ export const AssetScanScreen = () => {
                             </View>
 
                             <TouchableOpacity
-                                onPress={() =>
-                                    matchedAsset.linkedWorkOrderId
-                                        ? navigation.navigate('TaskDetails', { taskId: matchedAsset.linkedWorkOrderId })
-                                        : navigation.goBack()
-                                }
+                                onPress={() => openAssetDetails(matchedAsset.id)}
                                 style={[styles.primaryButton, { backgroundColor: colors.primary }]}
                             >
                                 <Text style={[styles.primaryButtonText, { color: colors.white }]}>
-                                    {matchedAsset.linkedWorkOrderId ? 'Open linked work' : 'Use asset'}
+                                    View
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -190,7 +187,7 @@ export const AssetScanScreen = () => {
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={() => setCpid(ASSETS[0].cpid)}
+                            onPress={() => openAssetDetails(recentAsset.id)}
                             style={[styles.controlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
                         >
                             <Ionicons name="albums-outline" size={20} color={colors.primary} />

@@ -6,9 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
+import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
 import { WORK_ORDERS } from '../data/fieldDemo';
-import { FONTS } from '../styles/futurist';
+import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { getServiceTypeColors, ServiceType } from '../styles/workTypeColors';
 
 const DEFAULT_REGION: Region = {
@@ -102,7 +103,6 @@ export const MapScreen = () => {
     const mapRef = useRef<MapView | null>(null);
     const [region, setRegion] = useState<Region>(DEFAULT_REGION);
     const [locationState, setLocationState] = useState<'loading' | 'granted' | 'denied'>('loading');
-    const [workStatus, setWorkStatus] = useState<'Away' | 'Working'>('Working');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrderId, setSelectedOrderId] = useState(WORK_ORDERS[0].id);
 
@@ -287,60 +287,13 @@ export const MapScreen = () => {
                 <View style={styles.topStack}>
                     <View
                         style={[
-                            styles.headerPanel,
-                            {
-                                backgroundColor: colors.overlay,
-                                shadowColor: colors.shadow,
-                            },
-                        ]}
-                    >
-                        <View style={styles.headerTopRow}>
-                            <View style={styles.greetingBlock}>
-                                <Text style={[styles.headerTitle, { color: colors.text }]}>Hi Timothy</Text>
-                                <Text style={[styles.headerCopy, { color: colors.textSecondary }]}>Good morning</Text>
-                            </View>
-                            <View
-                                style={[
-                                    styles.statusToggle,
-                                    {
-                                        borderColor: colors.success,
-                                        backgroundColor: isDark ? colors.white : colors.surfaceHighlight,
-                                    },
-                                ]}
-                            >
-                                {(['Away', 'Working'] as const).map((item) => (
-                                    <TouchableOpacity
-                                        key={item}
-                                        onPress={() => setWorkStatus(item)}
-                                        style={[
-                                            styles.statusToggleButton,
-                                            item === 'Away' && workStatus === item && { backgroundColor: isDark ? colors.white : colors.surface },
-                                            item === 'Working' && workStatus === item && { backgroundColor: colors.success },
-                                        ]}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.statusToggleText,
-                                                {
-                                                    color:
-                                                        item === 'Working'
-                                                            ? (workStatus === item ? colors.white : colors.success)
-                                                            : (workStatus === item ? colors.text : colors.success),
-                                                },
-                                            ]}
-                                        >
-                                            {item}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-                    </View>
-
-                    <View
-                        style={[
                             styles.searchBar,
-                            { backgroundColor: colors.overlay, shadowColor: colors.shadow },
+                            getInputShellStyle(colors),
+                            {
+                                backgroundColor: isDark ? 'rgba(19, 32, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)',
+                                borderWidth: 1,
+                                borderColor: isDark ? 'rgba(244, 247, 251, 0.58)' : 'rgba(20, 33, 43, 0.24)',
+                            },
                         ]}
                     >
                         <Ionicons name="search" size={18} color={colors.textSecondary} />
@@ -493,6 +446,7 @@ export const MapScreen = () => {
                                     { backgroundColor: colors.overlayStrong, shadowColor: colors.shadow },
                                 ]}
                             >
+                                <EmptyStateIllustration width={176} style={{ marginBottom: 10 }} />
                                 <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No matching works</Text>
                                 <Text style={[styles.emptyStateCopy, { color: colors.textSecondary }]}>
                                     Try a different site name or clear the search.
@@ -516,35 +470,10 @@ const styles = StyleSheet.create({
     overlay: {
         flex: 1,
         justifyContent: 'space-between',
-        paddingTop: 8,
+        paddingTop: 16,
     },
     topStack: {
         gap: 8,
-    },
-    headerPanel: {
-        marginHorizontal: 16,
-        borderRadius: 18,
-        padding: 16,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 18,
-        elevation: 10,
-    },
-    headerTopRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: 12,
-    },
-    greetingBlock: {
-        flex: 1,
-    },
-    headerTitle: {
-        ...FONTS.h3,
-        marginBottom: 4,
-    },
-    headerCopy: {
-        ...FONTS.caption,
     },
     searchBar: {
         minHeight: 50,
@@ -563,24 +492,6 @@ const styles = StyleSheet.create({
         ...FONTS.body,
         flex: 1,
         paddingVertical: 0,
-    },
-    statusToggle: {
-        minHeight: 50,
-        borderRadius: 12,
-        padding: 4,
-        flexDirection: 'row',
-        borderWidth: 2,
-        minWidth: 154,
-    },
-    statusToggleButton: {
-        flex: 1,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    statusToggleText: {
-        ...FONTS.bodyStrong,
-        fontSize: 14,
     },
     locateButton: {
         position: 'absolute',
@@ -616,6 +527,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         borderRadius: 14,
         padding: 16,
+        alignItems: 'center',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.12,
         shadowRadius: 18,
@@ -624,9 +536,11 @@ const styles = StyleSheet.create({
     emptyStateTitle: {
         ...FONTS.h3,
         marginBottom: 6,
+        textAlign: 'center',
     },
     emptyStateCopy: {
         ...FONTS.body,
+        textAlign: 'center',
     },
     jobCard: {
         width: MAP_CARD_WIDTH,

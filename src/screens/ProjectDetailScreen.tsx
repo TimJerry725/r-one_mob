@@ -3,8 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
-import { FONTS } from '../styles/futurist';
+import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { getServiceTypeColors } from '../styles/workTypeColors';
 import { WORK_ORDERS, WorkOrder, WorkOrderStatus } from '../data/fieldDemo';
 
@@ -36,7 +37,18 @@ const OrderCard = ({
     isDark: boolean;
     onOpen: () => void;
 }) => {
-    const showActions = item.status === 'To-Do';
+    const actionConfig =
+        item.status === 'To-Do'
+            ? {
+                secondaryLabel: 'Forward',
+                primaryLabel: 'Accept Work',
+            }
+            : item.status === 'Under Review'
+                ? {
+                    secondaryLabel: 'Re-assign',
+                    primaryLabel: 'Review Work',
+                }
+                : null;
     const typeColors = getServiceTypeColors(item.type, isDark);
 
     return (
@@ -132,18 +144,18 @@ const OrderCard = ({
                 </View>
             </View>
 
-            {showActions ? (
+            {actionConfig ? (
                 <View style={styles.actionRow}>
                     <TouchableOpacity
                         style={[styles.actionButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                     >
-                        <Text style={[styles.actionButtonText, { color: colors.text }]}>Forward</Text>
+                        <Text style={[styles.actionButtonText, { color: colors.text }]}>{actionConfig.secondaryLabel}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={onOpen}
                         style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
                     >
-                        <Text style={[styles.primaryActionText, { color: colors.white }]}>Accept Work</Text>
+                        <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
                     </TouchableOpacity>
                 </View>
             ) : null}
@@ -221,6 +233,8 @@ export const ProjectDetailScreen = () => {
         setSearchQuery('');
     };
 
+    const hasAppliedFilters = Boolean(selectedSite) || selectedStatuses.length > 0 || selectedTypes.length > 0;
+
     const stations = useMemo<StationSummary[]>(() => {
         const grouped = new Map<string, StationSummary>();
         visibleOrders.forEach((item) => {
@@ -243,7 +257,7 @@ export const ProjectDetailScreen = () => {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <SafeAreaView style={styles.safeArea}>
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                    <View style={[styles.searchBar, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                    <View style={[styles.searchBar, getInputShellStyle(colors)]}>
                         <Ionicons name="search" size={18} color={colors.textSecondary} />
                         <TextInput
                             value={searchQuery}
@@ -323,7 +337,7 @@ export const ProjectDetailScreen = () => {
 
                             <View style={[styles.filterDivider, { backgroundColor: colors.border }]} />
                             <Text style={[styles.filterHeader, { color: colors.textSecondary }]}>TYPE</Text>
-                            {['Installation', 'Maintenance', 'Preventive'].map((type) => (
+                            {['Installation', 'Service', 'Preventive'].map((type) => (
                                 <TouchableOpacity
                                     key={type}
                                     onPress={() => toggleType(type)}
@@ -338,61 +352,49 @@ export const ProjectDetailScreen = () => {
                         </View>
                     ) : null}
 
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.selectedFilterRow}
-                    >
-                        {selectedStatuses.length + selectedTypes.length === 0 ? (
-                            <View
-                                style={[
-                                    styles.selectedChip,
-                                    { backgroundColor: colors.primary + '14', borderColor: colors.primary },
-                                ]}
-                            >
-                                <Text style={[styles.selectedChipText, { color: colors.primary }]}>All</Text>
-                            </View>
-                        ) : (
-                            <>
-                                {selectedStatuses.map((status) => (
-                                    <TouchableOpacity
-                                        key={status}
-                                        onPress={() => toggleStatus(status)}
-                                        style={[
-                                            styles.selectedChip,
-                                            { backgroundColor: colors.primary + '14', borderColor: colors.primary },
-                                        ]}
-                                    >
-                                        <Text style={[styles.selectedChipText, { color: colors.primary }]}>{status}</Text>
-                                        <Ionicons name="close" size={14} color={colors.primary} />
-                                    </TouchableOpacity>
-                                ))}
-                                {selectedTypes.map((type) => (
-                                    <TouchableOpacity
-                                        key={type}
-                                        onPress={() => toggleType(type)}
-                                        style={[
-                                            styles.selectedChip,
-                                            { backgroundColor: colors.primary + '14', borderColor: colors.primary },
-                                        ]}
-                                    >
-                                        <Text style={[styles.selectedChipText, { color: colors.primary }]}>{type}</Text>
-                                        <Ionicons name="close" size={14} color={colors.primary} />
-                                    </TouchableOpacity>
-                                ))}
-                            </>
-                        )}
-                    </ScrollView>
-
-                    {selectedSite ? (
-                        <TouchableOpacity
-                            onPress={() => setSelectedSite(null)}
-                            style={[styles.siteFilter, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                    {hasAppliedFilters ? (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.selectedFilterRow}
                         >
-                            <Ionicons name="location" size={16} color={colors.primary} />
-                            <Text style={[styles.siteFilterText, { color: colors.text }]}>{selectedSite}</Text>
-                            <Ionicons name="close" size={16} color={colors.textSecondary} />
-                        </TouchableOpacity>
+                            {selectedSite ? (
+                                <TouchableOpacity
+                                    onPress={() => setSelectedSite(null)}
+                                    style={[styles.siteFilter, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                >
+                                    <Ionicons name="location" size={16} color={colors.primary} />
+                                    <Text style={[styles.siteFilterText, { color: colors.text }]}>{selectedSite}</Text>
+                                    <Ionicons name="close" size={16} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            ) : null}
+                            {selectedStatuses.map((status) => (
+                                <TouchableOpacity
+                                    key={status}
+                                    onPress={() => toggleStatus(status)}
+                                    style={[
+                                        styles.selectedChip,
+                                        { backgroundColor: colors.primary + '14', borderColor: colors.primary },
+                                    ]}
+                                >
+                                    <Text style={[styles.selectedChipText, { color: colors.primary }]}>{status}</Text>
+                                    <Ionicons name="close" size={14} color={colors.primary} />
+                                </TouchableOpacity>
+                            ))}
+                            {selectedTypes.map((type) => (
+                                <TouchableOpacity
+                                    key={type}
+                                    onPress={() => toggleType(type)}
+                                    style={[
+                                        styles.selectedChip,
+                                        { backgroundColor: colors.primary + '14', borderColor: colors.primary },
+                                    ]}
+                                >
+                                    <Text style={[styles.selectedChipText, { color: colors.primary }]}>{type}</Text>
+                                    <Ionicons name="close" size={14} color={colors.primary} />
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
                     ) : null}
 
                     <View style={styles.listColumn}>
@@ -420,6 +422,7 @@ export const ProjectDetailScreen = () => {
 
                         {((stationView && stations.length === 0) || (!stationView && visibleOrders.length === 0)) ? (
                             <View style={[styles.emptyCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                                <EmptyStateIllustration width={196} style={{ marginBottom: 12 }} />
                                 <Text style={[styles.emptyTitle, { color: colors.text }]}>No results</Text>
                                 <Text style={[styles.emptyCopy, { color: colors.textSecondary }]}>
                                     Try another search term, toggle station view, or adjust the filters.
@@ -562,10 +565,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        alignSelf: 'flex-start',
         paddingHorizontal: 14,
         gap: 8,
-        marginBottom: 14,
     },
     siteFilterText: {
         ...FONTS.bodyStrong,
@@ -720,6 +721,7 @@ const styles = StyleSheet.create({
     emptyCard: {
         borderRadius: 16,
         padding: 20,
+        alignItems: 'center',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.08,
         shadowRadius: 18,
@@ -728,8 +730,10 @@ const styles = StyleSheet.create({
     emptyTitle: {
         ...FONTS.h3,
         marginBottom: 8,
+        textAlign: 'center',
     },
     emptyCopy: {
         ...FONTS.body,
+        textAlign: 'center',
     },
 });

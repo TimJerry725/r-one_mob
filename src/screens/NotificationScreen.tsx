@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
 import { FONTS } from '../styles/futurist';
 
@@ -233,6 +234,7 @@ export const NotificationScreen = () => {
                     ))}
                     {filteredNotifications.length === 0 ? (
                         <View style={[styles.emptyCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                            <EmptyStateIllustration width={196} style={{ marginBottom: 12 }} />
                             <Text style={[styles.emptyTitle, { color: colors.text }]}>No results</Text>
                             <Text style={[styles.emptyCopy, { color: colors.textSecondary }]}>
                                 You have no notifications in this category.
@@ -392,6 +394,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 20,
         marginTop: 10,
+        alignItems: 'center',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.08,
         shadowRadius: 18,
@@ -400,8 +403,10 @@ const styles = StyleSheet.create({
     emptyTitle: {
         ...FONTS.h3,
         marginBottom: 8,
+        textAlign: 'center',
     },
     emptyCopy: {
         ...FONTS.body,
+        textAlign: 'center',
     },
 });

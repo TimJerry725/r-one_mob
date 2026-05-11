@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { TextInput, View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { FONTS, RADIUS } from '../styles/futurist';
+import { FONTS, RADIUS, getInputShellStyle } from '../styles/futurist';
 import { useTheme } from '../context/ThemeContext';
 
 interface NeonInputProps {
@@ -21,23 +21,11 @@ export const NeonInput: React.FC<NeonInputProps> = ({
     style,
 }) => {
     const { colors } = useTheme();
-    const [isFocused, setIsFocused] = useState(false);
 
     return (
         <View style={[styles.container, style]}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>
-            <View
-                style={[
-                    styles.inputWrapper,
-                    {
-                        backgroundColor: isFocused ? colors.surfaceHighlight : colors.surface,
-                        shadowColor: colors.shadow,
-                        shadowOpacity: isFocused ? 0.14 : 0.08,
-                        shadowRadius: isFocused ? 18 : 14,
-                        elevation: isFocused ? 6 : 4,
-                    },
-                ]}
-            >
+            <View style={[styles.inputWrapper, getInputShellStyle(colors)]}>
                 <TextInput
                     style={[styles.input, { color: colors.text }]}
                     placeholder={placeholder}
@@ -45,8 +33,6 @@ export const NeonInput: React.FC<NeonInputProps> = ({
                     value={value}
                     onChangeText={onChangeText}
                     secureTextEntry={secureTextEntry}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
                 />
             </View>
         </View>

@@ -2,10 +2,11 @@ export type WorkOrderStatus = 'To-Do' | 'Working' | 'Under Review' | 'Completed'
 
 export type WorkOrder = {
     id: string;
+    projectId: string;
     title: string;
     siteName: string;
     address: string;
-    type: 'Installation' | 'Maintenance' | 'Preventive';
+    type: 'Installation' | 'Service' | 'Preventive';
     stage: string;
     status: WorkOrderStatus;
     dueWindow: string;
@@ -17,6 +18,7 @@ export type WorkOrder = {
     parts: string[];
     technicians: string[];
     assetId: string;
+    checklistItems?: ChecklistTemplateItem[];
     offlineReady: boolean;
     notes: string;
     latitude: number;
@@ -35,6 +37,46 @@ export type AssetRecord = {
     lastService: string;
     firmware: string;
     linkedWorkOrderId?: string;
+};
+
+export type AssetAlertPriority = 'Highest' | 'High' | 'Medium';
+export type AssetAlertStatus = 'Open' | 'Assigned' | 'Closed';
+
+export type AssetAlertItem = {
+    id: string;
+    title: string;
+    priority: AssetAlertPriority;
+    status: AssetAlertStatus;
+};
+
+export type AssetWorkHistoryItem = {
+    id: string;
+    title: string;
+    date: string;
+    status: AssetAlertStatus;
+    linkedWorkOrderId?: string;
+};
+
+export type AssetRealtimeItem = {
+    id: string;
+    realTime: string;
+    receivedTime: string;
+    recordId: string;
+};
+
+export type AssetVisionDetail = {
+    chargerLabel: string;
+    commissionedOn: string;
+    siteLead: string;
+    contactNumber: string;
+    peakPower: string;
+    voltageRange: string;
+    currentRating: string;
+    connectors: string;
+    warrantyTill: string;
+    alerts: AssetAlertItem[];
+    workHistory: AssetWorkHistoryItem[];
+    realtimeEvents: AssetRealtimeItem[];
 };
 
 export type ChecklistTemplateItem = {
@@ -56,6 +98,7 @@ export type ActivityItem = {
 export const WORK_ORDERS: WorkOrder[] = [
     {
         id: 'wo-101',
+        projectId: 'PJ001',
         title: 'DC Fast Charger Install',
         siteName: 'Pune Central Station',
         address: 'Platform Road, Shivajinagar, Pune',
@@ -78,10 +121,11 @@ export const WORK_ORDERS: WorkOrder[] = [
     },
     {
         id: 'wo-102',
+        projectId: 'PJ002',
         title: 'Connector Fault Investigation',
         siteName: 'Mumbai Highway Point',
         address: 'NH48 Service Lane, Panvel',
-        type: 'Maintenance',
+        type: 'Service',
         stage: 'Fault Check',
         status: 'Working',
         dueWindow: 'Today, 13:00 - 16:00',
@@ -100,6 +144,7 @@ export const WORK_ORDERS: WorkOrder[] = [
     },
     {
         id: 'wo-103',
+        projectId: 'PJ003',
         title: 'Quarterly Preventive Service',
         siteName: 'Skyline Mall Parking',
         address: 'MG Road Basement B2, Bengaluru',
@@ -122,10 +167,11 @@ export const WORK_ORDERS: WorkOrder[] = [
     },
     {
         id: 'wo-104',
+        projectId: 'PJ004',
         title: 'Cable Replacement and Test',
         siteName: 'Industrial Zone B',
         address: 'Plot 14, Peenya, Bengaluru',
-        type: 'Maintenance',
+        type: 'Service',
         stage: 'Closeout',
         status: 'Completed',
         dueWindow: 'Completed on 22 Mar',
@@ -144,6 +190,7 @@ export const WORK_ORDERS: WorkOrder[] = [
     },
     {
         id: 'wo-105',
+        projectId: 'PJ005',
         title: 'Commissioning Safety Audit',
         siteName: 'City Square Terminal',
         address: 'T Nagar Bus Hub, Chennai',
@@ -164,6 +211,30 @@ export const WORK_ORDERS: WorkOrder[] = [
         latitude: 13.0418,
         longitude: 80.2341,
     },
+    {
+        id: 'wo-106',
+        projectId: 'PJ006',
+        title: 'Expansion Bay Checklist',
+        siteName: 'Harbor Transit Hub',
+        address: 'Dock Access Road, Kochi',
+        type: 'Preventive',
+        stage: 'Draft',
+        status: 'To-Do',
+        dueWindow: 'Tomorrow, 14:00 - 16:00',
+        eta: 'Checklist not configured yet',
+        distance: '4.7 km',
+        checklistCompleted: 0,
+        checklistTotal: 0,
+        tools: ['Inspection torch'],
+        parts: [],
+        technicians: ['Tim'],
+        assetId: 'CP-400210',
+        checklistItems: [],
+        offlineReady: true,
+        notes: 'Checklist shell created before the field steps were added.',
+        latitude: 9.9312,
+        longitude: 76.2673,
+    },
 ];
 
 export const ASSETS: AssetRecord[] = [
@@ -171,7 +242,7 @@ export const ASSETS: AssetRecord[] = [
         id: 'asset-1',
         cpid: 'CP-100239',
         serial: 'RONE-778392',
-        model: 'R-One Hyper 240',
+        model: 'ABB Terra 360',
         status: 'Healthy',
         location: 'Pune Central Station',
         lastService: '18 Mar 2026',
@@ -182,7 +253,7 @@ export const ASSETS: AssetRecord[] = [
         id: 'asset-2',
         cpid: 'CP-200451',
         serial: 'RONE-661205',
-        model: 'R-One Fleet 180',
+        model: 'Tritium PKM150',
         status: 'Service Due',
         location: 'Mumbai Highway Point',
         lastService: '02 Feb 2026',
@@ -193,7 +264,7 @@ export const ASSETS: AssetRecord[] = [
         id: 'asset-3',
         cpid: 'CP-100102',
         serial: 'RONE-550412',
-        model: 'R-One Urban 120',
+        model: 'Tritium RTM75',
         status: 'Healthy',
         location: 'Skyline Mall Parking',
         lastService: '11 Mar 2026',
@@ -204,7 +275,7 @@ export const ASSETS: AssetRecord[] = [
         id: 'asset-4',
         cpid: 'CP-100555',
         serial: 'RONE-903117',
-        model: 'R-One Hyper 240',
+        model: 'Delta UFC 200',
         status: 'Offline',
         location: 'City Square Terminal',
         lastService: '21 Mar 2026',
@@ -212,6 +283,103 @@ export const ASSETS: AssetRecord[] = [
         linkedWorkOrderId: 'wo-105',
     },
 ];
+
+export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
+    'asset-1': {
+        chargerLabel: 'Charge Point 1001',
+        commissionedOn: '12 Oct 2023',
+        siteLead: 'Rohit',
+        contactNumber: '+91 82488 6155',
+        peakPower: '360 kW',
+        voltageRange: '400 - 920 V',
+        currentRating: '250 A',
+        connectors: '4',
+        warrantyTill: '18 Oct 2027',
+        alerts: [
+            { id: 'alert-1', title: 'Charger offline', priority: 'High', status: 'Open' },
+            { id: 'alert-2', title: 'Consistent high temperature', priority: 'Highest', status: 'Assigned' },
+            { id: 'alert-3', title: 'Irregular power delivery', priority: 'Medium', status: 'Open' },
+        ],
+        workHistory: [
+            { id: 'work-1', title: 'DC fast charger install', date: '09 Dec 2024', status: 'Open', linkedWorkOrderId: 'wo-101' },
+            { id: 'work-2', title: 'Connector fault investigation', date: '11 Dec 2024', status: 'Open', linkedWorkOrderId: 'wo-102' },
+            { id: 'work-3', title: 'Power module replacement', date: '13 Aug 2024', status: 'Closed' },
+        ],
+        realtimeEvents: [
+            { id: 'rt-1', realTime: '10 Oct 2024 12:27 PM', receivedTime: '10 Oct 2024 12:27 PM', recordId: '11098766-res-01' },
+            { id: 'rt-2', realTime: '09 Oct 2024 06:45 PM', receivedTime: '09 Oct 2024 06:47 PM', recordId: '11098766-res-02' },
+            { id: 'rt-3', realTime: '08 Oct 2024 08:14 AM', receivedTime: '08 Oct 2024 08:15 AM', recordId: '11098766-res-03' },
+        ],
+    },
+    'asset-2': {
+        chargerLabel: 'Charge Point 2004',
+        commissionedOn: '05 Jan 2024',
+        siteLead: 'Sagar',
+        contactNumber: '+91 98220 44112',
+        peakPower: '150 kW',
+        voltageRange: '380 - 920 V',
+        currentRating: '220 A',
+        connectors: '2',
+        warrantyTill: '05 Jan 2028',
+        alerts: [
+            { id: 'alert-4', title: 'Handshake timeout', priority: 'High', status: 'Assigned' },
+            { id: 'alert-5', title: 'Door sensor warning', priority: 'Medium', status: 'Open' },
+        ],
+        workHistory: [
+            { id: 'work-4', title: 'Connector fault investigation', date: '02 Feb 2026', status: 'Open', linkedWorkOrderId: 'wo-102' },
+            { id: 'work-5', title: 'Fuse set replacement', date: '18 Jan 2026', status: 'Closed' },
+        ],
+        realtimeEvents: [
+            { id: 'rt-4', realTime: '06 Apr 2026 09:45 AM', receivedTime: '06 Apr 2026 09:46 AM', recordId: '12014544-res-11' },
+            { id: 'rt-5', realTime: '05 Apr 2026 07:13 PM', receivedTime: '05 Apr 2026 07:14 PM', recordId: '12014544-res-12' },
+        ],
+    },
+    'asset-3': {
+        chargerLabel: 'Charge Point 3012',
+        commissionedOn: '21 Jul 2023',
+        siteLead: 'Neha',
+        contactNumber: '+91 88990 11234',
+        peakPower: '75 kW',
+        voltageRange: '150 - 920 V',
+        currentRating: '200 A',
+        connectors: '2',
+        warrantyTill: '21 Jul 2027',
+        alerts: [
+            { id: 'alert-6', title: 'Cable wear warning', priority: 'Medium', status: 'Open' },
+        ],
+        workHistory: [
+            { id: 'work-6', title: 'Quarterly preventive service', date: '11 Mar 2026', status: 'Assigned', linkedWorkOrderId: 'wo-103' },
+            { id: 'work-7', title: 'Cooling fan inspection', date: '12 Dec 2025', status: 'Closed' },
+        ],
+        realtimeEvents: [
+            { id: 'rt-6', realTime: '05 Apr 2026 11:02 AM', receivedTime: '05 Apr 2026 11:02 AM', recordId: '11887644-res-21' },
+            { id: 'rt-7', realTime: '03 Apr 2026 01:26 PM', receivedTime: '03 Apr 2026 01:27 PM', recordId: '11887644-res-22' },
+        ],
+    },
+    'asset-4': {
+        chargerLabel: 'Charge Point 4018',
+        commissionedOn: '17 Nov 2023',
+        siteLead: 'Sara',
+        contactNumber: '+91 93450 77118',
+        peakPower: '200 kW',
+        voltageRange: '400 - 1000 V',
+        currentRating: '400 A',
+        connectors: '4',
+        warrantyTill: '17 Nov 2027',
+        alerts: [
+            { id: 'alert-7', title: 'Charger offline', priority: 'Highest', status: 'Open' },
+            { id: 'alert-8', title: 'Network packet loss', priority: 'High', status: 'Assigned' },
+        ],
+        workHistory: [
+            { id: 'work-8', title: 'Commissioning safety audit', date: '21 Mar 2026', status: 'Open', linkedWorkOrderId: 'wo-105' },
+            { id: 'work-9', title: 'Output contactor reset', date: '14 Feb 2026', status: 'Closed' },
+        ],
+        realtimeEvents: [
+            { id: 'rt-8', realTime: '07 Apr 2026 06:18 AM', receivedTime: '07 Apr 2026 06:19 AM', recordId: '13008721-res-31' },
+            { id: 'rt-9', realTime: '06 Apr 2026 10:31 PM', receivedTime: '06 Apr 2026 10:31 PM', recordId: '13008721-res-32' },
+        ],
+    },
+};
 
 export const CHECKLIST_TEMPLATE: ChecklistTemplateItem[] = [
     {
@@ -325,3 +493,9 @@ export const ACTIVITY_LOG: ActivityItem[] = [
 
 export const getWorkOrderById = (taskId?: string) =>
     WORK_ORDERS.find((item) => item.id === taskId) ?? WORK_ORDERS[0];
+
+export const getAssetById = (assetId?: string) =>
+    ASSETS.find((item) => item.id === assetId) ?? ASSETS[0];
+
+export const getAssetVisionDetailById = (assetId?: string) =>
+    ASSET_VISION_DETAILS[assetId ?? ''] ?? ASSET_VISION_DETAILS[ASSETS[0].id];

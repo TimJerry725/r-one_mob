@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { ASSETS } from '../data/fieldDemo';
-import { FONTS } from '../styles/futurist';
+import { FONTS, getInputShellStyle } from '../styles/futurist';
 
 const statusTone = (status: string, colors: ReturnType<typeof useTheme>['colors']) => {
     if (status === 'Healthy') {
@@ -54,7 +54,7 @@ export const ProjectListScreen = () => {
                         </View>
                     </View>
 
-                    <View style={[styles.searchBar, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                    <View style={[styles.searchBar, getInputShellStyle(colors)]}>
                         <Ionicons name="search" size={20} color={colors.textSecondary} />
                         <TextInput
                             style={[styles.searchInput, { color: colors.text }]}

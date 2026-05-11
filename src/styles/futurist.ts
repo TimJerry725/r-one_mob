@@ -4,6 +4,7 @@ export const DARK_COLORS = {
     background: '#0B141B',
     surface: '#13202A',
     surfaceHighlight: '#1C2D3A',
+    inputBorder: 'rgba(244, 247, 251, 0.28)',
     primary: '#E23151',
     primaryLight: '#FF4D6D',
     secondary: '#4CA7FF',
@@ -28,6 +29,7 @@ export const LIGHT_COLORS = {
     background: '#EDF2F6',
     surface: '#FFFFFF',
     surfaceHighlight: '#E0E8EF',
+    inputBorder: '#CDD8E1',
     primary: '#E23151',
     primaryLight: '#FF4D6D',
     secondary: '#005EB8',
@@ -49,6 +51,15 @@ export const LIGHT_COLORS = {
 };
 
 export const COLORS = DARK_COLORS;
+
+export const getInputShellStyle = (colors: typeof DARK_COLORS) => ({
+    backgroundColor: 'transparent' as const,
+    borderWidth: 0.5,
+    borderColor: colors.inputBorder,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+});
 
 export const SPACING = {
     xs: 6,

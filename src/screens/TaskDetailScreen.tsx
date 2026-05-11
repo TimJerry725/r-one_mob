@@ -13,9 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
-import { ACTIVITY_LOG, CHECKLIST_TEMPLATE, getWorkOrderById } from '../data/fieldDemo';
-import { FONTS } from '../styles/futurist';
+import { ACTIVITY_LOG, CHECKLIST_TEMPLATE, ChecklistTemplateItem, getWorkOrderById } from '../data/fieldDemo';
+import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { getServiceTypeColors } from '../styles/workTypeColors';
 
 type ChecklistStateItem = {
@@ -27,10 +28,38 @@ type ChecklistStateItem = {
     value: string | number | string[];
 };
 
-const buildChecklistState = (): ChecklistStateItem[] =>
-    CHECKLIST_TEMPLATE.map((item) => ({
+const getCompletedChecklistValue = (item: ChecklistTemplateItem): string | number | string[] => {
+    switch (item.type) {
+        case 'date':
+            return new Date().toISOString().slice(0, 10);
+        case 'radio':
+            return item.options?.[0] ?? 'Completed';
+        case 'text':
+            return 'Checked and verified on site.';
+        case 'photo':
+        case 'media':
+            return 1;
+        case 'toggle':
+            return 'Completed';
+        case 'number':
+            return '415';
+        case 'not_applicable':
+            return 'N/A';
+        case 'multiselect':
+            return item.options?.slice(0, 2) ?? ['Completed'];
+        default:
+            return 'Completed';
+    }
+};
+
+const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete: boolean): ChecklistStateItem[] =>
+    template.map((item) => ({
         ...item,
-        value: item.type === 'photo' || item.type === 'media' ? 0 : '',
+        value: prefillComplete
+            ? getCompletedChecklistValue(item)
+            : item.type === 'photo' || item.type === 'media'
+                ? 0
+                : '',
     }));
 
 const isComplete = (item: ChecklistStateItem) => {
@@ -72,8 +101,9 @@ export const TaskDetailScreen = () => {
     const { colors, isDark } = useTheme();
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
-    const [items, setItems] = useState<ChecklistStateItem[]>(buildChecklistState);
-    const [signatureCaptured, setSignatureCaptured] = useState(false);
+    const isUnderReview = workOrder.status === 'Under Review';
+    const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
+    const [items, setItems] = useState<ChecklistStateItem[]>(() => buildChecklistState(checklistTemplate, isUnderReview));
     const [completionNote, setCompletionNote] = useState('');
     const [mediaModalVisible, setMediaModalVisible] = useState(false);
     const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
@@ -81,9 +111,13 @@ export const TaskDetailScreen = () => {
     const [activeTab, setActiveTab] = useState<DetailTab>('Tasks');
     const [activityFilter, setActivityFilter] = useState<ActivityFilter>('All');
 
+    const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
+
     const requiredItems = items.filter((item) => item.required);
     const completedRequired = requiredItems.filter(isComplete).length;
-    const readyToComplete = completedRequired === requiredItems.length && signatureCaptured;
+    const allCompleted = items.filter(isComplete).length === items.length;
+    const readyToComplete = items.length > 0 && completedRequired === requiredItems.length;
+    const completeActionLabel = isUnderReview ? 'Mark as Complete' : 'Mark Complete';
     const filteredActivities = ACTIVITY_LOG.filter((item) => {
         if (activityFilter === 'All') {
             return true;
@@ -98,6 +132,14 @@ export const TaskDetailScreen = () => {
         setItems((current) => current.map((item) => (item.id === id ? { ...item, value } : item)));
     };
 
+    const handleCompleteAction = () => {
+        if (!allCompleted) {
+            setConfirmationModalVisible(true);
+        } else {
+            navigation.goBack();
+        }
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <SafeAreaView style={styles.safeArea}>
@@ -108,8 +150,11 @@ export const TaskDetailScreen = () => {
                     >
                         <Ionicons name="chevron-back" size={28} color={colors.text} />
                     </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
+                    <View style={styles.headerTitleWrap}>
                         <Text numberOfLines={1} style={[styles.headerTitle, { color: colors.text }]}>{workOrder.siteName}</Text>
+                    </View>
+                    <View style={[styles.headerTypeChip, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
+                        <Text style={[styles.headerTypeChipText, { color: typeColors.tintText }]}>{workOrder.type}</Text>
                     </View>
                     <TouchableOpacity 
                         onPress={() => setActionModalVisible(true)}
@@ -122,34 +167,32 @@ export const TaskDetailScreen = () => {
 
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                     <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-                        <Text style={[styles.jobTitle, { color: colors.text }]}>{workOrder.title}</Text>
-                        <View style={styles.locationRow}>
-                            <Text style={[styles.jobAddress, { color: colors.textSecondary, flex: 1 }]}>
-                                {workOrder.address}
-                            </Text>
+                        <View style={styles.heroTopRow}>
+                            <View style={styles.heroTitleWrap}>
+                                <Text numberOfLines={2} style={[styles.jobTitle, { color: colors.text }]}>{workOrder.title}</Text>
+                                {workOrder.type === 'Installation' ? (
+                                    <View style={styles.heroTopChipRow}>
+                                        <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+                                            <Text style={[styles.heroChipText, { color: colors.primary }]}>{workOrder.stage}</Text>
+                                        </View>
+                                    </View>
+                                ) : null}
+                            </View>
                             <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.primary + '15' }]}>
                                 <Ionicons name="navigate" size={16} color={colors.primary} />
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.chipRow}>
+                        <View style={styles.heroInfoRow}>
                             <View style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
                                 <Text style={[styles.heroChipText, { color: colors.textSecondary }]}>{workOrder.assetId}</Text>
                             </View>
+                            <View style={[styles.heroChip, styles.heroWideChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                <Text numberOfLines={1} style={[styles.heroChipText, { color: colors.textSecondary }]}>{workOrder.address}</Text>
+                            </View>
                             <View style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                <Text style={[styles.heroChipText, { color: colors.textSecondary }]}>{workOrder.siteName}</Text>
+                                <Text style={[styles.heroChipText, { color: colors.textSecondary }]}>{workOrder.projectId}</Text>
                             </View>
-                        </View>
-
-                        <View style={styles.chipRow}>
-                            <View style={[styles.heroChip, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
-                                <Text style={[styles.heroChipText, { color: typeColors.tintText }]}>{workOrder.type}</Text>
-                            </View>
-                            {workOrder.type === 'Installation' ? (
-                                <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-                                    <Text style={[styles.heroChipText, { color: colors.primary }]}>{workOrder.stage}</Text>
-                                </View>
-                            ) : null}
                         </View>
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
@@ -192,97 +235,85 @@ export const TaskDetailScreen = () => {
 
                     {activeTab === 'Tasks' ? (
                         <>
-                            <View style={styles.listColumn}>
-                                {items.map((item) => (
-                                    <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-                                        <View style={styles.stepHeader}>
-                                            <View style={[styles.stepIcon, { backgroundColor: isComplete(item) ? colors.success : colors.surfaceHighlight }]}>
-                                                <Ionicons
-                                                    name={isComplete(item) ? 'checkmark' : 'ellipse-outline'}
-                                                    size={18}
-                                                    color={isComplete(item) ? colors.white : colors.textSecondary}
-                                                />
-                                            </View>
-                                            <View style={{ flex: 1 }}>
-                                                <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
-                                                <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
-                                                    {item.required ? 'Required before completion' : 'Optional'}
-                                                </Text>
-                                            </View>
-                                        </View>
-
-                                        {item.type === 'photo' || item.type === 'media' ? (
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    setActiveMediaId(item.id);
-                                                    setMediaModalVisible(true);
-                                                }}
-                                                style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
-                                            >
-                                                <FontAwesome name="paperclip" size={18} color={colors.primary} />
-                                                <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
-                                            </TouchableOpacity>
-                                        ) : item.type === 'text' ? (
-                                            <TextInput
-                                                multiline
-                                                placeholder={getChecklistPlaceholder(item)}
-                                                placeholderTextColor={colors.textSecondary}
-                                                style={[styles.notesInput, { color: colors.text, backgroundColor: colors.cardAlt, shadowColor: colors.shadow }]}
-                                                value={String(item.value)}
-                                                onChangeText={(value) => updateItem(item.id, value)}
-                                            />
-                                        ) : (
-                                            <TextInput
-                                                keyboardType={item.type === 'number' ? 'numeric' : 'default'}
-                                                placeholder={getChecklistPlaceholder(item)}
-                                                placeholderTextColor={colors.textSecondary}
-                                                style={[styles.inputSingle, { color: colors.text, backgroundColor: colors.cardAlt, shadowColor: colors.shadow }]}
-                                                value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value)}
-                                                onChangeText={(value) => updateItem(item.id, value)}
-                                            />
-                                        )}
-
-                                        {item.options?.length ? (
-                                            <Text style={[styles.stepHint, { color: colors.textSecondary }]}>
-                                                {item.options.join(', ')}
-                                            </Text>
-                                        ) : null}
-                                    </View>
-                                ))}
-                            </View>
-
-                            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Customer Sign-off</Text>
-                            <View style={[styles.signatureCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-                                <Text style={[styles.signatureTitle, { color: colors.text }]}>Signature</Text>
-                                <Text style={[styles.signatureCopy, { color: colors.textSecondary }]}>
-                                    Capture customer confirmation before marking the work complete.
-                                </Text>
-                                <TouchableOpacity
-                                    onPress={() => setSignatureCaptured((current) => !current)}
-                                    style={[
-                                        styles.signatureButton,
-                                        {
-                                            backgroundColor: signatureCaptured ? colors.success : colors.surfaceHighlight,
-                                            borderColor: signatureCaptured ? colors.success : colors.border,
-                                        },
-                                    ]}
-                                >
-                                    <Ionicons name={signatureCaptured ? 'checkmark-circle' : 'create-outline'} size={20} color={colors.white} />
-                                    <Text style={[styles.signatureButtonText, { color: colors.white }]}>
-                                        {signatureCaptured ? 'Signature stored' : 'Capture signature'}
+                            {items.length === 0 ? (
+                                <View style={[styles.emptyStateCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                                    <EmptyStateIllustration width={228} style={{ marginBottom: 10 }} />
+                                    <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No tasks yet</Text>
+                                    <Text style={[styles.emptyStateCopy, { color: colors.textSecondary }]}>
+                                        This checklist has been created, but no tasks have been added yet.
                                     </Text>
-                                </TouchableOpacity>
-                            </View>
+                                </View>
+                            ) : (
+                                <>
+                                    <View style={styles.listColumn}>
+                                        {items.map((item) => (
+                                            <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                                                <View style={styles.stepHeader}>
+                                                    <View style={[styles.stepIcon, { backgroundColor: isComplete(item) ? colors.success : colors.surfaceHighlight }]}>
+                                                        <Ionicons
+                                                            name={isComplete(item) ? 'checkmark' : 'ellipse-outline'}
+                                                            size={18}
+                                                            color={isComplete(item) ? colors.white : colors.textSecondary}
+                                                        />
+                                                    </View>
+                                                    <View style={{ flex: 1 }}>
+                                                        <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
+                                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
+                                                            {item.required ? 'Required before completion' : 'Optional'}
+                                                        </Text>
+                                                    </View>
+                                                </View>
 
-                            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Completion Note</Text>
-                            <TextInput
-                                multiline
-                                placeholder="Summarize findings and follow-up actions."
-                                placeholderTextColor={colors.textSecondary}
-                                style={[styles.completionInput, { color: colors.text, backgroundColor: colors.surface, shadowColor: colors.shadow }]}
-                                value={completionNote}
-                                onChangeText={setCompletionNote}
-                            />
+                                                {item.type === 'photo' || item.type === 'media' ? (
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            setActiveMediaId(item.id);
+                                                            setMediaModalVisible(true);
+                                                        }}
+                                                        style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                                    >
+                                                        <FontAwesome name="paperclip" size={18} color={colors.primary} />
+                                                        <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
+                                                    </TouchableOpacity>
+                                                ) : item.type === 'text' ? (
+                                                    <TextInput
+                                                        multiline
+                                                        placeholder={getChecklistPlaceholder(item)}
+                                                        placeholderTextColor={colors.textSecondary}
+                                                        style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text }]}
+                                                        value={String(item.value)}
+                                                        onChangeText={(value) => updateItem(item.id, value)}
+                                                    />
+                                                ) : (
+                                                    <TextInput
+                                                        keyboardType={item.type === 'number' ? 'numeric' : 'default'}
+                                                        placeholder={getChecklistPlaceholder(item)}
+                                                        placeholderTextColor={colors.textSecondary}
+                                                        style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                                        value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value)}
+                                                        onChangeText={(value) => updateItem(item.id, value)}
+                                                    />
+                                                )}
+
+                                                {item.options?.length ? (
+                                                    <Text style={[styles.stepHint, { color: colors.textSecondary }]}>
+                                                        {item.options.join(', ')}
+                                                    </Text>
+                                                ) : null}
+                                            </View>
+                                        ))}
+                                    </View>
+                                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Completion Note</Text>
+                                    <TextInput
+                                        multiline
+                                        placeholder="Summarize findings and follow-up actions."
+                                        placeholderTextColor={colors.textSecondary}
+                                        style={[styles.completionInput, getInputShellStyle(colors), { color: colors.text }]}
+                                        value={completionNote}
+                                        onChangeText={setCompletionNote}
+                                    />
+                                </>
+                            )}
                         </>
                     ) : (
                         <>
@@ -358,6 +389,7 @@ export const TaskDetailScreen = () => {
                                 })}
                                 {filteredActivities.length === 0 ? (
                                     <View style={[styles.emptyStateCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                                        <EmptyStateIllustration width={188} style={{ marginBottom: 10 }} />
                                         <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No matching items</Text>
                                         <Text style={[styles.emptyStateCopy, { color: colors.textSecondary }]}>
                                             Try another activity filter.
@@ -380,19 +412,18 @@ export const TaskDetailScreen = () => {
                         <Text style={[styles.footerButtonText, { color: colors.text }]}>Save</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        disabled={!readyToComplete}
-                        onPress={() => navigation.goBack()}
+                        onPress={handleCompleteAction}
                         style={[
                             styles.footerButton,
                             {
                                 backgroundColor: readyToComplete ? colors.primary : colors.surfaceHighlight,
                                 borderColor: readyToComplete ? colors.primary : colors.border,
-                                opacity: readyToComplete ? 1 : 0.55,
+                                opacity: 1,
                             },
                         ]}
                     >
                         <Text style={[styles.footerPrimaryText, { color: readyToComplete ? colors.white : colors.textSecondary }]}>
-                            Mark Complete
+                            {completeActionLabel}
                         </Text>
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
@@ -405,6 +436,7 @@ export const TaskDetailScreen = () => {
                         prefill: {
                             serviceType: workOrder.type,
                             siteName: workOrder.siteName,
+                            projectId: workOrder.projectId,
                             stageName: 'Inspection',
                             checklistName: 'Pedestal Repair'
                         }
@@ -442,9 +474,9 @@ export const TaskDetailScreen = () => {
                 <Modal visible={actionModalVisible} transparent animationType="fade">
                     <TouchableOpacity style={[styles.modalOverlay, { justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 16 }]} activeOpacity={1} onPress={() => setActionModalVisible(false)}>
                         <View style={[{ backgroundColor: colors.surface, borderRadius: 12, padding: 8, minWidth: 200, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 16, elevation: 8 }]}>
-                            <TouchableOpacity onPress={() => { setActionModalVisible(false); if(readyToComplete) navigation.goBack(); }} style={[{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-                                <Ionicons name="checkmark-circle-outline" size={20} color={readyToComplete ? colors.success : colors.textSecondary} style={{ marginRight: 10 }} />
-                                <Text style={[{ color: readyToComplete ? colors.text : colors.textSecondary, ...FONTS.body }]}>Mark Complete</Text>
+                            <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                                <Ionicons name="checkmark-circle-outline" size={20} color={colors.success} style={{ marginRight: 10 }} />
+                                <Text style={[{ color: colors.text, ...FONTS.body }]}>{completeActionLabel}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => { setActionModalVisible(false); }} style={[{ flexDirection: 'row', alignItems: 'center', padding: 12 }]}>
                                 <Ionicons name="arrow-redo-outline" size={20} color={colors.primary} style={{ marginRight: 10 }} />
@@ -452,6 +484,44 @@ export const TaskDetailScreen = () => {
                             </TouchableOpacity>
                         </View>
                     </TouchableOpacity>
+                </Modal>
+
+                <Modal visible={confirmationModalVisible} transparent animationType="fade">
+                    <View style={styles.modalOverlay}>
+                        <View style={[styles.confirmSheet, { backgroundColor: colors.surface }]}>
+                            <View style={[styles.warningIconCircle, { backgroundColor: colors.secondary + '15' }]}>
+                                <Ionicons name="warning" size={32} color={colors.secondary} />
+                            </View>
+                            
+                            <Text style={[styles.confirmTitle, { color: colors.text }]}>Incomplete Tasks</Text>
+                            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                                Are you sure you want to move the checklists with applicable incomplete tasks to review?
+                            </Text>
+                            
+                            <View style={[styles.checklistBadge, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                <Text style={[styles.checklistBadgeText, { color: colors.text }]}>{workOrder.title}</Text>
+                            </View>
+
+                            <View style={styles.confirmActions}>
+                                <TouchableOpacity 
+                                    style={[styles.confirmBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]} 
+                                    onPress={() => setConfirmationModalVisible(false)}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity 
+                                    style={[styles.confirmBtn, { backgroundColor: colors.primary }]} 
+                                    onPress={() => {
+                                        setConfirmationModalVisible(false);
+                                        navigation.goBack();
+                                    }}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.white }]}>Move to Review</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
                 </Modal>
             </SafeAreaView>
         </View>
@@ -501,52 +571,85 @@ const styles = StyleSheet.create({
     headerTitle: {
         ...FONTS.h3,
     },
+    headerTitleWrap: {
+        flex: 1,
+        minWidth: 0,
+    },
+    headerTypeChip: {
+        minHeight: 24,
+        borderRadius: 8,
+        borderWidth: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 8,
+        marginRight: 8,
+    },
+    headerTypeChipText: {
+        ...FONTS.label,
+        fontSize: 9,
+    },
     content: {
         padding: 16,
         paddingBottom: 24,
     },
     heroCard: {
         borderRadius: 18,
-        padding: 18,
-        marginBottom: 16,
+        padding: 14,
+        marginBottom: 14,
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.08,
         shadowRadius: 18,
         elevation: 5,
     },
+    heroTopRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 12,
+        marginBottom: 10,
+    },
+    heroTitleWrap: {
+        flex: 1,
+    },
+    heroTopChipRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 8,
+    },
     jobTitle: {
         ...FONTS.h2,
-        marginBottom: 6,
-    },
-    jobAddress: {
-        ...FONTS.body,
-    },
-    locationRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-        marginBottom: 14,
+        fontSize: 20,
+        lineHeight: 24,
     },
     navButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 34,
+        height: 34,
+        borderRadius: 17,
         alignItems: 'center',
         justifyContent: 'center',
     },
     chipRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 10,
-        marginBottom: 14,
+        gap: 8,
+        marginBottom: 10,
+    },
+    heroInfoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 10,
     },
     heroChip: {
-        minHeight: 28,
-        borderRadius: 10,
+        minHeight: 26,
+        borderRadius: 8,
         borderWidth: 1,
         justifyContent: 'center',
-        paddingHorizontal: 10,
+        paddingHorizontal: 9,
+        paddingVertical: 4,
+    },
+    heroWideChip: {
+        flex: 1,
+        minWidth: 0,
     },
     heroChipText: {
         ...FONTS.label,
@@ -555,8 +658,8 @@ const styles = StyleSheet.create({
     heroSubLabel: {
         ...FONTS.label,
         fontSize: 10,
-        marginBottom: 8,
-        marginTop: 4,
+        marginBottom: 6,
+        marginTop: 0,
     },
     tabSwitch: {
         minHeight: 48,
@@ -675,6 +778,7 @@ const styles = StyleSheet.create({
     emptyStateCard: {
         borderRadius: 16,
         padding: 16,
+        alignItems: 'center',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.08,
         shadowRadius: 18,
@@ -683,9 +787,11 @@ const styles = StyleSheet.create({
     emptyStateTitle: {
         ...FONTS.bodyStrong,
         marginBottom: 4,
+        textAlign: 'center',
     },
     emptyStateCopy: {
         ...FONTS.body,
+        textAlign: 'center',
     },
     stepCard: {
         borderRadius: 16,
@@ -703,7 +809,7 @@ const styles = StyleSheet.create({
     stepIcon: {
         width: 40,
         height: 40,
-        borderRadius: 10,
+        borderRadius: 999,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -784,35 +890,6 @@ const styles = StyleSheet.create({
     captureButtonText: {
         ...FONTS.bodyStrong,
         textAlign: 'center',
-    },
-    signatureCard: {
-        borderRadius: 16,
-        padding: 18,
-        marginBottom: 14,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.08,
-        shadowRadius: 18,
-        elevation: 5,
-    },
-    signatureTitle: {
-        ...FONTS.h3,
-        marginBottom: 8,
-    },
-    signatureCopy: {
-        ...FONTS.body,
-        marginBottom: 14,
-    },
-    signatureButton: {
-        minHeight: 54,
-        borderRadius: 12,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-        gap: 10,
-    },
-    signatureButtonText: {
-        ...FONTS.bodyStrong,
     },
     completionInput: {
         minHeight: 120,
@@ -896,6 +973,59 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     sheetCancelText: {
+        ...FONTS.bodyStrong,
+    },
+    confirmSheet: {
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        padding: 32,
+        alignItems: 'center',
+    },
+    warningIconCircle: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    confirmTitle: {
+        ...FONTS.h2,
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    confirmMessage: {
+        ...FONTS.body,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 20,
+    },
+    checklistBadge: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 32,
+    },
+    checklistBadgeText: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+    },
+    confirmActions: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
+    confirmBtn: {
+        flex: 1,
+        minHeight: 56,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    confirmBtnText: {
         ...FONTS.bodyStrong,
     },
 });

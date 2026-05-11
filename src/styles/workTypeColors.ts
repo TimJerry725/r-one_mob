@@ -1,4 +1,4 @@
-export type ServiceType = 'Installation' | 'Maintenance' | 'Preventive';
+export type ServiceType = 'Installation' | 'Service' | 'Preventive';
 
 type ServiceTypeColors = {
     background: string;
@@ -16,7 +16,7 @@ const LIGHT_TYPE_COLORS: Record<ServiceType, ServiceTypeColors> = {
         tint: '#E6F1FB',
         tintText: '#003F74',
     },
-    Maintenance: {
+    Service: {
         background: '#A64B00',
         border: '#7A3600',
         text: '#FFFFFF',
@@ -40,7 +40,7 @@ const DARK_TYPE_COLORS: Record<ServiceType, ServiceTypeColors> = {
         tint: '#D9F0FF',
         tintText: '#0F405E',
     },
-    Maintenance: {
+    Service: {
         background: '#FFB04C',
         border: '#7A4208',
         text: '#2A1400',

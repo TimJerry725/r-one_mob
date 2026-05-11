@@ -19,6 +19,9 @@ import { LanguageProvider } from './src/context/LanguageContext';
 import { ProjectDetailScreen } from './src/screens/ProjectDetailScreen';
 import { TaskDetailScreen } from './src/screens/TaskDetailScreen';
 import { CreateTaskScreen } from './src/screens/CreateTaskScreen';
+import { CreateChecklistTaskScreen } from './src/screens/CreateChecklistTaskScreen';
+import { CreateTaskSelectorScreen } from './src/screens/CreateTaskSelectorScreen';
+import { AssetDetailScreen } from './src/screens/AssetDetailScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { MapScreen } from './src/screens/MapScreen';
 import { AssetScanScreen } from './src/screens/AssetScanScreen';
@@ -214,11 +217,30 @@ function AppNavigator() {
         <Stack.Screen name="MainTabs" component={BottomTabs} />
         <Stack.Screen name="TaskDetails" component={TaskDetailScreen} />
         <Stack.Screen name="AssetScan" component={AssetScanScreen} />
+        <Stack.Screen name="AssetDetails" component={AssetDetailScreen} />
         <Stack.Screen name="Notification" component={NotificationScreen} />
         <Stack.Screen name="Language" component={LanguageScreen} />
         <Stack.Screen
           name="CreateTask"
           component={CreateTaskScreen}
+          options={{
+            presentation: 'transparentModal',
+            animation: 'slide_from_bottom',
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
+          name="CreateTaskSelector"
+          component={CreateTaskSelectorScreen}
+          options={{
+            presentation: 'transparentModal',
+            animation: 'slide_from_bottom',
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
+          name="CreateChecklistTask"
+          component={CreateChecklistTaskScreen}
           options={{
             presentation: 'transparentModal',
             animation: 'slide_from_bottom',
