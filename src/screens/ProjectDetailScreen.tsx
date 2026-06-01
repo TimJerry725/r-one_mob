@@ -112,7 +112,6 @@ const OrderCard = ({
                     <Text style={[styles.infoChipValue, { color: colors.text }]}>{item.siteName}</Text>
                 </View>
                 <View style={[styles.infoChip, { backgroundColor: colors.danger + '15', borderColor: colors.danger }]}>
-                    <Ionicons name="time-outline" size={10} color={colors.danger} style={{ marginRight: 2 }} />
                     <Text style={[styles.infoChipValue, { color: colors.danger }]}>
                         {new Date(item.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </Text>

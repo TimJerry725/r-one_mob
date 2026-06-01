@@ -198,7 +198,6 @@ export const TaskDetailScreen = () => {
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Deadline</Text>
                         <View style={[styles.chipRow, { marginBottom: 16 }]}>
                             <View style={[styles.heroChip, { backgroundColor: colors.danger + '15', borderColor: colors.danger }]}>
-                                <Ionicons name="time-outline" size={12} color={colors.danger} style={{ marginRight: 4 }} />
                                 <Text style={[styles.heroChipText, { color: colors.danger }]}>
                                     {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </Text>
