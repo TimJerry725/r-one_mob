@@ -92,7 +92,7 @@ const getChecklistPlaceholder = (item: ChecklistStateItem) => {
     }
 };
 
-type DetailTab = 'Tasks' | 'Activities';
+type DetailTab = 'Tasks' | 'Activities' | 'Attachments';
 type ActivityFilter = 'All' | 'Comment' | 'Activity';
 
 export const TaskDetailScreen = () => {
@@ -117,7 +117,7 @@ export const TaskDetailScreen = () => {
     const completedRequired = requiredItems.filter(isComplete).length;
     const allCompleted = items.filter(isComplete).length === items.length;
     const readyToComplete = items.length > 0 && completedRequired === requiredItems.length;
-    const completeActionLabel = isUnderReview ? 'Mark as Complete' : 'Mark Complete';
+    const completeActionLabel = isUnderReview ? 'Review Work' : 'Mark Complete';
     const filteredActivities = ACTIVITY_LOG.filter((item) => {
         if (activityFilter === 'All') {
             return true;
@@ -195,6 +195,16 @@ export const TaskDetailScreen = () => {
                             </View>
                         </View>
 
+                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Deadline</Text>
+                        <View style={[styles.chipRow, { marginBottom: 16 }]}>
+                            <View style={[styles.heroChip, { backgroundColor: colors.danger + '15', borderColor: colors.danger }]}>
+                                <Ionicons name="time-outline" size={12} color={colors.danger} style={{ marginRight: 4 }} />
+                                <Text style={[styles.heroChipText, { color: colors.danger }]}>
+                                    {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </Text>
+                            </View>
+                        </View>
+
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
                         <View style={styles.chipRow}>
                             {workOrder.technicians.map((tech, idx) => {
@@ -214,7 +224,7 @@ export const TaskDetailScreen = () => {
                     </View>
 
                     <View style={[styles.tabSwitch, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                        {(['Tasks', 'Activities'] as const).map((tab) => {
+                        {(['Tasks', 'Activities', 'Attachments'] as const).map((tab) => {
                             const isSelected = activeTab === tab;
                             return (
                                 <TouchableOpacity
@@ -315,7 +325,7 @@ export const TaskDetailScreen = () => {
                                 </>
                             )}
                         </>
-                    ) : (
+                    ) : activeTab === 'Activities' ? (
                         <>
                             <View style={styles.filterRow}>
                                 {(['All', 'Comment', 'Activity'] as const).map((filter) => {
@@ -398,7 +408,36 @@ export const TaskDetailScreen = () => {
                                 ) : null}
                             </View>
                         </>
-                    )}
+                    ) : activeTab === 'Attachments' ? (
+                        <>
+                            <View style={styles.listColumn}>
+                                <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
+                                    <View style={[styles.stepIcon, { backgroundColor: colors.primary + '15', width: 48, height: 48 }]}>
+                                        <Ionicons name="document-text" size={24} color={colors.primary} />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={[styles.stepTitle, { color: colors.text }]}>Site Layout Plan.pdf</Text>
+                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>PDF Document • 2.4 MB</Text>
+                                    </View>
+                                </View>
+
+                                <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
+                                    <View style={[styles.stepIcon, { backgroundColor: colors.secondary + '15', width: 48, height: 48 }]}>
+                                        <Ionicons name="image" size={24} color={colors.secondary} />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={[styles.stepTitle, { color: colors.text }]}>Previous Service Photo.jpg</Text>
+                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>Image • 1.1 MB</Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            <TouchableOpacity style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, marginTop: 16 }]}>
+                                <Ionicons name="cloud-upload-outline" size={24} color={colors.primary} />
+                                <Text style={[styles.captureButtonText, { color: colors.text }]}>Upload New Attachment</Text>
+                            </TouchableOpacity>
+                        </>
+                    ) : null}
                 </ScrollView>
 
                 <KeyboardAvoidingView
@@ -473,14 +512,14 @@ export const TaskDetailScreen = () => {
 
                 <Modal visible={actionModalVisible} transparent animationType="fade">
                     <TouchableOpacity style={[styles.modalOverlay, { justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 16 }]} activeOpacity={1} onPress={() => setActionModalVisible(false)}>
-                        <View style={[{ backgroundColor: colors.surface, borderRadius: 12, padding: 8, minWidth: 200, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 16, elevation: 8 }]}>
-                            <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-                                <Ionicons name="checkmark-circle-outline" size={20} color={colors.success} style={{ marginRight: 10 }} />
-                                <Text style={[{ color: colors.text, ...FONTS.body }]}>{completeActionLabel}</Text>
+                        <View style={[{ backgroundColor: colors.surface, borderRadius: 16, padding: 12, minWidth: 260, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 20, elevation: 12 }]}>
+                            <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                                <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
+                                <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>{completeActionLabel}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => { setActionModalVisible(false); }} style={[{ flexDirection: 'row', alignItems: 'center', padding: 12 }]}>
-                                <Ionicons name="arrow-redo-outline" size={20} color={colors.primary} style={{ marginRight: 10 }} />
-                                <Text style={[{ color: colors.text, ...FONTS.body }]}>Forward</Text>
+                            <TouchableOpacity onPress={() => { setActionModalVisible(false); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
+                                <Ionicons name={isUnderReview ? "close-circle-outline" : "arrow-redo-outline"} size={26} color={isUnderReview ? colors.secondary : colors.primary} style={{ marginRight: 14 }} />
+                                <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>{isUnderReview ? 'Reject' : 'Forward'}</Text>
                             </TouchableOpacity>
                         </View>
                     </TouchableOpacity>
@@ -878,18 +917,19 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     captureButton: {
-        minHeight: 54,
+        minHeight: 64,
         borderRadius: 12,
         borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 10,
-        paddingHorizontal: 14,
+        gap: 12,
+        paddingHorizontal: 16,
     },
     captureButtonText: {
         ...FONTS.bodyStrong,
         textAlign: 'center',
+        fontSize: 16,
     },
     completionInput: {
         minHeight: 120,
@@ -911,8 +951,8 @@ const styles = StyleSheet.create({
     },
     footerButton: {
         flex: 1,
-        minHeight: 56,
-        borderRadius: 14,
+        minHeight: 68,
+        borderRadius: 16,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
@@ -925,11 +965,11 @@ const styles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        bottom: 86,
+        bottom: 96,
         right: 20,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
         shadowOffset: { width: 0, height: 6 },

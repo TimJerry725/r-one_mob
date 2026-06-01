@@ -7,7 +7,7 @@ import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { getServiceTypeColors } from '../styles/workTypeColors';
-import { WORK_ORDERS, WorkOrder, WorkOrderStatus } from '../data/fieldDemo';
+import { WORK_ORDERS, WorkOrder, WorkOrderStatus, STATION_BUSINESS_IMPACT } from '../data/fieldDemo';
 
 const STATUS_TABS: WorkOrderStatus[] = ['To-Do', 'Working', 'Under Review', 'Completed'];
 
@@ -45,7 +45,7 @@ const OrderCard = ({
             }
             : item.status === 'Under Review'
                 ? {
-                    secondaryLabel: 'Re-assign',
+                    secondaryLabel: 'Reject',
                     primaryLabel: 'Review Work',
                 }
                 : null;
@@ -67,6 +67,14 @@ const OrderCard = ({
                             <Text style={[styles.typeBadgeText, { color: colors.primary }]}>{item.stage}</Text>
                         </View>
                     ) : null}
+                    <View style={[styles.typeBadge, { 
+                        backgroundColor: item.priority === 'High' ? colors.danger + '15' : item.priority === 'Medium' ? colors.secondary + '15' : colors.surfaceHighlight, 
+                        borderColor: item.priority === 'High' ? colors.danger : item.priority === 'Medium' ? colors.secondary : colors.border 
+                    }]}>
+                        <Text style={[styles.typeBadgeText, { 
+                            color: item.priority === 'High' ? colors.danger : item.priority === 'Medium' ? colors.secondary : colors.textSecondary 
+                        }]}>{item.priority}</Text>
+                    </View>
                 </View>
                 <View style={[
                     styles.statusBadgeInline, 
@@ -102,6 +110,12 @@ const OrderCard = ({
                 <View style={[styles.infoChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
                     <Text style={[styles.infoChipText, { color: colors.textSecondary }]}>Station:</Text>
                     <Text style={[styles.infoChipValue, { color: colors.text }]}>{item.siteName}</Text>
+                </View>
+                <View style={[styles.infoChip, { backgroundColor: colors.danger + '15', borderColor: colors.danger }]}>
+                    <Ionicons name="time-outline" size={10} color={colors.danger} style={{ marginRight: 2 }} />
+                    <Text style={[styles.infoChipValue, { color: colors.danger }]}>
+                        {new Date(item.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </Text>
                 </View>
             </View>
 
@@ -202,15 +216,42 @@ export const ProjectDetailScreen = () => {
         setSelectedSite(route.params?.stationFilter ?? null);
     }, [route.params?.stationFilter]);
 
+    const calculateSmartRouteScore = (item: WorkOrder): number => {
+        let score = 0;
+        
+        // 1. Station Business Impact (Highest Priority)
+        const impact = STATION_BUSINESS_IMPACT[item.siteName] || 'Medium';
+        if (impact === 'High') score += 20000;
+        else if (impact === 'Medium') score += 10000;
+        
+        // 2. Task Priority
+        if (item.priority === 'High') score += 5000;
+        else if (item.priority === 'Medium') score += 2500;
+        
+        // 3. Deadline Proximity
+        const hoursFromNow = (item.targetTime - Date.now()) / (1000 * 60 * 60);
+        score -= hoursFromNow * 100;
+        
+        // 4. Route / Distance Proximity
+        const distanceKm = parseFloat(item.distance.split(' ')[0]) || 0;
+        score -= distanceKm * 50;
+        
+        return score;
+    };
+
     const visibleOrders = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
-        return WORK_ORDERS.filter((item) => {
+        const filtered = WORK_ORDERS.filter((item) => {
             const matchesStatus = selectedStatuses.length === 0 ? true : selectedStatuses.includes(item.status);
             const matchesType = selectedTypes.length === 0 ? true : selectedTypes.includes(item.type);
             const matchesSite = selectedSite ? item.siteName === selectedSite : true;
             const haystack = `${item.title} ${item.siteName} ${item.address} ${item.type} ${item.stage}`.toLowerCase();
             const matchesSearch = query.length === 0 ? true : haystack.includes(query);
             return matchesStatus && matchesType && matchesSite && matchesSearch;
+        });
+
+        return filtered.sort((a, b) => {
+            return calculateSmartRouteScore(b) - calculateSmartRouteScore(a);
         });
     }, [searchQuery, selectedSite, selectedStatuses, selectedTypes]);
 

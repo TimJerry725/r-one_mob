@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -27,10 +27,11 @@ export const AssetScanScreen = () => {
     const [hasError, setHasError] = useState(false);
 
     const matchedAsset = getAssetMatch(cpid);
-    const recentAsset = ASSETS[0];
+    const recentAssets = ASSETS.slice(0, 5);
+    const [recentModalVisible, setRecentModalVisible] = useState(false);
 
     const openAssetDetails = (assetId?: string) => {
-        navigation.navigate('AssetDetails', { assetId: assetId ?? recentAsset.id });
+        navigation.navigate('AssetDetails', { assetId: assetId ?? recentAssets[0].id });
     };
 
     const handleBarcodeScanned = ({ data }: { data: string }) => {
@@ -187,15 +188,42 @@ export const AssetScanScreen = () => {
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={() => openAssetDetails(recentAsset.id)}
+                            onPress={() => setRecentModalVisible(true)}
                             style={[styles.controlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
                         >
                             <Ionicons name="albums-outline" size={20} color={colors.primary} />
-                            <Text style={[styles.controlButtonText, { color: colors.text }]}>Recent asset</Text>
+                            <Text style={[styles.controlButtonText, { color: colors.text }]}>Recent assets</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </SafeAreaView>
+            
+            <Modal visible={recentModalVisible} transparent animationType="slide">
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setRecentModalVisible(false)}>
+                    <View style={[styles.recentSheet, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.sheetTitle, { color: colors.text, marginBottom: 16 }]}>Recent Assets</Text>
+                        {recentAssets.map((asset, index) => (
+                            <TouchableOpacity
+                                key={asset.id}
+                                style={[styles.recentItem, { borderBottomColor: colors.border, borderBottomWidth: index === recentAssets.length - 1 ? 0 : StyleSheet.hairlineWidth }]}
+                                onPress={() => {
+                                    setRecentModalVisible(false);
+                                    openAssetDetails(asset.id);
+                                }}
+                            >
+                                <View style={{ flex: 1 }}>
+                                    <Text numberOfLines={1} style={[styles.resultTitle, { color: colors.text }]}>{asset.model}</Text>
+                                    <Text numberOfLines={1} style={[styles.resultMeta, { color: colors.textSecondary }]}>{asset.cpid} • {asset.location}</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                            </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity onPress={() => setRecentModalVisible(false)} style={[styles.primaryButton, { backgroundColor: colors.surfaceHighlight, marginTop: 16 }]}>
+                            <Text style={[styles.primaryButtonText, { color: colors.text }]}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 };
@@ -209,6 +237,11 @@ const styles = StyleSheet.create({
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
     },
     header: {
         flexDirection: 'row',
@@ -417,5 +450,23 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.08,
         shadowRadius: 16,
         elevation: 4,
+    },
+    recentSheet: {
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 24,
+        paddingBottom: 40,
+        width: '100%',
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.12,
+        shadowRadius: 18,
+        elevation: 12,
+    },
+    recentItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 14,
+        gap: 12,
     },
 });

@@ -23,6 +23,8 @@ export type WorkOrder = {
     notes: string;
     latitude: number;
     longitude: number;
+    priority: 'High' | 'Medium' | 'Low';
+    targetTime: number;
 };
 
 export type AssetStatus = 'Healthy' | 'Service Due' | 'Offline';
@@ -47,6 +49,7 @@ export type AssetAlertItem = {
     title: string;
     priority: AssetAlertPriority;
     status: AssetAlertStatus;
+    date?: string;
 };
 
 export type AssetWorkHistoryItem = {
@@ -118,6 +121,8 @@ export const WORK_ORDERS: WorkOrder[] = [
         notes: 'Heavy public traffic. Customer requests zero downtime for adjacent chargers.',
         latitude: 18.5314,
         longitude: 73.8446,
+        priority: 'Medium',
+        targetTime: Date.now() + 2 * 60 * 60 * 1000,
     },
     {
         id: 'wo-102',
@@ -141,6 +146,8 @@ export const WORK_ORDERS: WorkOrder[] = [
         notes: 'Intermittent handshake failure reported overnight.',
         latitude: 18.5324,
         longitude: 73.8456,
+        priority: 'High',
+        targetTime: Date.now() + 1 * 60 * 60 * 1000,
     },
     {
         id: 'wo-103',
@@ -164,6 +171,8 @@ export const WORK_ORDERS: WorkOrder[] = [
         notes: 'Customer asked for image evidence of cable wear and enclosure seal.',
         latitude: 12.9754,
         longitude: 77.6056,
+        priority: 'Low',
+        targetTime: Date.now() + 24 * 60 * 60 * 1000,
     },
     {
         id: 'wo-104',
@@ -187,6 +196,8 @@ export const WORK_ORDERS: WorkOrder[] = [
         notes: 'Customer signature stored offline and synced later.',
         latitude: 12.9912,
         longitude: 77.5349,
+        priority: 'Medium',
+        targetTime: Date.now() - 24 * 60 * 60 * 1000,
     },
     {
         id: 'wo-105',
@@ -210,6 +221,8 @@ export const WORK_ORDERS: WorkOrder[] = [
         notes: 'Weak network on site. Manual sync may be required.',
         latitude: 13.0418,
         longitude: 80.2341,
+        priority: 'High',
+        targetTime: Date.now() + 5 * 60 * 60 * 1000,
     },
     {
         id: 'wo-106',
@@ -234,8 +247,19 @@ export const WORK_ORDERS: WorkOrder[] = [
         notes: 'Checklist shell created before the field steps were added.',
         latitude: 9.9312,
         longitude: 76.2673,
+        priority: 'Low',
+        targetTime: Date.now() + 48 * 60 * 60 * 1000,
     },
 ];
+
+export const STATION_BUSINESS_IMPACT: Record<string, 'High' | 'Medium' | 'Low'> = {
+    'Pune Central Station': 'High',
+    'Mumbai Highway Point': 'High',
+    'Skyline Mall Parking': 'Medium',
+    'Industrial Zone B': 'Low',
+    'City Square Terminal': 'High',
+    'Harbor Transit Hub': 'Low',
+};
 
 export const ASSETS: AssetRecord[] = [
     {
@@ -296,9 +320,9 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
         connectors: '4',
         warrantyTill: '18 Oct 2027',
         alerts: [
-            { id: 'alert-1', title: 'Charger offline', priority: 'High', status: 'Open' },
-            { id: 'alert-2', title: 'Consistent high temperature', priority: 'Highest', status: 'Assigned' },
-            { id: 'alert-3', title: 'Irregular power delivery', priority: 'Medium', status: 'Open' },
+            { id: 'alert-1', title: 'Charger offline', priority: 'High', status: 'Open', date: '10 Oct 2024' },
+            { id: 'alert-2', title: 'Consistent high temperature', priority: 'Highest', status: 'Assigned', date: '09 Oct 2024' },
+            { id: 'alert-3', title: 'Irregular power delivery', priority: 'Medium', status: 'Open', date: '08 Oct 2024' },
         ],
         workHistory: [
             { id: 'work-1', title: 'DC fast charger install', date: '09 Dec 2024', status: 'Open', linkedWorkOrderId: 'wo-101' },
@@ -322,8 +346,8 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
         connectors: '2',
         warrantyTill: '05 Jan 2028',
         alerts: [
-            { id: 'alert-4', title: 'Handshake timeout', priority: 'High', status: 'Assigned' },
-            { id: 'alert-5', title: 'Door sensor warning', priority: 'Medium', status: 'Open' },
+            { id: 'alert-4', title: 'Handshake timeout', priority: 'High', status: 'Assigned', date: '06 Apr 2026' },
+            { id: 'alert-5', title: 'Door sensor warning', priority: 'Medium', status: 'Open', date: '05 Apr 2026' },
         ],
         workHistory: [
             { id: 'work-4', title: 'Connector fault investigation', date: '02 Feb 2026', status: 'Open', linkedWorkOrderId: 'wo-102' },
@@ -345,7 +369,7 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
         connectors: '2',
         warrantyTill: '21 Jul 2027',
         alerts: [
-            { id: 'alert-6', title: 'Cable wear warning', priority: 'Medium', status: 'Open' },
+            { id: 'alert-6', title: 'Cable wear warning', priority: 'Medium', status: 'Open', date: '04 Apr 2026' },
         ],
         workHistory: [
             { id: 'work-6', title: 'Quarterly preventive service', date: '11 Mar 2026', status: 'Assigned', linkedWorkOrderId: 'wo-103' },
@@ -367,8 +391,8 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
         connectors: '4',
         warrantyTill: '17 Nov 2027',
         alerts: [
-            { id: 'alert-7', title: 'Charger offline', priority: 'Highest', status: 'Open' },
-            { id: 'alert-8', title: 'Network packet loss', priority: 'High', status: 'Assigned' },
+            { id: 'alert-7', title: 'Charger offline', priority: 'Highest', status: 'Open', date: '07 Apr 2026' },
+            { id: 'alert-8', title: 'Network packet loss', priority: 'High', status: 'Assigned', date: '06 Apr 2026' },
         ],
         workHistory: [
             { id: 'work-8', title: 'Commissioning safety audit', date: '21 Mar 2026', status: 'Open', linkedWorkOrderId: 'wo-105' },
