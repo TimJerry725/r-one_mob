@@ -68,7 +68,10 @@ export const ProfileScreen = () => {
                         </View>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.logoutButton, { borderColor: colors.danger }]}>
+                    <TouchableOpacity 
+                        style={[styles.logoutButton, { borderColor: colors.danger }]}
+                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'RoleSelection' }] })}
+                    >
                         <Text style={[styles.logoutText, { color: colors.danger }]}>Log out</Text>
                     </TouchableOpacity>
                 </ScrollView>

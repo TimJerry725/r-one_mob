@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "r-one-mobV2",
-    "slug": "r-one-mobV2",
+    "slug": "r-one",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,6 +19,7 @@
       }
     },
     "android": {
+      "package": "com.timjerry725.rone",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -37,6 +38,11 @@
     "plugins": [
       "expo-asset",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c178cec5-4850-4baa-93dd-7cf566d17e6a"
+      }
+    }
   }
 }

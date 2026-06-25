@@ -156,7 +156,7 @@ export const TaskDetailScreen = () => {
                     <View style={[styles.headerTypeChip, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
                         <Text style={[styles.headerTypeChipText, { color: typeColors.tintText }]}>{workOrder.type}</Text>
                     </View>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => setActionModalVisible(true)}
                         style={[styles.actionBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                     >
@@ -466,10 +466,10 @@ export const TaskDetailScreen = () => {
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
 
-                <TouchableOpacity 
-                    style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000' }]} 
+                <TouchableOpacity
+                    style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000' }]}
                     activeOpacity={0.9}
-                    onPress={() => navigation.navigate('CreateTask', { 
+                    onPress={() => navigation.navigate('CreateTask', {
                         fromDetail: true,
                         prefill: {
                             serviceType: workOrder.type,
@@ -486,18 +486,18 @@ export const TaskDetailScreen = () => {
                     <View style={styles.modalOverlay}>
                         <View style={[styles.bottomSheetInner, { backgroundColor: colors.background, paddingBottom: 40 }]}>
                             <Text style={[styles.sheetTitle, { color: colors.textSecondary }]}>Add Attachment</Text>
-                            
-                            <TouchableOpacity style={[styles.sheetOption, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => { setMediaModalVisible(false); if(activeMediaId) updateItem(activeMediaId, Number(items.find(i=>i.id===activeMediaId)?.value||0)+1); }}>
+
+                            <TouchableOpacity style={[styles.sheetOption, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => { setMediaModalVisible(false); if (activeMediaId) updateItem(activeMediaId, Number(items.find(i => i.id === activeMediaId)?.value || 0) + 1); }}>
                                 <FontAwesome name="camera" size={20} color={colors.primary} style={styles.sheetIcon} />
                                 <Text style={[styles.sheetOptionText, { color: colors.text }]}>Take Photo</Text>
                             </TouchableOpacity>
-                            
-                            <TouchableOpacity style={[styles.sheetOption, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => { setMediaModalVisible(false); if(activeMediaId) updateItem(activeMediaId, Number(items.find(i=>i.id===activeMediaId)?.value||0)+1); }}>
+
+                            <TouchableOpacity style={[styles.sheetOption, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => { setMediaModalVisible(false); if (activeMediaId) updateItem(activeMediaId, Number(items.find(i => i.id === activeMediaId)?.value || 0) + 1); }}>
                                 <FontAwesome name="video-camera" size={20} color={colors.primary} style={styles.sheetIcon} />
                                 <Text style={[styles.sheetOptionText, { color: colors.text }]}>Record Video</Text>
                             </TouchableOpacity>
-                            
-                            <TouchableOpacity style={styles.sheetOption} onPress={() => { setMediaModalVisible(false); if(activeMediaId) updateItem(activeMediaId, Number(items.find(i=>i.id===activeMediaId)?.value||0)+1); }}>
+
+                            <TouchableOpacity style={styles.sheetOption} onPress={() => { setMediaModalVisible(false); if (activeMediaId) updateItem(activeMediaId, Number(items.find(i => i.id === activeMediaId)?.value || 0) + 1); }}>
                                 <FontAwesome name="paperclip" size={20} color={colors.primary} style={styles.sheetIcon} />
                                 <Text style={[styles.sheetOptionText, { color: colors.text }]}>Attach File</Text>
                             </TouchableOpacity>
@@ -530,26 +530,26 @@ export const TaskDetailScreen = () => {
                             <View style={[styles.warningIconCircle, { backgroundColor: colors.secondary + '15' }]}>
                                 <Ionicons name="warning" size={32} color={colors.secondary} />
                             </View>
-                            
+
                             <Text style={[styles.confirmTitle, { color: colors.text }]}>Incomplete Tasks</Text>
                             <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
                                 Are you sure you want to move the checklists with applicable incomplete tasks to review?
                             </Text>
-                            
+
                             <View style={[styles.checklistBadge, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
                                 <Text style={[styles.checklistBadgeText, { color: colors.text }]}>{workOrder.title}</Text>
                             </View>
 
                             <View style={styles.confirmActions}>
-                                <TouchableOpacity 
-                                    style={[styles.confirmBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]} 
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                                     onPress={() => setConfirmationModalVisible(false)}
                                 >
                                     <Text style={[styles.confirmBtnText, { color: colors.text }]}>Cancel</Text>
                                 </TouchableOpacity>
-                                
-                                <TouchableOpacity 
-                                    style={[styles.confirmBtn, { backgroundColor: colors.primary }]} 
+
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.primary }]}
                                     onPress={() => {
                                         setConfirmationModalVisible(false);
                                         navigation.goBack();

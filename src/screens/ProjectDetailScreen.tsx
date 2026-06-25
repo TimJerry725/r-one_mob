@@ -26,16 +26,20 @@ const getInitials = (name: string) =>
         .join('')
         .slice(0, 2) || '?';
 
-const OrderCard = ({
+export const OrderCard = ({
     item,
     colors,
     isDark,
     onOpen,
+    hideTypeChip,
+    hideStationChip,
 }: {
     item: WorkOrder;
     colors: ReturnType<typeof useTheme>['colors'];
     isDark: boolean;
     onOpen: () => void;
+    hideTypeChip?: boolean;
+    hideStationChip?: boolean;
 }) => {
     const actionConfig =
         item.status === 'To-Do'
@@ -50,6 +54,7 @@ const OrderCard = ({
                 }
                 : null;
     const typeColors = getServiceTypeColors(item.type, isDark);
+    const priorityColor = item.priority === 'High' ? colors.danger : item.priority === 'Medium' ? colors.secondary : colors.textSecondary;
 
     return (
         <TouchableOpacity
@@ -57,24 +62,24 @@ const OrderCard = ({
             onPress={onOpen}
             style={[styles.orderCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
         >
-            <View style={styles.chipRow}>
-                <View style={{ flex: 1, flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                    <View style={[styles.typeBadge, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
-                        <Text style={[styles.typeBadgeText, { color: typeColors.tintText }]}>{item.type}</Text>
-                    </View>
-                    {item.type === 'Installation' ? (
-                        <View style={[styles.typeBadge, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-                            <Text style={[styles.typeBadgeText, { color: colors.primary }]}>{item.stage}</Text>
-                        </View>
-                    ) : null}
-                    <View style={[styles.typeBadge, { 
-                        backgroundColor: item.priority === 'High' ? colors.danger + '15' : item.priority === 'Medium' ? colors.secondary + '15' : colors.surfaceHighlight, 
-                        borderColor: item.priority === 'High' ? colors.danger : item.priority === 'Medium' ? colors.secondary : colors.border 
-                    }]}>
-                        <Text style={[styles.typeBadgeText, { 
-                            color: item.priority === 'High' ? colors.danger : item.priority === 'Medium' ? colors.secondary : colors.textSecondary 
-                        }]}>{item.priority}</Text>
-                    </View>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8, gap: 12 }}>
+                <View style={{ flex: 1, gap: 4 }}>
+                    <Text style={[styles.orderTitle, { color: colors.text, marginBottom: 0 }]}>{item.title}</Text>
+                    <Text style={{ ...FONTS.caption, color: colors.textSecondary }}>
+                        {!hideTypeChip && (
+                            <>
+                                <Text style={{ color: typeColors.tintText, fontWeight: '600' }}>{item.type}</Text>
+                                {' • '}
+                            </>
+                        )}
+                        {item.type === 'Installation' && (
+                            <>
+                                <Text style={{ color: colors.primary, fontWeight: '600' }}>{item.stage}</Text>
+                                {' • '}
+                            </>
+                        )}
+                        <Text style={{ color: priorityColor, fontWeight: '600' }}>{item.priority} Priority</Text>
+                    </Text>
                 </View>
                 <View style={[
                     styles.statusBadgeInline, 
@@ -101,21 +106,18 @@ const OrderCard = ({
                 </View>
             </View>
 
-            <Text style={[styles.orderTitle, { color: colors.text }]}>{item.title}</Text>
-            <View style={styles.infoChipRow}>
-                <View style={[styles.infoChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                    <Text style={[styles.infoChipText, { color: colors.textSecondary }]}>CPID:</Text>
-                    <Text style={[styles.infoChipValue, { color: colors.text }]}>{item.assetId}</Text>
-                </View>
-                <View style={[styles.infoChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                    <Text style={[styles.infoChipText, { color: colors.textSecondary }]}>Station:</Text>
-                    <Text style={[styles.infoChipValue, { color: colors.text }]}>{item.siteName}</Text>
-                </View>
-                <View style={[styles.infoChip, { backgroundColor: colors.danger + '15', borderColor: colors.danger }]}>
-                    <Text style={[styles.infoChipValue, { color: colors.danger }]}>
-                        {new Date(item.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </Text>
-                </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
+                <Text style={{ ...FONTS.caption, color: colors.textSecondary, flex: 1 }}>
+                    CPID: <Text style={{ color: colors.text }}>{item.assetId}</Text>
+                    {!hideStationChip && (
+                        <>
+                            {'   '}Station: <Text style={{ color: colors.text }}>{item.siteName}</Text>
+                        </>
+                    )}
+                </Text>
+                <Text style={[{ ...FONTS.caption, fontSize: 11, color: colors.danger, marginLeft: 8 }]}>
+                    {new Date(item.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </Text>
             </View>
 
             <View style={styles.metaList}>
@@ -205,15 +207,24 @@ export const ProjectDetailScreen = () => {
     const route = useRoute<any>();
     const { colors, isDark } = useTheme();
     const [selectedStatuses, setSelectedStatuses] = useState<WorkOrderStatus[]>([]);
-    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+    const [selectedTypes, setSelectedTypes] = useState<string[]>(route.params?.typeFilter ? [route.params.typeFilter] : []);
     const [selectedSite, setSelectedSite] = useState<string | null>(route.params?.stationFilter ?? null);
+    const [selectedProject, setSelectedProject] = useState<string | null>(route.params?.projectFilter ?? null);
     const [searchQuery, setSearchQuery] = useState('');
     const [stationView, setStationView] = useState(false);
     const [showFilterMenu, setShowFilterMenu] = useState(false);
 
     useEffect(() => {
-        setSelectedSite(route.params?.stationFilter ?? null);
-    }, [route.params?.stationFilter]);
+        if (route.params?.stationFilter !== undefined) {
+            setSelectedSite(route.params?.stationFilter);
+        }
+        if (route.params?.typeFilter !== undefined) {
+            setSelectedTypes([route.params?.typeFilter]);
+        }
+        if (route.params?.projectFilter !== undefined) {
+            setSelectedProject(route.params?.projectFilter);
+        }
+    }, [route.params?.stationFilter, route.params?.typeFilter, route.params?.projectFilter]);
 
     const calculateSmartRouteScore = (item: WorkOrder): number => {
         let score = 0;
@@ -244,9 +255,10 @@ export const ProjectDetailScreen = () => {
             const matchesStatus = selectedStatuses.length === 0 ? true : selectedStatuses.includes(item.status);
             const matchesType = selectedTypes.length === 0 ? true : selectedTypes.includes(item.type);
             const matchesSite = selectedSite ? item.siteName === selectedSite : true;
+            const matchesProject = selectedProject ? item.projectId === selectedProject : true;
             const haystack = `${item.title} ${item.siteName} ${item.address} ${item.type} ${item.stage}`.toLowerCase();
             const matchesSearch = query.length === 0 ? true : haystack.includes(query);
-            return matchesStatus && matchesType && matchesSite && matchesSearch;
+            return matchesStatus && matchesType && matchesSite && matchesProject && matchesSearch;
         });
 
         return filtered.sort((a, b) => {
@@ -270,10 +282,11 @@ export const ProjectDetailScreen = () => {
         setSelectedStatuses([]);
         setSelectedTypes([]);
         setSelectedSite(null);
+        setSelectedProject(null);
         setSearchQuery('');
     };
 
-    const hasAppliedFilters = Boolean(selectedSite) || selectedStatuses.length > 0 || selectedTypes.length > 0;
+    const hasAppliedFilters = Boolean(selectedSite) || Boolean(selectedProject) || selectedStatuses.length > 0 || selectedTypes.length > 0;
 
     const stations = useMemo<StationSummary[]>(() => {
         const grouped = new Map<string, StationSummary>();
@@ -398,6 +411,16 @@ export const ProjectDetailScreen = () => {
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.selectedFilterRow}
                         >
+                            {selectedProject ? (
+                                <TouchableOpacity
+                                    onPress={() => setSelectedProject(null)}
+                                    style={[styles.siteFilter, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                >
+                                    <Ionicons name="folder" size={16} color={colors.primary} />
+                                    <Text style={[styles.siteFilterText, { color: colors.text }]}>{selectedProject}</Text>
+                                    <Ionicons name="close" size={16} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            ) : null}
                             {selectedSite ? (
                                 <TouchableOpacity
                                     onPress={() => setSelectedSite(null)}

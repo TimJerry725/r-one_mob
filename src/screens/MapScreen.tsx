@@ -4,7 +4,7 @@ import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
@@ -96,6 +96,7 @@ const StationMarkerPin = ({
 
 export const MapScreen = () => {
     const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const navBarOffset = Math.max(insets.bottom, 12);
@@ -304,6 +305,11 @@ export const MapScreen = () => {
                             placeholderTextColor={colors.textSecondary}
                             style={[styles.searchInput, { color: colors.text }]}
                         />
+                        {route.params?.isAdmin && (
+                            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+                                <Ionicons name="person-circle" size={28} color={colors.primary} />
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
 
