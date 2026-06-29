@@ -38,24 +38,14 @@ export const ProjectListScreen = () => {
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                     {/* Project Metrics Widget */}
                     <View style={styles.metricsRow}>
-                        <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <View style={[styles.metricIconWrap, { backgroundColor: colors.primary + '12' }]}>
-                                <Ionicons name="folder-open" size={20} color={colors.primary} />
-                            </View>
-                            <View style={{ gap: 2 }}>
-                                <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>Total Projects</Text>
-                                <Text style={[{ color: colors.text }, FONTS.h2]}>{projects.length}</Text>
-                            </View>
+                        <View style={[styles.metricCard, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+                            <Text style={[styles.metricValue, { color: colors.primary }]}>{projects.length}</Text>
+                            <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Total Projects</Text>
                         </View>
 
-                        <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <View style={[styles.metricIconWrap, { backgroundColor: colors.secondary + '12' }]}>
-                                <Ionicons name="flash" size={20} color={colors.secondary} />
-                            </View>
-                            <View style={{ gap: 2 }}>
-                                <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>Chargers to be taken live</Text>
-                                <Text style={[{ color: colors.text }, FONTS.h2]}>4</Text>
-                            </View>
+                        <View style={[styles.metricCard, { backgroundColor: colors.secondary + '15', borderColor: colors.secondary }]}>
+                            <Text style={[styles.metricValue, { color: colors.secondary }]}>4</Text>
+                            <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Chargers to be taken live</Text>
                         </View>
                     </View>
 
@@ -180,27 +170,25 @@ const styles = StyleSheet.create({
     },
     metricsRow: {
         flexDirection: 'row',
-        gap: 12,
-        marginBottom: 20,
+        gap: 8,
+        marginBottom: 16,
     },
     metricCard: {
         flex: 1,
-        borderRadius: 16,
-        padding: 16,
-        borderWidth: 1,
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 3,
-    },
-    metricIconWrap: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        borderRadius: 8,
+        borderWidth: 1,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
         alignItems: 'center',
         justifyContent: 'center',
+        gap: 6,
+    },
+    metricValue: {
+        ...FONTS.h3,
+    },
+    metricLabel: {
+        ...FONTS.bodyStrong,
+        fontSize: 12,
     },
 });
