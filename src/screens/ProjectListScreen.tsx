@@ -36,6 +36,17 @@ export const ProjectListScreen = () => {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <SafeAreaView style={styles.safeArea}>
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                    <View style={[styles.searchBar, getInputShellStyle(colors)]}>
+                        <Ionicons name="search" size={20} color={colors.textSecondary} />
+                        <TextInput
+                            style={[styles.searchInput, { color: colors.text }]}
+                            placeholder="Search projects or stations"
+                            placeholderTextColor={colors.textSecondary}
+                            value={query}
+                            onChangeText={setQuery}
+                        />
+                    </View>
+
                     {/* Project Metrics Widget */}
                     <View style={styles.metricsRow}>
                         <View style={[styles.metricCard, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
@@ -47,17 +58,6 @@ export const ProjectListScreen = () => {
                             <Text style={[styles.metricValue, { color: colors.secondary }]}>4</Text>
                             <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Chargers to be taken live</Text>
                         </View>
-                    </View>
-
-                    <View style={[styles.searchBar, getInputShellStyle(colors)]}>
-                        <Ionicons name="search" size={20} color={colors.textSecondary} />
-                        <TextInput
-                            style={[styles.searchInput, { color: colors.text }]}
-                            placeholder="Search projects or stations"
-                            placeholderTextColor={colors.textSecondary}
-                            value={query}
-                            onChangeText={setQuery}
-                        />
                     </View>
 
                     <View style={styles.listColumn}>
