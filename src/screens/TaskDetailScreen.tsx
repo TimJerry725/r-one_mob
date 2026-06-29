@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     StyleSheet,
     View,
@@ -128,8 +128,25 @@ export const TaskDetailScreen = () => {
     const [newComment, setNewComment] = useState('');
     const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
     const [editingCommentText, setEditingCommentText] = useState('');
+    const [commentHasAttachment, setCommentHasAttachment] = useState(false);
 
     const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
+    const [completionModalVisible, setCompletionModalVisible] = useState(false);
+    const [completionComments, setCompletionComments] = useState('');
+    const [completionHasAttachment, setCompletionHasAttachment] = useState(false);
+
+    const [approveModalVisible, setApproveModalVisible] = useState(false);
+    const [approveComments, setApproveComments] = useState('');
+    const scrollViewRef = useRef<ScrollView>(null);
+
+    useEffect(() => {
+        if (isUnderReview) {
+            const timer = setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [isUnderReview]);
 
     const requiredItems = items.filter((item) => item.required);
     const completedRequired = requiredItems.filter(isComplete).length;
@@ -153,10 +170,11 @@ export const TaskDetailScreen = () => {
             title: 'You',
             time: 'Just now',
             type: 'comment' as const,
-            detail: newComment.trim(),
+            detail: commentHasAttachment ? `${newComment.trim()} (Attachment Added)` : newComment.trim(),
         };
         setActivities([newActivity, ...activities]);
         setNewComment('');
+        setCommentHasAttachment(false);
     };
 
     const handleDeleteComment = (id: string) => {
@@ -185,8 +203,80 @@ export const TaskDetailScreen = () => {
         if (!allCompleted) {
             setConfirmationModalVisible(true);
         } else {
-            navigation.goBack();
+            setCompletionModalVisible(true);
         }
+    };
+
+    const handleSubmitCompletion = () => {
+        if (!completionComments.trim()) {
+            Alert.alert('Comments Required', 'Please provide completion details/comments.');
+            return;
+        }
+
+        const newAct = {
+            id: Date.now().toString(),
+            title: 'Timothy Field (You)',
+            time: 'Just now',
+            type: 'comment' as const,
+            detail: completionHasAttachment 
+                ? `${completionComments.trim()} (Completion Attachment Uploaded)` 
+                : completionComments.trim(),
+        };
+        
+        setActivities([newAct, ...activities]);
+        workOrder.status = 'Under Review';
+
+        setCompletionModalVisible(false);
+        Alert.alert(
+            'Submitted',
+            'Work completed successfully and moved to Under Review.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+    };
+
+    const handleApproveWork = () => {
+        setApproveModalVisible(true);
+    };
+
+    const handleConfirmApproval = () => {
+        const approveText = approveComments.trim() || 'Work approved successfully.';
+        const newAct = {
+            id: Date.now().toString(),
+            title: 'Andrea Meuschke (You)',
+            time: 'Just now',
+            type: 'comment' as const,
+            detail: `${approveText} (Approved)`,
+        };
+        
+        setActivities([newAct, ...activities]);
+        workOrder.status = 'Completed';
+
+        setApproveModalVisible(false);
+        Alert.alert(
+            'Approved',
+            'The work order has been approved successfully.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+    };
+
+    const handleRejectWork = () => {
+        Alert.alert(
+            "Reject Work",
+            "Are you sure you want to reject this work order? It will be sent back to In Progress.",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Reject", 
+                    style: "destructive",
+                    onPress: () => {
+                        workOrder.status = 'Working';
+                        Alert.alert("Rejected", "The work order has been sent back for correction.", [
+                            { text: "OK", onPress: () => navigation.goBack() }
+                        ]);
+                    } 
+                }
+            ]
+        );
     };
 
     return (
@@ -214,7 +304,7 @@ export const TaskDetailScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                <ScrollView ref={scrollViewRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                     <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
                         <View style={styles.heroTopRow}>
                             <View style={styles.heroTitleWrap}>
@@ -249,10 +339,30 @@ export const TaskDetailScreen = () => {
                             </TouchableOpacity>
                         </View>
 
-                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Schedule Timeline</Text>
-                        <Text style={[{ color: colors.textSecondary, marginBottom: 16 }, FONTS.caption]}>
-                            Start: <Text style={{ color: colors.text }}>{new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>  •  End: <Text style={{ color: colors.text }}>{new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
-                        </Text>
+                        {workOrder.notes ? (
+                            <>
+                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Description</Text>
+                                <Text style={[{ color: colors.text, marginBottom: 12, lineHeight: 20 }, FONTS.body]}>
+                                    {workOrder.notes}
+                                </Text>
+                            </>
+                        ) : null}
+
+                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Scheduled Dates</Text>
+                        <View style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[{ color: colors.textSecondary, fontSize: 10 }, FONTS.label]}>START DATE</Text>
+                                <Text style={[{ color: colors.text, marginTop: 2 }, FONTS.bodyStrong]}>
+                                    {new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </Text>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[{ color: colors.textSecondary, fontSize: 10 }, FONTS.label]}>END DATE</Text>
+                                <Text style={[{ color: colors.text, marginTop: 2 }, FONTS.bodyStrong]}>
+                                    {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </Text>
+                            </View>
+                        </View>
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
                         <View style={styles.chipRow}>
@@ -305,9 +415,10 @@ export const TaskDetailScreen = () => {
                             ) : (
                                 <>
                                     <View style={styles.listColumn}>
-                                        {items.map((item) => (
-                                            <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-                                                <View style={styles.stepHeader}>
+                                        {items.map((item) => {
+                                            return (
+                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                                            <View style={styles.stepHeader}>
                                                     <View style={[styles.stepIcon, { backgroundColor: isComplete(item) ? colors.success : colors.surfaceHighlight }]}>
                                                         <Ionicons
                                                             name={isComplete(item) ? 'checkmark' : 'ellipse-outline'}
@@ -359,10 +470,39 @@ export const TaskDetailScreen = () => {
                                                         {item.options.join(', ')}
                                                     </Text>
                                                 ) : null}
-                                            </View>
-                                        ))}
+                                                </View>
+                                            );
+                                        })}
                                     </View>
 
+                                    {isUnderReview && (
+                                        <View style={{ marginTop: 24, paddingVertical: 16, borderTopWidth: 1, borderTopColor: colors.border, gap: 12 }}>
+                                            <Text style={[{ color: colors.textSecondary }, FONTS.label]}>Submission Details</Text>
+                                            <View style={[styles.card, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, padding: 16, gap: 8 }]}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                    <Ionicons name="chatbubble-ellipses-outline" size={18} color={colors.primary} />
+                                                    <Text style={[{ color: colors.text }, FONTS.bodyStrong]}>Completion Comments</Text>
+                                                </View>
+                                                <Text style={[{ color: colors.textSecondary, lineHeight: 20 }, FONTS.body]}>
+                                                    Foundation work fully validated. Cabinets locked and connectors tested.
+                                                </Text>
+
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                                                    <Ionicons name="attach-outline" size={18} color={colors.secondary} />
+                                                    <Text style={[{ color: colors.text }, FONTS.bodyStrong]}>Uploaded Attachment</Text>
+                                                </View>
+                                                <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: 'transparent', borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', marginTop: 4, padding: 12 }]}>
+                                                    <View style={[styles.stepIcon, { backgroundColor: colors.primary + '15', width: 36, height: 36, borderRadius: 18 }]}>
+                                                        <Ionicons name="document-text" size={18} color={colors.primary} />
+                                                    </View>
+                                                    <View style={{ flex: 1, marginLeft: 10 }}>
+                                                        <Text style={[styles.stepTitle, { color: colors.text, fontSize: 13 }]}>completion_evidence.jpg</Text>
+                                                        <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 11 }]}>Image • 1.5 MB</Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    )}
                                 </>
                             )}
                         </>
@@ -518,27 +658,54 @@ export const TaskDetailScreen = () => {
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
                     >
-                        <TouchableOpacity
-                            onPress={() => navigation.goBack()}
-                            style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
-                        >
-                            <Text style={[styles.footerButtonText, { color: colors.text }]}>Save</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={handleCompleteAction}
-                            style={[
-                                styles.footerButton,
-                                {
-                                    backgroundColor: readyToComplete ? colors.primary : colors.surfaceHighlight,
-                                    borderColor: readyToComplete ? colors.primary : colors.border,
-                                    opacity: 1,
-                                },
-                            ]}
-                        >
-                            <Text style={[styles.footerPrimaryText, { color: readyToComplete ? colors.white : colors.textSecondary }]}>
-                                {completeActionLabel}
-                            </Text>
-                        </TouchableOpacity>
+                        {isUnderReview ? (
+                            <>
+                                <TouchableOpacity
+                                    onPress={handleRejectWork}
+                                    style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger, borderWidth: 1 }]}
+                                >
+                                    <Text style={[styles.footerButtonText, { color: colors.danger, ...FONTS.bodyStrong }]}>Reject</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleApproveWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.success,
+                                            borderColor: colors.success,
+                                        },
+                                    ]}
+                                >
+                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
+                                        Approve
+                                    </Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <>
+                                <TouchableOpacity
+                                    onPress={() => navigation.goBack()}
+                                    style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                >
+                                    <Text style={[styles.footerButtonText, { color: colors.text }]}>Save</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleCompleteAction}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: readyToComplete ? colors.primary : colors.surfaceHighlight,
+                                            borderColor: readyToComplete ? colors.primary : colors.border,
+                                            opacity: 1,
+                                        },
+                                    ]}
+                                >
+                                    <Text style={[styles.footerPrimaryText, { color: readyToComplete ? colors.white : colors.textSecondary }]}>
+                                        {completeActionLabel}
+                                    </Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </KeyboardAvoidingView>
                 )}
 
@@ -555,21 +722,46 @@ export const TaskDetailScreen = () => {
                             }
                         ]}
                     >
-                        <TextInput
-                            style={[
-                                styles.commentInput, 
-                                getInputShellStyle(colors), 
-                                { 
-                                    color: colors.text, 
-                                    backgroundColor: colors.surfaceHighlight,
-                                }
-                            ]}
-                            placeholder="Add a comment..."
-                            placeholderTextColor={colors.textSecondary}
-                            value={newComment}
-                            onChangeText={setNewComment}
-                            multiline
-                        />
+                        <View style={{ flex: 1, position: 'relative', justifyContent: 'center' }}>
+                            <TextInput
+                                style={[
+                                    styles.commentInput, 
+                                    getInputShellStyle(colors), 
+                                    { 
+                                        color: colors.text, 
+                                        backgroundColor: colors.surfaceHighlight,
+                                        paddingRight: 44,
+                                    }
+                                ]}
+                                placeholder="Add a comment..."
+                                placeholderTextColor={colors.textSecondary}
+                                value={newComment}
+                                onChangeText={setNewComment}
+                                multiline
+                            />
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setMediaModalVisible(true);
+                                    setCommentHasAttachment(!commentHasAttachment);
+                                }}
+                                style={{
+                                    position: 'absolute',
+                                    right: 12,
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 14,
+                                    backgroundColor: commentHasAttachment ? colors.primary + '18' : 'transparent',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <Ionicons 
+                                    name="attach" 
+                                    size={20} 
+                                    color={commentHasAttachment ? colors.primary : colors.textSecondary} 
+                                />
+                            </TouchableOpacity>
+                        </View>
                         <TouchableOpacity 
                             style={[
                                 styles.addCommentButton, 
@@ -632,14 +824,29 @@ export const TaskDetailScreen = () => {
                 <Modal visible={actionModalVisible} transparent animationType="fade">
                     <TouchableOpacity style={[styles.modalOverlay, { justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 16 }]} activeOpacity={1} onPress={() => setActionModalVisible(false)}>
                         <View style={[{ backgroundColor: colors.surface, borderRadius: 16, padding: 12, minWidth: 260, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 20, elevation: 12 }]}>
-                            <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-                                <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
-                                <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>{completeActionLabel}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => { setActionModalVisible(false); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
-                                <Ionicons name={isUnderReview ? "close-circle-outline" : "arrow-redo-outline"} size={26} color={isUnderReview ? colors.secondary : colors.primary} style={{ marginRight: 14 }} />
-                                <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>{isUnderReview ? 'Reject' : 'Forward'}</Text>
-                            </TouchableOpacity>
+                            {isUnderReview ? (
+                                <>
+                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleApproveWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                                        <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
+                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Approve</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleRejectWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
+                                        <Ionicons name="close-circle-outline" size={26} color={colors.danger} style={{ marginRight: 14 }} />
+                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Reject</Text>
+                                    </TouchableOpacity>
+                                </>
+                            ) : (
+                                <>
+                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                                        <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
+                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>{completeActionLabel}</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
+                                        <Ionicons name="arrow-redo-outline" size={26} color={colors.primary} style={{ marginRight: 14 }} />
+                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Forward</Text>
+                                    </TouchableOpacity>
+                                </>
+                            )}
                         </View>
                     </TouchableOpacity>
                 </Modal>
@@ -672,10 +879,152 @@ export const TaskDetailScreen = () => {
                                     style={[styles.confirmBtn, { backgroundColor: colors.primary }]}
                                     onPress={() => {
                                         setConfirmationModalVisible(false);
-                                        navigation.goBack();
+                                        setCompletionModalVisible(true);
                                     }}
                                 >
                                     <Text style={[styles.confirmBtnText, { color: colors.white }]}>Move to Review</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                <Modal visible={completionModalVisible} transparent animationType="slide">
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setCompletionModalVisible(false)} />
+                        <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+                            <View style={styles.modalHeader}>
+                                <View>
+                                    <Text style={[styles.modalTitle, { color: colors.text }]}>Complete Work Details</Text>
+                                    <Text style={[styles.modalSub, { color: colors.textSecondary, marginTop: 2 }]}>Submit comments and final evidence</Text>
+                                </View>
+                                <TouchableOpacity onPress={() => setCompletionModalVisible(false)} style={styles.modalClose}>
+                                    <Ionicons name="close" size={24} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                                <View style={{ gap: 16, paddingBottom: 36 }}>
+                                    <View style={{ gap: 4 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                            <Text style={{ color: colors.danger }}>* </Text>Completion Comments
+                                        </Text>
+                                        <TextInput
+                                            value={completionComments}
+                                            onChangeText={setCompletionComments}
+                                            style={[
+                                                styles.commentInput, 
+                                                getInputShellStyle(colors), 
+                                                { 
+                                                    color: colors.text, 
+                                                    minHeight: 100, 
+                                                    textAlignVertical: 'top',
+                                                    paddingTop: 12,
+                                                }
+                                            ]}
+                                            placeholder="Provide final completion notes..."
+                                            placeholderTextColor={colors.textSecondary}
+                                            multiline
+                                        />
+                                    </View>
+
+                                    <View style={{ gap: 4 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Attachment</Text>
+                                        <TouchableOpacity 
+                                            activeOpacity={0.8}
+                                            onPress={() => setCompletionHasAttachment(!completionHasAttachment)}
+                                            style={[
+                                                styles.captureButton, 
+                                                { 
+                                                    backgroundColor: completionHasAttachment ? colors.primary + '12' : colors.surfaceHighlight,
+                                                    borderColor: completionHasAttachment ? colors.primary : colors.border,
+                                                }
+                                            ]}
+                                        >
+                                            <Ionicons 
+                                                name={completionHasAttachment ? "checkmark-circle" : "attach"}
+                                                size={18} 
+                                                color={colors.primary} 
+                                            />
+                                            <Text style={[styles.captureButtonText, { color: colors.text }]}>
+                                                {completionHasAttachment ? 'Attachment Added' : 'Upload attachments'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </ScrollView>
+
+                            <View style={styles.modalFooterRow}>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderWidth: 1 }]}
+                                    onPress={() => setCompletionModalVisible(false)}
+                                >
+                                    <Text style={[styles.footerBtnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: colors.primary }]}
+                                    onPress={handleSubmitCompletion}
+                                >
+                                    <Text style={[styles.footerBtnText, { color: colors.white }]}>Submit for Review</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                <Modal visible={approveModalVisible} transparent animationType="slide">
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setApproveModalVisible(false)} />
+                        <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+                            <View style={styles.modalHeader}>
+                                <View>
+                                    <Text style={[styles.modalTitle, { color: colors.text }]}>Approve Work Comments</Text>
+                                    <Text style={[styles.modalSub, { color: colors.textSecondary, marginTop: 2 }]}>Provide feedback or notes for approval</Text>
+                                </View>
+                                <TouchableOpacity onPress={() => setApproveModalVisible(false)} style={styles.modalClose}>
+                                    <Ionicons name="close" size={24} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                                <View style={{ gap: 16, paddingBottom: 36 }}>
+                                    <View style={{ gap: 4 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                            Approval Comments / Feedback
+                                        </Text>
+                                        <TextInput
+                                            value={approveComments}
+                                            onChangeText={setApproveComments}
+                                            style={[
+                                                styles.commentInput, 
+                                                getInputShellStyle(colors), 
+                                                { 
+                                                    color: colors.text, 
+                                                    minHeight: 100, 
+                                                    textAlignVertical: 'top',
+                                                    paddingTop: 12,
+                                                }
+                                            ]}
+                                            placeholder="Provide approval comments (optional)..."
+                                            placeholderTextColor={colors.textSecondary}
+                                            multiline
+                                        />
+                                    </View>
+                                </View>
+                            </ScrollView>
+
+                            <View style={styles.modalFooterRow}>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderWidth: 1 }]}
+                                    onPress={() => setApproveModalVisible(false)}
+                                >
+                                    <Text style={[styles.footerBtnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: colors.success }]}
+                                    onPress={handleConfirmApproval}
+                                >
+                                    <Text style={[styles.footerBtnText, { color: colors.white }]}>Confirm Approve</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -1206,5 +1555,65 @@ const styles = StyleSheet.create({
     },
     confirmBtnText: {
         ...FONTS.bodyStrong,
+    },
+    modalSheet: {
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingHorizontal: 24,
+        paddingTop: 24,
+        paddingBottom: 16,
+        width: '100%',
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    modalTitle: {
+        ...FONTS.h2,
+    },
+    modalSub: {
+        ...FONTS.caption,
+    },
+    modalClose: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalScroll: {
+        flexShrink: 1,
+    },
+    inputLabel: {
+        ...FONTS.label,
+        marginBottom: 8,
+    },
+    modalFooterRow: {
+        flexDirection: 'row',
+        gap: 12,
+        paddingVertical: 12,
+        paddingBottom: 24,
+    },
+    footerBtn: {
+        flex: 1,
+        minHeight: 52,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    footerBtnText: {
+        ...FONTS.bodyStrong,
+    },
+    card: {
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 3,
     },
 });

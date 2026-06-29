@@ -25,6 +25,7 @@ export type WorkOrder = {
     longitude: number;
     priority: 'High' | 'Medium' | 'Low';
     targetTime: number;
+    assignedBy?: string;
 };
 
 export type AssetStatus = 'Healthy' | 'Service Due' | 'Offline';
@@ -125,6 +126,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         longitude: 73.8446,
         priority: 'Medium',
         targetTime: Date.now() + 2 * 60 * 60 * 1000,
+        assignedBy: 'Andrea Meuschke',
     },
     {
         id: 'wo-101-b',
@@ -150,6 +152,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         longitude: 73.8446,
         priority: 'High',
         targetTime: Date.now() + 1 * 60 * 60 * 1000,
+        assignedBy: 'Marcus Aurelius',
     },
     {
         id: 'wo-101-c',

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
-import { WORK_ORDERS } from '../data/fieldDemo';
+import { WORK_ORDERS, ASSETS } from '../data/fieldDemo';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
 
 export const ProjectListScreen = () => {
@@ -36,6 +36,29 @@ export const ProjectListScreen = () => {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <SafeAreaView style={styles.safeArea}>
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                    {/* Project Metrics Widget */}
+                    <View style={styles.metricsRow}>
+                        <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <View style={[styles.metricIconWrap, { backgroundColor: colors.primary + '12' }]}>
+                                <Ionicons name="folder-open" size={20} color={colors.primary} />
+                            </View>
+                            <View style={{ gap: 2 }}>
+                                <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>Total Projects</Text>
+                                <Text style={[{ color: colors.text }, FONTS.h2]}>{projects.length}</Text>
+                            </View>
+                        </View>
+
+                        <View style={[styles.metricCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <View style={[styles.metricIconWrap, { backgroundColor: colors.secondary + '12' }]}>
+                                <Ionicons name="flash" size={20} color={colors.secondary} />
+                            </View>
+                            <View style={{ gap: 2 }}>
+                                <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>Chargers to be taken live</Text>
+                                <Text style={[{ color: colors.text }, FONTS.h2]}>4</Text>
+                            </View>
+                        </View>
+                    </View>
+
                     <View style={[styles.searchBar, getInputShellStyle(colors)]}>
                         <Ionicons name="search" size={20} color={colors.textSecondary} />
                         <TextInput
@@ -154,5 +177,30 @@ const styles = StyleSheet.create({
     infoChipValue: {
         ...FONTS.caption,
         fontSize: 11,
+    },
+    metricsRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 20,
+    },
+    metricCard: {
+        flex: 1,
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 3,
+    },
+    metricIconWrap: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

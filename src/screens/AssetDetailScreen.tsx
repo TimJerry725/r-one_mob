@@ -97,7 +97,44 @@ export const AssetDetailScreen = () => {
     })), []);
 
     const openWorkOrders = detail.workHistory.filter(item => item.status !== 'Closed');
-    const completedWorkOrders = detail.workHistory.filter(item => item.status === 'Closed').slice(-3);
+    const [currentPage, setCurrentPage] = useState(1);
+    const PAGE_SIZE = 4;
+
+    const completedWorkOrdersAll = useMemo(() => {
+        const closedFromData = detail.workHistory.filter(item => item.status === 'Closed');
+        if (closedFromData.length < 10) {
+            const list = [...closedFromData];
+            const tasks = [
+                'Filter kit replacement',
+                'Cabinet cleaning & inspection',
+                'Emergency button reset check',
+                'Connector lock motor lubrication',
+                'Isolation resistance check',
+                'Firmware upgrade validation',
+                'Grid synchronization test',
+                'Power terminal retorque',
+                'Auxiliary battery replacement',
+                'Display screen calibration',
+            ];
+            for (let i = 0; i < 8; i++) {
+                const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i % 12];
+                list.push({
+                    id: `work-mock-${i}`,
+                    title: tasks[i % tasks.length],
+                    date: `1${i % 9} ${month} 2025`,
+                    status: 'Closed',
+                });
+            }
+            return list;
+        }
+        return closedFromData;
+    }, [detail.workHistory]);
+
+    const totalPages = Math.ceil(completedWorkOrdersAll.length / PAGE_SIZE);
+    const completedWorkOrdersPaginated = useMemo(() => {
+        const startIndex = (currentPage - 1) * PAGE_SIZE;
+        return completedWorkOrdersAll.slice(startIndex, startIndex + PAGE_SIZE);
+    }, [completedWorkOrdersAll, currentPage]);
 
     const specFields = useMemo(() => [
         { label: 'CPID', value: asset.cpid, icon: 'barcode-outline', color: colors.primary },
@@ -231,11 +268,6 @@ export const AssetDetailScreen = () => {
                                     <Ionicons name="call-outline" size={16} color={colors.secondary} />
                                     <Text style={[styles.diagTitle, { color: colors.text }]}>10 calls</Text>
                                 </TouchableOpacity>
-
-                                <TouchableOpacity onPress={() => setPmModalVisible(true)} style={[styles.diagCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                    <Ionicons name="build-outline" size={16} color={colors.warning} />
-                                    <Text style={[styles.diagTitle, { color: colors.text }]}>Request PM</Text>
-                                </TouchableOpacity>
                             </View>
 
                             {/* Alerts section */}
@@ -282,6 +314,28 @@ export const AssetDetailScreen = () => {
                     {/* Tab 3: History */}
                     {activeTab === 'history' && (
                         <View style={styles.tabContent}>
+                            {/* Request PM Action Card */}
+                            <TouchableOpacity 
+                                onPress={() => setPmModalVisible(true)} 
+                                style={[
+                                    styles.diagCard, 
+                                    { 
+                                        backgroundColor: colors.surface, 
+                                        borderColor: colors.border, 
+                                        flexDirection: 'row', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center', 
+                                        gap: 10,
+                                        minHeight: 52,
+                                        borderRadius: 16,
+                                        marginBottom: 16,
+                                    }
+                                ]}
+                            >
+                                <Ionicons name="build-outline" size={18} color={colors.warning} />
+                                <Text style={[styles.diagTitle, { color: colors.text, ...FONTS.bodyStrong }]}>Request PM</Text>
+                            </TouchableOpacity>
+
                             {/* Open Work Orders */}
                             <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                                 <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 8 }]}>Open Work Orders ({openWorkOrders.length})</Text>
@@ -321,14 +375,14 @@ export const AssetDetailScreen = () => {
 
                             {/* Completed Work Orders */}
                             <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 8 }]}>Recently Completed ({completedWorkOrders.length})</Text>
-                                {completedWorkOrders.length === 0 ? (
+                                <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 8 }]}>Recently Completed ({completedWorkOrdersAll.length})</Text>
+                                {completedWorkOrdersPaginated.length === 0 ? (
                                     <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No completed work orders.</Text>
                                 ) : (
-                                    completedWorkOrders.map((item, index) => {
+                                    completedWorkOrdersPaginated.map((item, index) => {
                                         const workStatusColor = statusTone(item.status, colors);
                                         const cardContent = (
-                                            <View style={[styles.historyRow, index !== completedWorkOrders.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+                                            <View style={[styles.historyRow, index !== completedWorkOrdersPaginated.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
                                                 <View style={styles.historyLeft}>
                                                     <Text style={[styles.historyTitle, { color: colors.text }]}>{item.title}</Text>
                                                     <Text style={[styles.historyMeta, { color: colors.textSecondary }]}>{item.date}</Text>
@@ -353,6 +407,54 @@ export const AssetDetailScreen = () => {
                                             </TouchableOpacity>
                                         );
                                     })
+                                )}
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 && (
+                                    <View style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 16,
+                                        marginTop: 16,
+                                        paddingTop: 16,
+                                        borderTopWidth: 1,
+                                        borderTopColor: colors.border
+                                    }}>
+                                        <TouchableOpacity
+                                            disabled={currentPage === 1}
+                                            onPress={() => {
+                                                setCurrentPage(prev => Math.max(1, prev - 1));
+                                            }}
+                                            style={{
+                                                padding: 8,
+                                                borderRadius: 8,
+                                                backgroundColor: colors.surfaceHighlight,
+                                                opacity: currentPage === 1 ? 0.4 : 1
+                                            }}
+                                        >
+                                            <Ionicons name="chevron-back" size={20} color={colors.primary} />
+                                        </TouchableOpacity>
+                                        
+                                        <Text style={[{ color: colors.text }, FONTS.bodyStrong]}>
+                                            Page {currentPage} of {totalPages}
+                                        </Text>
+                                        
+                                        <TouchableOpacity
+                                            disabled={currentPage === totalPages}
+                                            onPress={() => {
+                                                setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                                            }}
+                                            style={{
+                                                padding: 8,
+                                                borderRadius: 8,
+                                                backgroundColor: colors.surfaceHighlight,
+                                                opacity: currentPage === totalPages ? 0.4 : 1
+                                            }}
+                                        >
+                                            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+                                        </TouchableOpacity>
+                                    </View>
                                 )}
                             </View>
                         </View>

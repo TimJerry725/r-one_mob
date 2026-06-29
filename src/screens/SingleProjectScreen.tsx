@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -13,6 +13,65 @@ export const SingleProjectScreen = () => {
     const route = useRoute<any>();
     const { colors, isDark } = useTheme();
     const [showMenu, setShowMenu] = useState(false);
+    const [activeTab, setActiveTab] = useState<'work' | 'activities' | 'attachments'>('work');
+    const [activityFilter, setActivityFilter] = useState<'All' | 'Comment' | 'Activity'>('All');
+    const [projectComments, setProjectComments] = useState([
+        {
+            id: 'pact-4',
+            type: 'attachment',
+            title: 'Site Survey Checklist uploaded',
+            detail: 'PuneCentral_survey_v2.pdf',
+            time: '15 mins ago',
+        },
+        {
+            id: 'pact-3',
+            type: 'status',
+            title: 'Charger Commissioned',
+            detail: 'CPID CP-100239 has been successfully taken live.',
+            time: '30 mins ago',
+        },
+        {
+            id: 'pact-2',
+            type: 'comment',
+            title: 'Timothy Field',
+            detail: 'Foundation work completed. Awaiting cables delivery to site.',
+            time: '1 hour ago',
+        },
+        {
+            id: 'pact-1',
+            type: 'status',
+            title: 'Project Initialized',
+            detail: 'Central team dispatched Pune Central Station DC installation.',
+            time: '2 hours ago',
+        },
+    ]);
+    const [newProjectComment, setNewProjectComment] = useState('');
+    const [commentHasAttachment, setCommentHasAttachment] = useState(false);
+
+    const handleAddProjectComment = () => {
+        if (!newProjectComment.trim()) return;
+        const newComm = {
+            id: Date.now().toString(),
+            type: 'comment',
+            title: 'Andrea Meuschke (You)',
+            detail: newProjectComment.trim() + (commentHasAttachment ? ' (Attachment Added)' : ''),
+            time: 'Just now',
+        };
+        setProjectComments([newComm, ...projectComments]);
+        setNewProjectComment('');
+        setCommentHasAttachment(false);
+        setActivityFilter('All');
+    };
+
+    const filteredActivities = useMemo(() => {
+        if (activityFilter === 'Activity') {
+            return projectComments.filter(a => a.type === 'status');
+        }
+        if (activityFilter === 'Comment') {
+            return projectComments.filter(a => a.type === 'comment');
+        }
+        return projectComments;
+    }, [projectComments, activityFilter]);
 
     const projectId = route.params?.projectId;
     const projectName = route.params?.projectName;
@@ -91,7 +150,7 @@ export const SingleProjectScreen = () => {
                     >
                         <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.shadow }]}>
                             <TouchableOpacity 
-                                style={[styles.dropdownItem, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} 
+                                style={styles.dropdownItem} 
                                 onPress={() => {
                                     setShowMenu(false);
                                     setTakeLiveModalVisible(true);
@@ -100,44 +159,221 @@ export const SingleProjectScreen = () => {
                                 <Feather name="arrow-up-right" size={20} color={colors.primary} />
                                 <Text style={[styles.dropdownText, { color: colors.text }]}>Take Live</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={styles.dropdownItem} 
-                                onPress={() => {
-                                    setShowMenu(false);
-                                    Alert.alert('Complete Project', 'Project has been marked as complete.');
-                                }}
-                            >
-                                <Ionicons name="checkmark-circle-outline" size={20} color={colors.success} />
-                                <Text style={[styles.dropdownText, { color: colors.text }]}>Complete Project</Text>
-                            </TouchableOpacity>
                         </View>
                     </TouchableOpacity>
                 )}
 
+                {/* Tab Switcher */}
+                <View style={{ paddingHorizontal: 24, paddingTop: 16 }}>
+                    <View style={[styles.tabSwitch, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                        {(['Worklist', 'Activities', 'Attachments'] as const).map((tab, idx) => {
+                            const tabKey = idx === 0 ? 'work' : idx === 1 ? 'activities' : 'attachments';
+                            const isSelected = activeTab === tabKey;
+                            return (
+                                <TouchableOpacity
+                                    key={tab}
+                                    onPress={() => setActiveTab(tabKey)}
+                                    style={[
+                                        styles.tabButton,
+                                        { backgroundColor: isSelected ? colors.surface : 'transparent' },
+                                    ]}
+                                >
+                                    <Text style={[styles.tabButtonText, { color: isSelected ? colors.text : colors.textSecondary }]}>
+                                        {tab}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                </View>
+
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                    {visibleOrders.length > 0 ? (
-                        <View style={styles.listColumn}>
-                            {visibleOrders.map((item) => (
-                                <OrderCard
-                                    key={item.id}
-                                    item={item}
-                                    colors={colors}
-                                    isDark={isDark}
-                                    onOpen={() => navigation.navigate('TaskDetails', { taskId: item.id })}
-                                    hideTypeChip={true}
-                                    hideStationChip={true}
-                                />
-                            ))}
+                    {activeTab === 'work' ? (
+                        visibleOrders.length > 0 ? (
+                            <View style={styles.listColumn}>
+                                {visibleOrders.map((item) => (
+                                    <OrderCard
+                                        key={item.id}
+                                        item={item}
+                                        colors={colors}
+                                        isDark={isDark}
+                                        onOpen={() => navigation.navigate('TaskDetails', { taskId: item.id })}
+                                        hideTypeChip={true}
+                                        hideStationChip={true}
+                                    />
+                                ))}
+                            </View>
+                        ) : (
+                            <View style={styles.emptyState}>
+                                <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
+                                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                                    No installation work found for this project.
+                                </Text>
+                            </View>
+                        )
+                    ) : activeTab === 'activities' ? (
+                        <View style={{ gap: 4 }}>
+                            {/* Filter Chips */}
+                            <View style={styles.filterRow}>
+                                {(['All', 'Comment', 'Activity'] as const).map((filter) => {
+                                    const isSelected = activityFilter === filter;
+                                    return (
+                                        <TouchableOpacity
+                                            key={filter}
+                                            onPress={() => setActivityFilter(filter)}
+                                            style={[
+                                                styles.filterChip,
+                                                {
+                                                    backgroundColor: isSelected ? colors.primary + '14' : colors.surface,
+                                                    borderColor: isSelected ? colors.primary : colors.border,
+                                                },
+                                            ]}
+                                        >
+                                            <Text style={[styles.filterChipText, { color: isSelected ? colors.primary : colors.textSecondary }]}>
+                                                {filter}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+
+                            {filteredActivities.length === 0 ? (
+                                <Text style={[styles.emptyText, { color: colors.textSecondary, marginTop: 32, textAlign: 'center' }]}>
+                                    No {activityFilter.toLowerCase()} found.
+                                </Text>
+                            ) : (
+                                filteredActivities.map((activity, index) => {
+                                    const isComment = activity.type === 'comment';
+                                    const isAttachment = activity.type === 'attachment';
+                                    const badgeColor = isComment ? colors.primary : isAttachment ? colors.secondary : colors.success;
+                                    const iconName = isComment ? 'chatbubble-outline' : isAttachment ? 'attach-outline' : 'build-outline';
+                                    return (
+                                        <View key={activity.id} style={styles.timelineRow}>
+                                            <View style={styles.timelineRail}>
+                                                <View style={[styles.timelineLineTop, index === 0 && { opacity: 0 }, { backgroundColor: colors.border }]} />
+                                                <View style={[styles.timelineDot, { backgroundColor: badgeColor }]} />
+                                                <View style={[styles.timelineLineBottom, index === filteredActivities.length - 1 && { opacity: 0 }, { backgroundColor: colors.border }]} />
+                                            </View>
+                                            <View style={[styles.timelineContent, { backgroundColor: colors.surfaceHighlight }]}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                                    <Ionicons name={iconName} size={14} color={badgeColor} />
+                                                    <Text style={[styles.activityTitle, { color: colors.text }]}>{activity.title}</Text>
+                                                </View>
+                                                <Text style={[styles.activityDetail, { color: colors.textSecondary }]}>{activity.detail}</Text>
+                                                <Text style={[styles.activityTime, { color: colors.textSecondary }]}>{activity.time}</Text>
+                                            </View>
+                                        </View>
+                                    );
+                                })
+                            )}
                         </View>
-                    ) : (
-                        <View style={styles.emptyState}>
-                            <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
-                            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                                No installation work found for this project.
-                            </Text>
-                        </View>
-                    )}
+                    ) : activeTab === 'attachments' ? (
+                        <>
+                            <View style={styles.listColumn}>
+                                <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
+                                    <View style={[styles.stepIcon, { backgroundColor: colors.primary + '15', width: 48, height: 48 }]}>
+                                        <Ionicons name="document-text" size={24} color={colors.primary} />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={[styles.stepTitle, { color: colors.text }]}>Site Layout Plan.pdf</Text>
+                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>PDF Document • 2.4 MB</Text>
+                                    </View>
+                                </View>
+
+                                <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
+                                    <View style={[styles.stepIcon, { backgroundColor: colors.primary + '15', width: 48, height: 48 }]}>
+                                        <Ionicons name="document-text" size={24} color={colors.primary} />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={[styles.stepTitle, { color: colors.text }]}>PuneCentral_survey_v2.pdf</Text>
+                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>PDF Document • 1.8 MB</Text>
+                                    </View>
+                                </View>
+
+                                <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
+                                    <View style={[styles.stepIcon, { backgroundColor: colors.secondary + '15', width: 48, height: 48 }]}>
+                                        <Ionicons name="image" size={24} color={colors.secondary} />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={[styles.stepTitle, { color: colors.text }]}>Previous Service Photo.jpg</Text>
+                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>Image • 1.1 MB</Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            <TouchableOpacity style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, marginTop: 16 }]}>
+                                <Ionicons name="cloud-upload-outline" size={24} color={colors.primary} />
+                                <Text style={[styles.captureButtonText, { color: colors.text }]}>Upload New Attachment</Text>
+                            </TouchableOpacity>
+                        </>
+                    ) : null}
                 </ScrollView>
+
+                {activeTab === 'activities' && (
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={[
+                            styles.footer, 
+                            { 
+                                backgroundColor: colors.background, 
+                                borderTopColor: colors.border,
+                                paddingVertical: 12,
+                                gap: 12,
+                            }
+                        ]}
+                    >
+                        <View style={{ flex: 1, position: 'relative', justifyContent: 'center' }}>
+                            <TextInput
+                                style={[
+                                    styles.commentInput, 
+                                    { 
+                                        color: colors.text, 
+                                        borderColor: colors.border,
+                                        backgroundColor: colors.surfaceHighlight,
+                                        paddingRight: 44,
+                                    }
+                                ]}
+                                placeholder="Add a comment..."
+                                placeholderTextColor={colors.textSecondary}
+                                value={newProjectComment}
+                                onChangeText={setNewProjectComment}
+                                multiline
+                            />
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setCommentHasAttachment(!commentHasAttachment);
+                                }}
+                                style={{
+                                    position: 'absolute',
+                                    right: 12,
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 14,
+                                    backgroundColor: commentHasAttachment ? colors.primary + '18' : 'transparent',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <Ionicons 
+                                    name="attach" 
+                                    size={20} 
+                                    color={commentHasAttachment ? colors.primary : colors.textSecondary} 
+                                />
+                            </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity 
+                            style={[
+                                styles.addCommentButton, 
+                                { 
+                                    backgroundColor: colors.primary,
+                                }
+                            ]}
+                            onPress={handleAddProjectComment}
+                        >
+                            <Ionicons name="send" size={16} color={colors.white} />
+                        </TouchableOpacity>
+                    </KeyboardAvoidingView>
+                )}
 
                 <Modal visible={takeLiveModalVisible} transparent animationType="slide">
                     <TouchableOpacity style={styles.modalOverlayFull} activeOpacity={1} onPress={() => setTakeLiveModalVisible(false)}>
@@ -482,5 +718,150 @@ const styles = StyleSheet.create({
     },
     confirmBtnText: {
         ...FONTS.bodyStrong,
+    },
+    tabSwitch: {
+        minHeight: 48,
+        borderRadius: 12,
+        borderWidth: 1,
+        flexDirection: 'row',
+        padding: 4,
+        gap: 4,
+    },
+    tabButton: {
+        flex: 1,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tabButtonText: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+    },
+    filterRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 16,
+    },
+    filterChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    filterChipText: {
+        ...FONTS.label,
+        fontSize: 12,
+    },
+    timelineRow: {
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'flex-start',
+        minHeight: 80,
+    },
+    timelineRail: {
+        width: 32,
+        alignItems: 'center',
+        position: 'relative',
+        alignSelf: 'stretch',
+    },
+    timelineDot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        marginVertical: 4,
+    },
+    timelineLineTop: {
+        flex: 1,
+        width: 2,
+        alignSelf: 'center',
+    },
+    timelineLineBottom: {
+        flex: 1,
+        width: 2,
+        alignSelf: 'center',
+    },
+    timelineContent: {
+        flex: 1,
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 12,
+    },
+    activityTitle: {
+        ...FONTS.bodyStrong,
+        fontSize: 13,
+        marginBottom: 2,
+    },
+    activityDetail: {
+        ...FONTS.body,
+        fontSize: 12,
+    },
+    activityTime: {
+        ...FONTS.caption,
+        fontSize: 10,
+        marginTop: 4,
+    },
+    footer: {
+        paddingHorizontal: 24,
+        paddingBottom: Platform.OS === 'ios' ? 36 : 16,
+        borderTopWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    commentInput: {
+        flex: 1,
+        minHeight: 44,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        ...FONTS.body,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    addCommentButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepCard: {
+        borderRadius: 14,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: 'transparent',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 3,
+        marginBottom: 12,
+    },
+    stepIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepTitle: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+        marginBottom: 2,
+    },
+    stepMeta: {
+        ...FONTS.caption,
+        fontSize: 12,
+    },
+    captureButton: {
+        minHeight: 52,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    captureButtonText: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
     },
 });

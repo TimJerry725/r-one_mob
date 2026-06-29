@@ -10,6 +10,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     Keyboard,
+    Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +33,7 @@ import {
     STAGE_NAMES,
     TaskDraftResult,
 } from '../data/createTaskOptions';
+import { WORK_ORDERS } from '../data/fieldDemo';
 
 const CREATE_OPTIONS = [
     {
@@ -102,6 +104,59 @@ export const CreateTaskScreen = () => {
 
     const handledSelectorToken = useRef<number | null>(null);
     const handledTaskToken = useRef<number | null>(null);
+
+    const handleCreateWorkOrder = () => {
+        if (serviceType === 'Service' && !title.trim()) {
+            Alert.alert('Required Field', 'Please enter a work title.');
+            return;
+        }
+        if (!siteName) {
+            Alert.alert('Required Field', 'Please choose a charging station.');
+            return;
+        }
+
+        const techs = [teamLead].filter(Boolean);
+        assignees.forEach(member => {
+            if (!techs.includes(member)) {
+                techs.push(member);
+            }
+        });
+
+        const newWO = {
+            id: `wo-${Date.now()}`,
+            projectId: projectId || 'PJ001',
+            title: serviceType === 'Service' ? title.trim() : `Request Preventive - ${checklistName || 'Preventive closeout'}`,
+            siteName: siteName,
+            address: 'Platform Road, Shivajinagar, Pune',
+            type: serviceType === 'Request Preventive' ? 'Preventive' as const : 'Service' as const,
+            stage: serviceType === 'Service' ? 'Site Prep' : 'Commissioning',
+            status: 'To-Do' as const,
+            dueWindow: 'Today, 14:00 - 17:00',
+            eta: 'Not started',
+            distance: '1.2 km',
+            checklistCompleted: 0,
+            checklistTotal: 5,
+            tools: [],
+            parts: [],
+            technicians: techs,
+            assetId: chargePoint || 'CP-100239',
+            offlineReady: true,
+            notes: serviceType === 'Service' ? 'Service job' : 'Requested preventive task sequence.',
+            latitude: 18.5314,
+            longitude: 73.8446,
+            priority: (priority || 'Medium') as any,
+            targetTime: Date.now() + 6 * 60 * 60 * 1000,
+            assignedBy: 'Andrea Meuschke',
+        };
+
+        WORK_ORDERS.unshift(newWO);
+
+        Alert.alert(
+            serviceType === 'Request Preventive' ? 'Request Sent' : 'Work Created',
+            `Work order has been successfully created. Both Team Lead (${teamLead}) and Team Members (${assignees.join(', ') || 'none'}) have been linked.`,
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+    };
 
     const selectedCopy = useMemo(
         () => (selectedFlow ? FLOW_COPY[selectedFlow] : null),
@@ -215,7 +270,7 @@ export const CreateTaskScreen = () => {
                                             </Text>
                                         ) : (
                                             <Text style={[styles.headerTitle, { color: colors.text }]}>
-                                                {serviceType === 'Service' ? 'Create Service Work' : selectedCopy?.title}
+                                                {serviceType === 'Service' ? 'Create Service Work' : 'Request Preventive'}
                                             </Text>
                                         )}
                                     </View>
@@ -352,80 +407,56 @@ export const CreateTaskScreen = () => {
                                                             />
                                                         </View>
                                                     </View>
-
-                                                    {/* Team Lead */}
-                                                    <PopoverDropdown
-                                                        label="* Team Lead"
-                                                        placeholder="Choose lead"
-                                                        options={[
-                                                            { label: 'Timothy Field (Self)', value: 'Timothy' },
-                                                            { label: 'Andrea Meuschke', value: 'Andrea' },
-                                                            { label: 'Marcus Aurelius', value: 'Marcus' },
-                                                        ]}
-                                                        value={teamLead}
-                                                        onSelect={(val) => setTeamLead(val as string)}
-                                                    />
-
-                                                    {/* Team Members */}
-                                                    <PopoverDropdown
-                                                        label="* Team Members"
-                                                        placeholder="Choose team members"
-                                                        options={getSelectorOptions('assignees').options}
-                                                        value={assignees}
-                                                        onSelect={(val) => setAssignees(val as string[])}
-                                                        isMulti={true}
-                                                    />
-
-                                                    {/* Attachments */}
-                                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Attachments</Text>
-                                                    <TouchableOpacity 
-                                                        activeOpacity={0.8}
-                                                        onPress={() => setHasAttachment(!hasAttachment)}
-                                                        style={[
-                                                            styles.uploadArea, 
-                                                            { 
-                                                                borderColor: hasAttachment ? colors.primary : colors.border,
-                                                                backgroundColor: hasAttachment ? colors.primary + '0A' : 'transparent',
-                                                            }
-                                                        ]}
-                                                    >
-                                                        <Ionicons 
-                                                            name={hasAttachment ? "checkmark-circle" : "cloud-upload-outline"} 
-                                                            size={28} 
-                                                            color={hasAttachment ? colors.primary : colors.textSecondary} 
-                                                        />
-                                                        <Text style={[styles.uploadText, { color: hasAttachment ? colors.primary : colors.textSecondary }]}>
-                                                            {hasAttachment ? 'Attachment uploaded successfully' : 'Tap to upload files or evidence'}
-                                                        </Text>
-                                                    </TouchableOpacity>
                                                 </View>
                                             )}
 
-                                            {serviceType === 'Request Preventive' && (
-                                                <View style={{ gap: 4, marginBottom: 12, marginTop: 8 }}>
-                                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Attachments</Text>
-                                                    <TouchableOpacity 
-                                                        activeOpacity={0.8}
-                                                        onPress={() => setHasAttachment(!hasAttachment)}
-                                                        style={[
-                                                            styles.uploadArea, 
-                                                            { 
-                                                                borderColor: hasAttachment ? colors.primary : colors.border,
-                                                                backgroundColor: hasAttachment ? colors.primary + '0A' : 'transparent',
-                                                            }
-                                                        ]}
-                                                    >
-                                                        <Ionicons 
-                                                            name={hasAttachment ? "checkmark-circle" : "cloud-upload-outline"} 
-                                                            size={28} 
-                                                            color={hasAttachment ? colors.primary : colors.textSecondary} 
-                                                        />
-                                                        <Text style={[styles.uploadText, { color: hasAttachment ? colors.primary : colors.textSecondary }]}>
-                                                            {hasAttachment ? 'Attachment uploaded successfully' : 'Tap to upload files or evidence'}
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                </View>
-                                            )}
+                                            {/* Team Lead - Universal */}
+                                            <PopoverDropdown
+                                                label="* Team Lead"
+                                                placeholder="Choose lead"
+                                                options={[
+                                                    { label: 'Timothy Field (Self)', value: 'Timothy' },
+                                                    { label: 'Andrea Meuschke', value: 'Andrea' },
+                                                    { label: 'Marcus Aurelius', value: 'Marcus' },
+                                                ]}
+                                                value={teamLead}
+                                                onSelect={(val) => setTeamLead(val as string)}
+                                            />
+
+                                            {/* Team Members - Universal */}
+                                            <PopoverDropdown
+                                                label="* Team Members"
+                                                placeholder="Choose team members"
+                                                options={getSelectorOptions('assignees').options}
+                                                value={assignees}
+                                                onSelect={(val) => setAssignees(val as string[])}
+                                                isMulti={true}
+                                            />
+
+                                            {/* Attachments - Universal */}
+                                            <View style={{ gap: 4, marginBottom: 12, marginTop: 8 }}>
+                                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Attachments</Text>
+                                                <TouchableOpacity 
+                                                    activeOpacity={0.8}
+                                                    onPress={() => setHasAttachment(!hasAttachment)}
+                                                    style={[
+                                                        styles.captureButton, 
+                                                        { 
+                                                            backgroundColor: hasAttachment ? colors.primary + '12' : colors.surfaceHighlight,
+                                                            borderColor: hasAttachment ? colors.primary : colors.border,
+                                                        }
+                                                    ]}
+                                                >
+                                                    <Ionicons 
+                                                        name={hasAttachment ? "checkmark-circle" : "attach"}
+                                                        size={18} 
+                                                        color={colors.primary} 
+                                                    />
+                                                    <Text style={[styles.captureButtonText, { color: colors.text }]}>
+                                                        {hasAttachment ? 'Attachment Added' : 'Add attachment'}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            </View>
                                             </>
                                         )}
 
@@ -478,14 +509,14 @@ export const CreateTaskScreen = () => {
                                         )}
                                     </View>
                                 </ScrollView>
-	                                <View style={{ paddingHorizontal: 16, paddingBottom: 40, paddingTop: 0 }}>
-	                                    <NeonButton title={serviceType === 'Request Preventive' ? 'Send Request' : (selectedCopy?.primary ?? 'Create')} onPress={() => navigation.goBack()} />
+                                <View style={{ paddingHorizontal: 16, paddingBottom: 40, paddingTop: 0 }}>
+                                    <NeonButton title={serviceType === 'Request Preventive' ? 'Send Request' : (selectedCopy?.primary ?? 'Create')} onPress={handleCreateWorkOrder} />
                                 </View>
-                    </View>
-                </KeyboardAvoidingView>
-	        </View>
-	    );
-	};
+                </View>
+            </KeyboardAvoidingView>
+        </View>
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -655,20 +686,20 @@ const styles = StyleSheet.create({
         shadowRadius: 16,
         elevation: 4,
     },
-    uploadArea: {
+    captureButton: {
+        minHeight: 64,
+        borderRadius: 12,
         borderWidth: 1,
-        borderRadius: 16,
-        borderStyle: 'dashed',
-        padding: 24,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 10,
-        marginTop: 6,
+        gap: 12,
+        paddingHorizontal: 16,
         marginBottom: 12,
     },
-    uploadText: {
+    captureButtonText: {
         ...FONTS.bodyStrong,
-        fontSize: 14,
         textAlign: 'center',
+        fontSize: 16,
     },
 });
