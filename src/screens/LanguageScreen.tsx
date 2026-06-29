@@ -24,7 +24,7 @@ export const LanguageScreen = () => {
             <SafeAreaView style={styles.safeArea}>
                 <View style={[styles.header, { borderBottomColor: colors.border }]}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={28} color={colors.text} />
+                        <Ionicons name="chevron-back" size={22} color={colors.primary} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: colors.text }]}>Language</Text>
                 </View>

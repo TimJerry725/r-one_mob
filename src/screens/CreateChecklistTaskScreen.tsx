@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
     Keyboard,
     KeyboardAvoidingView,
@@ -18,9 +18,10 @@ import { FONTS, getInputShellStyle } from '../styles/futurist';
 import {
     ChecklistTaskDraft,
     DATA_TYPES,
-    SelectorResult,
+    getSelectorOptions,
     TaskDraftResult,
 } from '../data/createTaskOptions';
+import { PopoverDropdown } from '../components/PopoverDropdown';
 
 export const CreateChecklistTaskScreen = () => {
     const navigation = useNavigation<any>();
@@ -28,35 +29,13 @@ export const CreateChecklistTaskScreen = () => {
     const isFocused = useIsFocused();
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
-    const handledSelectorToken = useRef<number | null>(null);
 
     const [taskTitle, setTaskTitle] = useState('');
     const [dataType, setDataType] = useState<typeof DATA_TYPES[number]>('Text');
     const [taskOptions, setTaskOptions] = useState<string[]>([]);
     const [newOption, setNewOption] = useState('');
 
-    useEffect(() => {
-        const selectorResult = route.params?.selectorResult as SelectorResult | undefined;
 
-        if (!selectorResult || handledSelectorToken.current === selectorResult.token) {
-            return;
-        }
-
-        handledSelectorToken.current = selectorResult.token;
-
-        if (selectorResult.type === 'dataType') {
-            setDataType(selectorResult.value as typeof DATA_TYPES[number]);
-        }
-    }, [route.params?.selectorResult]);
-
-    const openSelectorSheet = () => {
-        Keyboard.dismiss();
-        navigation.navigate('CreateTaskSelector', {
-            selectorType: 'dataType',
-            selectedValue: dataType,
-            returnScreen: 'CreateChecklistTask',
-        });
-    };
 
     const addOption = () => {
         if (newOption.trim() && !taskOptions.includes(newOption.trim())) {
@@ -140,12 +119,14 @@ export const CreateChecklistTaskScreen = () => {
                             />
                         </View>
 
-                        <View>
-                            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Data type</Text>
-                            <TouchableOpacity style={[styles.dropdownButton, getInputShellStyle(colors)]} onPress={openSelectorSheet}>
-                                <Text style={{ color: colors.text, ...FONTS.body }}>{dataType}</Text>
-                                <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-                            </TouchableOpacity>
+                        <View style={{ zIndex: 100 }}>
+                            <PopoverDropdown
+                                label="Data type"
+                                placeholder="Select data type"
+                                options={getSelectorOptions('dataType').options}
+                                value={dataType}
+                                onSelect={(val) => setDataType(val as any)}
+                            />
                         </View>
 
                         {['Radio', 'Multiselect'].includes(dataType) ? (

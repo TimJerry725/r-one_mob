@@ -1,4 +1,4 @@
-export type ServiceType = 'Installation' | 'Service' | 'Preventive';
+export type ServiceType = 'Installation' | 'Service' | 'Preventive' | 'Request Preventive';
 
 type ServiceTypeColors = {
     background: string;
@@ -30,6 +30,13 @@ const LIGHT_TYPE_COLORS: Record<ServiceType, ServiceTypeColors> = {
         tint: '#E4F6EE',
         tintText: '#004C39',
     },
+    'Request Preventive': {
+        background: '#006B4F',
+        border: '#004E3A',
+        text: '#FFFFFF',
+        tint: '#E4F6EE',
+        tintText: '#004C39',
+    },
 };
 
 const DARK_TYPE_COLORS: Record<ServiceType, ServiceTypeColors> = {
@@ -48,6 +55,13 @@ const DARK_TYPE_COLORS: Record<ServiceType, ServiceTypeColors> = {
         tintText: '#5E2E00',
     },
     Preventive: {
+        background: '#54E0A4',
+        border: '#1F6B4E',
+        text: '#041F17',
+        tint: '#D8F8E9',
+        tintText: '#0B4B36',
+    },
+    'Request Preventive': {
         background: '#54E0A4',
         border: '#1F6B4E',
         text: '#041F17',

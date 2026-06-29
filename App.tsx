@@ -20,7 +20,6 @@ import { ProjectDetailScreen } from './src/screens/ProjectDetailScreen';
 import { TaskDetailScreen } from './src/screens/TaskDetailScreen';
 import { CreateTaskScreen } from './src/screens/CreateTaskScreen';
 import { CreateChecklistTaskScreen } from './src/screens/CreateChecklistTaskScreen';
-import { CreateTaskSelectorScreen } from './src/screens/CreateTaskSelectorScreen';
 import { AssetDetailScreen } from './src/screens/AssetDetailScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { MapScreen } from './src/screens/MapScreen';
@@ -181,14 +180,6 @@ function BottomTabs() {
           },
         })}
       />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
-          title: 'Profile',
-        }}
-      />
     </Tab.Navigator>
   );
 }
@@ -284,15 +275,6 @@ function AppNavigator() {
         <Stack.Screen
           name="CreateTask"
           component={CreateTaskScreen}
-          options={{
-            presentation: 'transparentModal',
-            animation: 'slide_from_bottom',
-            contentStyle: { backgroundColor: 'transparent' },
-          }}
-        />
-        <Stack.Screen
-          name="CreateTaskSelector"
-          component={CreateTaskSelectorScreen}
           options={{
             presentation: 'transparentModal',
             animation: 'slide_from_bottom',

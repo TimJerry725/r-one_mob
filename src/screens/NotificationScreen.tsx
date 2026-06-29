@@ -101,7 +101,7 @@ export const NotificationScreen = () => {
                 <View style={[styles.header, { borderBottomColor: colors.border }]}>
                     <View style={styles.headerLeft}>
                         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                            <Ionicons name="chevron-back" size={28} color={colors.text} />
+                            <Ionicons name="chevron-back" size={22} color={colors.primary} />
                         </TouchableOpacity>
                         <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
                     </View>

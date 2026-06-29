@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
-import { WORK_ORDERS } from '../data/fieldDemo';
+import { WORK_ORDERS, ASSETS, getAssetVisionDetailById, requestPM } from '../data/fieldDemo';
 import { FONTS } from '../styles/futurist';
 import { OrderCard } from './ProjectDetailScreen';
 
@@ -21,12 +21,58 @@ export const SingleProjectScreen = () => {
         return WORK_ORDERS.filter((item) => item.projectId === projectId && item.type === 'Installation');
     }, [projectId]);
 
+    const projectAssets = useMemo(() => {
+        const orderIds = visibleOrders.map(wo => wo.id);
+        return ASSETS.filter(a => a.linkedWorkOrderId && orderIds.includes(a.linkedWorkOrderId));
+    }, [visibleOrders]);
+
+    const [takeLiveModalVisible, setTakeLiveModalVisible] = useState(false);
+    const [pmConfirmModalVisible, setPmConfirmModalVisible] = useState(false);
+    const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+    const [liveFromDates, setLiveFromDates] = useState<Record<string, string>>({});
+
+    const toggleAssetSelection = (id: string) => {
+        setSelectedAssets(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
+    };
+
+    const handleSelectDate = (id: string) => {
+        const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        setLiveFromDates(prev => ({ ...prev, [id]: today }));
+    };
+
+    const handleTakeLive = () => {
+        if (selectedAssets.length === 0) {
+            Alert.alert('Selection Required', 'Please select at least one charger.');
+            return;
+        }
+        setTakeLiveModalVisible(false);
+        setTimeout(() => {
+            setPmConfirmModalVisible(true);
+        }, 400);
+    };
+
+    const handleConfirmTakeLive = (includePM: boolean) => {
+        setPmConfirmModalVisible(false);
+        
+        if (includePM) {
+            selectedAssets.forEach(assetId => {
+                requestPM(assetId, 'Auto-scheduled during Take Live', false, 'System Dispatch');
+            });
+            Alert.alert('Success', `${selectedAssets.length} charger(s) are now live with Preventive Maintenance scheduled.`);
+        } else {
+            Alert.alert('Success', `${selectedAssets.length} charger(s) are now live.`);
+        }
+        
+        setSelectedAssets([]);
+        setLiveFromDates({});
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <SafeAreaView style={styles.safeArea}>
                 <View style={[styles.header, { borderBottomColor: colors.border }]}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={24} color={colors.text} />
+                        <Ionicons name="chevron-back" size={22} color={colors.primary} />
                     </TouchableOpacity>
                     <Text style={[styles.pageTitle, { color: colors.text }]} numberOfLines={1}>
                         {projectName || `Project ${projectId}`}
@@ -48,7 +94,7 @@ export const SingleProjectScreen = () => {
                                 style={[styles.dropdownItem, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} 
                                 onPress={() => {
                                     setShowMenu(false);
-                                    Alert.alert('Take Live', 'Project is now live.');
+                                    setTakeLiveModalVisible(true);
                                 }}
                             >
                                 <Feather name="arrow-up-right" size={20} color={colors.primary} />
@@ -92,6 +138,132 @@ export const SingleProjectScreen = () => {
                         </View>
                     )}
                 </ScrollView>
+
+                <Modal visible={takeLiveModalVisible} transparent animationType="slide">
+                    <TouchableOpacity style={styles.modalOverlayFull} activeOpacity={1} onPress={() => setTakeLiveModalVisible(false)}>
+                        <TouchableOpacity activeOpacity={1} style={[styles.modalSheetLarge, { backgroundColor: colors.surface }]}>
+                            <View style={styles.modalHeaderRow}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <Ionicons name="play-circle-outline" size={24} color={colors.primary} />
+                                    <Text style={[styles.pageTitle, { color: colors.text }]}>Take Station Live</Text>
+                                </View>
+                                <View />
+                            </View>
+                            
+                            <Text style={[{ color: colors.text, marginHorizontal: 20, marginBottom: 16 }, FONTS.bodyStrong]}>
+                                Select the chargers to be take live
+                            </Text>
+
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, gap: 12 }}>
+                                {projectAssets.map((asset) => {
+                                    const detail = getAssetVisionDetailById(asset.id);
+                                    const isSelected = selectedAssets.includes(asset.id);
+                                    const dateSelected = liveFromDates[asset.id];
+                                    const make = asset.model.split(' ')[0];
+                                    const model = asset.model.split(' ').slice(1).join(' ');
+
+                                    return (
+                                        <TouchableOpacity 
+                                            key={asset.id} 
+                                            activeOpacity={0.9} 
+                                            onPress={() => toggleAssetSelection(asset.id)}
+                                            style={[
+                                                styles.chargerCard,
+                                                { 
+                                                    backgroundColor: colors.surface, 
+                                                    borderColor: isSelected ? colors.primary : colors.border,
+                                                    borderWidth: isSelected ? 2 : 1
+                                                }
+                                            ]}
+                                        >
+                                            <View style={styles.chargerCardHeader}>
+                                                <View style={{ flex: 1, paddingRight: 16 }}>
+                                                    <Text style={[styles.chargerCardTitle, { color: colors.text }]} numberOfLines={1}>{make} {model}</Text>
+                                                    <Text style={[styles.chargerCardSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                                                        CPID: <Text style={{ color: colors.text }}>{asset.cpid}</Text>  •  SN: <Text style={{ color: colors.text }}>{asset.serial}</Text>
+                                                    </Text>
+                                                </View>
+                                                <Ionicons name={isSelected ? "checkmark-circle" : "ellipse-outline"} size={26} color={isSelected ? colors.primary : colors.textSecondary} />
+                                            </View>
+                                            
+                                            <View style={[styles.chargerCardDetails, { backgroundColor: colors.surfaceHighlight }]}>
+                                                <View style={styles.chargerCardDetailItem}>
+                                                    <Text style={[styles.chargerCardDetailLabel, { color: colors.textSecondary }]}>Power</Text>
+                                                    <Text style={[styles.chargerCardDetailValue, { color: colors.text }]}>{detail.peakPower}</Text>
+                                                </View>
+                                                <View style={styles.chargerCardDetailItem}>
+                                                    <Text style={[styles.chargerCardDetailLabel, { color: colors.textSecondary }]}>Connectors</Text>
+                                                    <Text style={[styles.chargerCardDetailValue, { color: colors.text }]}>{detail.connectors}</Text>
+                                                </View>
+                                            </View>
+
+                                            {isSelected && (
+                                                <View style={[styles.chargerCardFooter, { borderTopColor: colors.border }]}>
+                                                    <Text style={[styles.chargerCardDetailLabel, { color: colors.textSecondary }]}>Live From</Text>
+                                                    <TouchableOpacity onPress={() => handleSelectDate(asset.id)} style={[styles.datePickerBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderWidth: 1 }]}>
+                                                        <Text style={[{ color: dateSelected ? colors.text : colors.textSecondary }, FONTS.body]}>{dateSelected || 'Select date'}</Text>
+                                                        <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+
+                            <View style={[styles.modalFooterRow, { borderTopColor: colors.border }]}>
+                                <TouchableOpacity onPress={() => setTakeLiveModalVisible(false)} style={[styles.footerBtn, { backgroundColor: colors.surfaceHighlight }]}>
+                                    <Text style={[styles.footerBtnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={handleTakeLive} style={[styles.footerBtn, { backgroundColor: colors.primary }]}>
+                                    <Text style={[styles.footerBtnText, { color: '#FFF' }]}>Take Live</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </Modal>
+
+                {/* PM Confirmation Modal */}
+                <Modal visible={pmConfirmModalVisible} transparent animationType="fade">
+                    <View style={styles.modalOverlayFull}>
+                        <TouchableOpacity 
+                            style={StyleSheet.absoluteFill} 
+                            activeOpacity={1} 
+                            onPress={() => {
+                                setPmConfirmModalVisible(false);
+                                setTimeout(() => {
+                                    setTakeLiveModalVisible(true);
+                                }, 400);
+                            }} 
+                        />
+                        <View style={[styles.confirmSheet, { backgroundColor: colors.surface }]}>
+                            <View style={[styles.warningIconCircle, { backgroundColor: colors.primary + '15' }]}>
+                                <Ionicons name="build" size={32} color={colors.primary} />
+                            </View>
+
+                            <Text style={[styles.confirmTitle, { color: colors.text }]}>Include Preventive Maintenance?</Text>
+                            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                                Would you like to automatically schedule a Preventive Maintenance work order for the {selectedAssets.length} selected charger(s)?
+                            </Text>
+
+                            <View style={styles.confirmActions}>
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                    onPress={() => handleConfirmTakeLive(false)}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.text }]}>No, Skip PM</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.primary }]}
+                                    onPress={() => handleConfirmTakeLive(true)}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.white }]}>Yes, Include PM</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
             </SafeAreaView>
         </View>
     );
@@ -178,5 +350,137 @@ const styles = StyleSheet.create({
     emptyText: {
         ...FONTS.body,
         textAlign: 'center',
+    },
+    modalOverlayFull: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalSheetLarge: {
+        maxHeight: '90%',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingTop: 16,
+    },
+    modalHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    chargerCard: {
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    chargerCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+    },
+    chargerCardTitle: {
+        ...FONTS.h3,
+        fontSize: 16,
+        marginBottom: 4,
+    },
+    chargerCardSub: {
+        ...FONTS.caption,
+    },
+    chargerCardDetails: {
+        flexDirection: 'row',
+        padding: 12,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderRadius: 12,
+        gap: 16,
+    },
+    chargerCardDetailItem: {
+        flex: 1,
+    },
+    chargerCardDetailLabel: {
+        ...FONTS.label,
+        marginBottom: 4,
+    },
+    chargerCardDetailValue: {
+        ...FONTS.bodyStrong,
+    },
+    chargerCardFooter: {
+        padding: 16,
+        borderTopWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    datePickerBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        minWidth: 140,
+    },
+    modalFooterRow: {
+        flexDirection: 'row',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderTopWidth: 1,
+        gap: 12,
+        paddingBottom: 36, // safe area approx
+    },
+    footerBtn: {
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    footerBtnText: {
+        ...FONTS.bodyStrong,
+    },
+    confirmSheet: {
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        padding: 32,
+        alignItems: 'center',
+        width: '100%',
+    },
+    warningIconCircle: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    confirmTitle: {
+        ...FONTS.h2,
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    confirmMessage: {
+        ...FONTS.body,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 20,
+    },
+    confirmActions: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
+    confirmBtn: {
+        flex: 1,
+        minHeight: 56,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    confirmBtnText: {
+        ...FONTS.bodyStrong,
     },
 });

@@ -9,6 +9,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     Modal,
+    Share,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
@@ -108,8 +110,24 @@ export const TaskDetailScreen = () => {
     const [mediaModalVisible, setMediaModalVisible] = useState(false);
     const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
     const [actionModalVisible, setActionModalVisible] = useState(false);
+
+    const handleShareWork = async () => {
+        try {
+            const message = `Work Order Details:\nSite: ${workOrder.siteName}\nProject: ${workOrder.projectId}\nType: ${workOrder.type}\nStatus: ${workOrder.status}\nAddress: ${workOrder.address}`;
+            await Share.share({
+                message: message,
+                title: `Share Work: ${workOrder.siteName}`,
+            });
+        } catch (error: any) {
+            Alert.alert('Error', error.message);
+        }
+    };
     const [activeTab, setActiveTab] = useState<DetailTab>('Tasks');
     const [activityFilter, setActivityFilter] = useState<ActivityFilter>('All');
+    const [activities, setActivities] = useState(ACTIVITY_LOG);
+    const [newComment, setNewComment] = useState('');
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+    const [editingCommentText, setEditingCommentText] = useState('');
 
     const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
 
@@ -118,7 +136,7 @@ export const TaskDetailScreen = () => {
     const allCompleted = items.filter(isComplete).length === items.length;
     const readyToComplete = items.length > 0 && completedRequired === requiredItems.length;
     const completeActionLabel = isUnderReview ? 'Review Work' : 'Mark Complete';
-    const filteredActivities = ACTIVITY_LOG.filter((item) => {
+    const filteredActivities = activities.filter((item) => {
         if (activityFilter === 'All') {
             return true;
         }
@@ -127,6 +145,37 @@ export const TaskDetailScreen = () => {
         }
         return item.type !== 'comment';
     });
+
+    const handleAddComment = () => {
+        if (!newComment.trim()) return;
+        const newActivity = {
+            id: Date.now().toString(),
+            title: 'You',
+            time: 'Just now',
+            type: 'comment' as const,
+            detail: newComment.trim(),
+        };
+        setActivities([newActivity, ...activities]);
+        setNewComment('');
+    };
+
+    const handleDeleteComment = (id: string) => {
+        setActivities(activities.filter(a => a.id !== id));
+    };
+
+    const handleSaveEdit = () => {
+        if (!editingCommentText.trim() || !editingCommentId) return;
+        setActivities(activities.map(a => 
+            a.id === editingCommentId ? { ...a, detail: editingCommentText.trim() } : a
+        ));
+        setEditingCommentId(null);
+        setEditingCommentText('');
+    };
+
+    const handleStartEdit = (id: string, text: string) => {
+        setEditingCommentId(id);
+        setEditingCommentText(text);
+    };
 
     const updateItem = (id: string, value: string | number | string[]) => {
         setItems((current) => current.map((item) => (item.id === id ? { ...item, value } : item)));
@@ -148,7 +197,7 @@ export const TaskDetailScreen = () => {
                         onPress={() => navigation.goBack()}
                         style={styles.backButton}
                     >
-                        <Ionicons name="chevron-back" size={28} color={colors.text} />
+                        <Ionicons name="chevron-back" size={22} color={colors.primary} />
                     </TouchableOpacity>
                     <View style={styles.headerTitleWrap}>
                         <Text numberOfLines={1} style={[styles.headerTitle, { color: colors.text }]}>{workOrder.siteName}</Text>
@@ -169,7 +218,10 @@ export const TaskDetailScreen = () => {
                     <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
                         <View style={styles.heroTopRow}>
                             <View style={styles.heroTitleWrap}>
-                                <Text numberOfLines={2} style={[styles.jobTitle, { color: colors.text }]}>{workOrder.title}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                                    <Text style={[styles.jobTitle, { color: colors.text, flex: 1 }]}>{workOrder.title}</Text>
+                                    <Text style={[{ color: colors.primary, marginTop: 4 }, FONTS.caption]}>{workOrder.projectId}</Text>
+                                </View>
                                 {workOrder.type === 'Installation' ? (
                                     <View style={styles.heroTopChipRow}>
                                         <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
@@ -178,31 +230,29 @@ export const TaskDetailScreen = () => {
                                     </View>
                                 ) : null}
                             </View>
+                            <TouchableOpacity 
+                                onPress={handleShareWork}
+                                style={[styles.navButton, { backgroundColor: colors.primary + '15', marginTop: 4 }]}
+                            >
+                                <Ionicons name="share-social-outline" size={16} color={colors.primary} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Station Address</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                                <Ionicons name="location-outline" size={16} color={colors.primary} />
+                                <Text style={[{ color: colors.text, flex: 1 }, FONTS.body]}>{workOrder.address}</Text>
+                            </View>
                             <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.primary + '15' }]}>
                                 <Ionicons name="navigate" size={16} color={colors.primary} />
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.heroInfoRow}>
-                            <View style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                <Text style={[styles.heroChipText, { color: colors.textSecondary }]}>{workOrder.assetId}</Text>
-                            </View>
-                            <View style={[styles.heroChip, styles.heroWideChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                <Text numberOfLines={1} style={[styles.heroChipText, { color: colors.textSecondary }]}>{workOrder.address}</Text>
-                            </View>
-                            <View style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                <Text style={[styles.heroChipText, { color: colors.textSecondary }]}>{workOrder.projectId}</Text>
-                            </View>
-                        </View>
-
-                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Deadline</Text>
-                        <View style={[styles.chipRow, { marginBottom: 16 }]}>
-                            <View style={[styles.heroChip, { backgroundColor: colors.danger + '15', borderColor: colors.danger }]}>
-                                <Text style={[styles.heroChipText, { color: colors.danger }]}>
-                                    {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </Text>
-                            </View>
-                        </View>
+                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Schedule Timeline</Text>
+                        <Text style={[{ color: colors.textSecondary, marginBottom: 16 }, FONTS.caption]}>
+                            Start: <Text style={{ color: colors.text }}>{new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>  •  End: <Text style={{ color: colors.text }}>{new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                        </Text>
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
                         <View style={styles.chipRow}>
@@ -312,15 +362,7 @@ export const TaskDetailScreen = () => {
                                             </View>
                                         ))}
                                     </View>
-                                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Completion Note</Text>
-                                    <TextInput
-                                        multiline
-                                        placeholder="Summarize findings and follow-up actions."
-                                        placeholderTextColor={colors.textSecondary}
-                                        style={[styles.completionInput, getInputShellStyle(colors), { color: colors.text }]}
-                                        value={completionNote}
-                                        onChangeText={setCompletionNote}
-                                    />
+
                                 </>
                             )}
                         </>
@@ -348,6 +390,7 @@ export const TaskDetailScreen = () => {
                                     );
                                 })}
                             </View>
+
 
                             <View style={styles.activityList}>
                                 {filteredActivities.map((activity, index) => {
@@ -391,7 +434,38 @@ export const TaskDetailScreen = () => {
                                                 <View style={[styles.activityBadge, { backgroundColor: badgeBackground, borderColor: badgeColor }]}>
                                                     <Text style={[styles.activityBadgeText, { color: badgeColor }]}>{badgeLabel}</Text>
                                                 </View>
-                                                <Text style={[styles.activityDetail, { color: colors.textSecondary }]}>{activity.detail}</Text>
+
+                                                {editingCommentId === activity.id ? (
+                                                    <View style={{ marginTop: 8 }}>
+                                                        <TextInput
+                                                            style={[styles.commentInput, getInputShellStyle(colors), { color: colors.text, marginBottom: 8 }]}
+                                                            value={editingCommentText}
+                                                            onChangeText={setEditingCommentText}
+                                                            multiline
+                                                        />
+                                                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                            <TouchableOpacity onPress={handleSaveEdit} style={{ backgroundColor: colors.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
+                                                                <Text style={{ color: colors.white, ...FONTS.bodyStrong, fontSize: 12 }}>Save</Text>
+                                                            </TouchableOpacity>
+                                                            <TouchableOpacity onPress={() => setEditingCommentId(null)} style={{ backgroundColor: colors.surfaceHighlight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
+                                                                <Text style={{ color: colors.text, ...FONTS.bodyStrong, fontSize: 12 }}>Cancel</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    </View>
+                                                ) : (
+                                                    <Text style={[styles.activityDetail, { color: colors.textSecondary }]}>{activity.detail}</Text>
+                                                )}
+
+                                                {isComment && editingCommentId !== activity.id ? (
+                                                    <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+                                                        <TouchableOpacity onPress={() => handleStartEdit(activity.id, activity.detail)}>
+                                                            <Text style={{ color: colors.primary, ...FONTS.bodyStrong, fontSize: 12 }}>Edit</Text>
+                                                        </TouchableOpacity>
+                                                        <TouchableOpacity onPress={() => handleDeleteComment(activity.id)}>
+                                                            <Text style={{ color: colors.secondary, ...FONTS.bodyStrong, fontSize: 12 }}>Delete</Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ) : null}
                                             </View>
                                         </View>
                                     );
@@ -439,49 +513,95 @@ export const TaskDetailScreen = () => {
                     ) : null}
                 </ScrollView>
 
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
-                >
-                    <TouchableOpacity
-                        onPress={() => navigation.goBack()}
-                        style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                {activeTab === 'Tasks' && (
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
                     >
-                        <Text style={[styles.footerButtonText, { color: colors.text }]}>Save</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={handleCompleteAction}
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                        >
+                            <Text style={[styles.footerButtonText, { color: colors.text }]}>Save</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={handleCompleteAction}
+                            style={[
+                                styles.footerButton,
+                                {
+                                    backgroundColor: readyToComplete ? colors.primary : colors.surfaceHighlight,
+                                    borderColor: readyToComplete ? colors.primary : colors.border,
+                                    opacity: 1,
+                                },
+                            ]}
+                        >
+                            <Text style={[styles.footerPrimaryText, { color: readyToComplete ? colors.white : colors.textSecondary }]}>
+                                {completeActionLabel}
+                            </Text>
+                        </TouchableOpacity>
+                    </KeyboardAvoidingView>
+                )}
+
+                {activeTab === 'Activities' && (
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={[
-                            styles.footerButton,
-                            {
-                                backgroundColor: readyToComplete ? colors.primary : colors.surfaceHighlight,
-                                borderColor: readyToComplete ? colors.primary : colors.border,
-                                opacity: 1,
-                            },
+                            styles.footer, 
+                            { 
+                                backgroundColor: colors.background, 
+                                borderTopColor: colors.border,
+                                paddingVertical: 12,
+                                gap: 12,
+                            }
                         ]}
                     >
-                        <Text style={[styles.footerPrimaryText, { color: readyToComplete ? colors.white : colors.textSecondary }]}>
-                            {completeActionLabel}
-                        </Text>
-                    </TouchableOpacity>
-                </KeyboardAvoidingView>
+                        <TextInput
+                            style={[
+                                styles.commentInput, 
+                                getInputShellStyle(colors), 
+                                { 
+                                    color: colors.text, 
+                                    backgroundColor: colors.surfaceHighlight,
+                                }
+                            ]}
+                            placeholder="Add a comment..."
+                            placeholderTextColor={colors.textSecondary}
+                            value={newComment}
+                            onChangeText={setNewComment}
+                            multiline
+                        />
+                        <TouchableOpacity 
+                            style={[
+                                styles.addCommentButton, 
+                                { 
+                                    backgroundColor: colors.primary,
+                                }
+                            ]}
+                            onPress={handleAddComment}
+                        >
+                            <Ionicons name="send" size={16} color={colors.white} />
+                        </TouchableOpacity>
+                    </KeyboardAvoidingView>
+                )}
 
-                <TouchableOpacity
-                    style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000' }]}
-                    activeOpacity={0.9}
-                    onPress={() => navigation.navigate('CreateTask', {
-                        fromDetail: true,
-                        prefill: {
-                            serviceType: workOrder.type,
-                            siteName: workOrder.siteName,
-                            projectId: workOrder.projectId,
-                            stageName: 'Inspection',
-                            checklistName: 'Pedestal Repair'
-                        }
-                    })}
-                >
-                    <Ionicons name="add" size={32} color={colors.white} />
-                </TouchableOpacity>
+                {activeTab === 'Tasks' && (
+                    <TouchableOpacity
+                        style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000' }]}
+                        activeOpacity={0.9}
+                        onPress={() => navigation.navigate('CreateTask', {
+                            fromDetail: true,
+                            prefill: {
+                                serviceType: workOrder.type,
+                                siteName: workOrder.siteName,
+                                projectId: workOrder.projectId,
+                                stageName: 'Inspection',
+                                checklistName: 'Pedestal Repair'
+                            }
+                        })}
+                    >
+                        <Ionicons name="add" size={32} color={colors.white} />
+                    </TouchableOpacity>
+                )}
                 <Modal visible={mediaModalVisible} transparent animationType="fade">
                     <View style={styles.modalOverlay}>
                         <View style={[styles.bottomSheetInner, { backgroundColor: colors.background, paddingBottom: 40 }]}>
@@ -743,7 +863,27 @@ const styles = StyleSheet.create({
         fontSize: 11,
     },
     activityList: {
-        marginBottom: 14,
+        marginTop: 16,
+    },
+    addCommentContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 16,
+        gap: 12,
+    },
+    commentInput: {
+        flex: 1,
+        minHeight: 44,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        ...FONTS.body,
+    },
+    addCommentButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     timelineRow: {
         flexDirection: 'row',

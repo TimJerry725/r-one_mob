@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, Modal, Animated, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -213,6 +213,8 @@ export const ProjectDetailScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [stationView, setStationView] = useState(false);
     const [showFilterMenu, setShowFilterMenu] = useState(false);
+    const [tempSelectedStatuses, setTempSelectedStatuses] = useState<WorkOrderStatus[]>([]);
+    const [tempSelectedTypes, setTempSelectedTypes] = useState<string[]>([]);
 
     useEffect(() => {
         if (route.params?.stationFilter !== undefined) {
@@ -267,15 +269,54 @@ export const ProjectDetailScreen = () => {
     }, [searchQuery, selectedSite, selectedStatuses, selectedTypes]);
 
     const toggleStatus = (status: WorkOrderStatus) => {
-        setSelectedStatuses((current) =>
+        setTempSelectedStatuses((current) =>
             current.includes(status) ? current.filter((item) => item !== status) : [...current, status],
         );
     };
 
     const toggleType = (type: string) => {
-        setSelectedTypes((current) =>
+        setTempSelectedTypes((current) =>
             current.includes(type) ? current.filter((item) => item !== type) : [...current, type],
         );
+    };
+
+    const [slideAnim] = useState(() => new Animated.Value(320));
+
+    useEffect(() => {
+        if (showFilterMenu) {
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [showFilterMenu]);
+
+    const closeFilterMenu = () => {
+        Animated.timing(slideAnim, {
+            toValue: 320,
+            duration: 200,
+            useNativeDriver: true,
+        }).start(() => {
+            setShowFilterMenu(false);
+        });
+    };
+
+    const openFilters = () => {
+        setTempSelectedStatuses([...selectedStatuses]);
+        setTempSelectedTypes([...selectedTypes]);
+        setShowFilterMenu(true);
+    };
+
+    const applyFilters = () => {
+        setSelectedStatuses([...tempSelectedStatuses]);
+        setSelectedTypes([...tempSelectedTypes]);
+        closeFilterMenu();
+    };
+
+    const clearTempFilters = () => {
+        setTempSelectedStatuses([]);
+        setTempSelectedTypes([]);
     };
 
     const clearAllFilters = () => {
@@ -305,6 +346,29 @@ export const ProjectDetailScreen = () => {
         });
         return Array.from(grouped.values());
     }, [visibleOrders]);
+    
+    const filterCounts = useMemo(() => {
+        const counts: Record<string, number> = { 
+            'To-Do': 0, 'Working': 0, 'Under Review': 0, 'Completed': 0,
+            'Installation': 0, 'Service': 0, 'Preventive': 0
+        };
+        WORK_ORDERS.forEach((item) => {
+            const matchesStatus = selectedStatuses.length === 0 ? true : selectedStatuses.includes(item.status);
+            const matchesType = selectedTypes.length === 0 ? true : selectedTypes.includes(item.type);
+            const matchesSite = selectedSite ? item.siteName === selectedSite : true;
+            const matchesProject = selectedProject ? item.projectId === selectedProject : true;
+            
+            // For status counts, we check if it matches type, site, project
+            if (matchesType && matchesSite && matchesProject && counts[item.status] !== undefined) {
+                counts[item.status]++;
+            }
+            // For type counts, we check if it matches status, site, project
+            if (matchesStatus && matchesSite && matchesProject && counts[item.type] !== undefined) {
+                counts[item.type]++;
+            }
+        });
+        return counts;
+    }, [selectedTypes, selectedStatuses, selectedSite, selectedProject]);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -319,6 +383,21 @@ export const ProjectDetailScreen = () => {
                             placeholderTextColor={colors.textSecondary}
                             style={[styles.searchInput, { color: colors.text }]}
                         />
+                    </View>
+
+                    <View style={styles.typeMetricsContainer}>
+                        <View style={[styles.typeMetricBox, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+                            <Text style={[styles.typeMetricCount, { color: colors.primary }]}>{filterCounts['Installation'] || 0}</Text>
+                            <Text style={[styles.typeMetricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Installation</Text>
+                        </View>
+                        <View style={[styles.typeMetricBox, { backgroundColor: colors.secondary + '15', borderColor: colors.secondary }]}>
+                            <Text style={[styles.typeMetricCount, { color: colors.secondary }]}>{filterCounts['Service'] || 0}</Text>
+                            <Text style={[styles.typeMetricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Service</Text>
+                        </View>
+                        <View style={[styles.typeMetricBox, { backgroundColor: colors.warning + '15', borderColor: colors.warning }]}>
+                            <Text style={[styles.typeMetricCount, { color: colors.warning }]}>{filterCounts['Preventive'] || 0}</Text>
+                            <Text style={[styles.typeMetricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Preventive</Text>
+                        </View>
                     </View>
 
                     <View style={styles.controlRow}>
@@ -345,8 +424,8 @@ export const ProjectDetailScreen = () => {
                             </View>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={() => setShowFilterMenu((current) => !current)}
-                            style={[styles.filterDropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                            onPress={openFilters}
+                            style={[styles.filterDropdown, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: 'center' }]}
                         >
                             <View style={styles.filterDropdownContent}>
                                 <Ionicons name="filter" size={16} color={colors.textSecondary} />
@@ -354,56 +433,103 @@ export const ProjectDetailScreen = () => {
                                     {selectedStatuses.length + selectedTypes.length === 0 ? 'All' : `${selectedStatuses.length + selectedTypes.length} selected`}
                                 </Text>
                             </View>
-                            <Ionicons
-                                name={showFilterMenu ? 'chevron-up' : 'chevron-down'}
-                                size={18}
-                                color={colors.textSecondary}
-                            />
                         </TouchableOpacity>
                     </View>
 
-                    {showFilterMenu ? (
-                        <View style={[styles.filterMenu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <TouchableOpacity
-                                onPress={clearAllFilters}
-                                style={styles.filterMenuItem}
+                    <Modal
+                        visible={showFilterMenu}
+                        transparent={true}
+                        animationType="fade"
+                        onRequestClose={closeFilterMenu}
+                    >
+                        <TouchableOpacity
+                            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'stretch' }}
+                            activeOpacity={1}
+                            onPress={closeFilterMenu}
+                        >
+                            <Animated.View
+                                style={[
+                                    styles.sideSlider,
+                                    {
+                                        backgroundColor: colors.surface,
+                                        transform: [{ translateX: slideAnim }]
+                                    }
+                                ]}
                             >
-                                <Text style={[styles.filterMenuText, { color: colors.text }]}>Clear All</Text>
-                                <Ionicons name="refresh-outline" size={18} color={colors.textSecondary} />
-                            </TouchableOpacity>
+                                <View style={{ flex: 1 }}>
+                                    <View style={styles.bottomSheetHeader}>
+                                        <Text style={[styles.bottomSheetTitle, { color: colors.text }]}>Filters</Text>
+                                        <TouchableOpacity onPress={closeFilterMenu}>
+                                            <Ionicons name="close" size={24} color={colors.textSecondary} />
+                                        </TouchableOpacity>
+                                    </View>
 
-                            <View style={[styles.filterDivider, { backgroundColor: colors.border }]} />
-                            <Text style={[styles.filterHeader, { color: colors.textSecondary }]}>STATUS</Text>
+                                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+                                        <Text style={[styles.filterHeader, { color: colors.textSecondary }]}>STATUS</Text>
 
-                            {STATUS_TABS.map((status) => (
-                                <TouchableOpacity
-                                    key={status}
-                                    onPress={() => toggleStatus(status)}
-                                    style={styles.filterMenuItem}
-                                >
-                                    <Text style={[styles.filterMenuText, { color: colors.text }]}>{status}</Text>
-                                    {selectedStatuses.includes(status) ? (
-                                        <Ionicons name="checkmark" size={18} color={colors.primary} />
-                                    ) : null}
-                                </TouchableOpacity>
-                            ))}
+                                        {STATUS_TABS.map((status) => {
+                                            const isSelected = tempSelectedStatuses.includes(status);
+                                            return (
+                                                <TouchableOpacity
+                                                    key={status}
+                                                    onPress={() => toggleStatus(status)}
+                                                    style={[
+                                                        styles.filterMenuItem,
+                                                        isSelected && { backgroundColor: colors.primary + '15' }
+                                                    ]}
+                                                >
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                        <Text style={[styles.filterMenuText, { color: isSelected ? colors.primary : colors.text }]}>{status}</Text>
+                                                    </View>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                                        <Text style={{ ...FONTS.h3, color: colors.primary, fontSize: 16 }}>{filterCounts[status] || 0}</Text>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
 
-                            <View style={[styles.filterDivider, { backgroundColor: colors.border }]} />
-                            <Text style={[styles.filterHeader, { color: colors.textSecondary }]}>TYPE</Text>
-                            {['Installation', 'Service', 'Preventive'].map((type) => (
-                                <TouchableOpacity
-                                    key={type}
-                                    onPress={() => toggleType(type)}
-                                    style={styles.filterMenuItem}
-                                >
-                                    <Text style={[styles.filterMenuText, { color: colors.text }]}>{type}</Text>
-                                    {selectedTypes.includes(type) ? (
-                                        <Ionicons name="checkmark" size={18} color={colors.primary} />
-                                    ) : null}
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    ) : null}
+                                        <View style={[styles.filterDivider, { backgroundColor: colors.border, marginTop: 16 }]} />
+                                        <Text style={[styles.filterHeader, { color: colors.textSecondary }]}>TYPE</Text>
+                                        {['Installation', 'Service', 'Preventive'].map((type) => {
+                                            const isSelected = tempSelectedTypes.includes(type);
+                                            return (
+                                                <TouchableOpacity
+                                                    key={type}
+                                                    onPress={() => toggleType(type)}
+                                                    style={[
+                                                        styles.filterMenuItem,
+                                                        isSelected && { backgroundColor: colors.primary + '15' }
+                                                    ]}
+                                                >
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                        <Text style={[styles.filterMenuText, { color: isSelected ? colors.primary : colors.text }]}>{type}</Text>
+                                                    </View>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                                        <Text style={{ ...FONTS.h3, color: colors.primary, fontSize: 16 }}>{filterCounts[type] || 0}</Text>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </ScrollView>
+
+                                    <View style={[styles.stickyFooter, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+                                        <TouchableOpacity
+                                            onPress={clearTempFilters}
+                                            style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight }]}
+                                        >
+                                            <Text style={[styles.footerButtonText, { color: colors.text }]}>Clear All</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={applyFilters}
+                                            style={[styles.footerButton, { backgroundColor: colors.primary }]}
+                                        >
+                                            <Text style={[styles.footerButtonText, { color: colors.white }]}>Apply Filters</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </Animated.View>
+                        </TouchableOpacity>
+                    </Modal>
 
                     {hasAppliedFilters ? (
                         <ScrollView
@@ -528,6 +654,29 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 0,
     },
+    typeMetricsContainer: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 14,
+    },
+    typeMetricBox: {
+        flex: 1,
+        flexDirection: 'row',
+        borderRadius: 8,
+        borderWidth: 1,
+        paddingVertical: 8,
+        paddingHorizontal: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    typeMetricCount: {
+        ...FONTS.h3,
+    },
+    typeMetricLabel: {
+        ...FONTS.bodyStrong,
+        fontSize: 12,
+    },
     controlRow: {
         flexDirection: 'row',
         gap: 10,
@@ -583,14 +732,15 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     filterMenuItem: {
-        minHeight: 46,
+        minHeight: 52,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
     },
     filterMenuText: {
         ...FONTS.bodyStrong,
+        fontSize: 16,
     },
     filterHeader: {
         ...FONTS.label,
@@ -602,9 +752,50 @@ const styles = StyleSheet.create({
     },
     filterDivider: {
         height: 1,
-        marginHorizontal: 16,
         marginVertical: 4,
-        opacity: 0.3,
+    },
+    bottomSheet: {
+        width: '100%',
+        maxHeight: '80%',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingTop: 16,
+    },
+    sideSlider: {
+        width: '80%',
+        maxWidth: 320,
+        height: '100%',
+        paddingTop: Platform.OS === 'ios' ? 60 : 20,
+        borderTopLeftRadius: 24,
+        borderBottomLeftRadius: 24,
+        overflow: 'hidden',
+    },
+    bottomSheetHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    bottomSheetTitle: {
+        ...FONTS.h3,
+    },
+    stickyFooter: {
+        flexDirection: 'row',
+        padding: 16,
+        borderTopWidth: 1,
+        gap: 12,
+        paddingBottom: 36, // For safe area
+    },
+    footerButton: {
+        flex: 1,
+        minHeight: 54,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    footerButtonText: {
+        ...FONTS.bodyStrong,
     },
     selectedFilterRow: {
         gap: 8,

@@ -1,9 +1,9 @@
-export const SERVICE_TYPES = ['Installation', 'Service', 'Preventive'] as const;
+export const SERVICE_TYPES = ['Service', 'Request Preventive'] as const;
 export const DATA_TYPES = ['Text', 'Number', 'Date', 'Radio', 'Multiselect', 'Media', 'Toggle', 'Not applicable'] as const;
 export const STAGE_NAMES = ['Site Prep', 'Fault Check', 'Inspection', 'Commissioning', 'Closeout'] as const;
 export const CHECKLIST_NAMES = ['Pedestal Repair', 'Grounding Check', 'Annual Maintenance'] as const;
 
-export type SelectorSheetType = 'station' | 'stage' | 'dataType';
+export type SelectorSheetType = 'station' | 'stage' | 'dataType' | 'assignees';
 
 export type StationProjectOption = {
     siteName: string;
@@ -19,7 +19,7 @@ export type SelectorOption = {
 
 export type SelectorResult = {
     type: SelectorSheetType;
-    value: string;
+    value: string | string[];
     token: number;
 };
 
@@ -48,7 +48,7 @@ export const getStationSelectionValue = (siteName: string, projectId: string) =>
 export const findStationProjectOptionByValue = (value: string) =>
     STATION_PROJECT_OPTIONS.find((item) => getStationSelectionValue(item.siteName, item.projectId) === value) ?? null;
 
-export const getSelectorOptions = (selectorType: SelectorSheetType): { title: string; options: SelectorOption[] } => {
+export const getSelectorOptions = (selectorType: SelectorSheetType): { title: string; options: SelectorOption[]; isMulti?: boolean } => {
     if (selectorType === 'station') {
         return {
             title: 'Select station',
@@ -68,6 +68,19 @@ export const getSelectorOptions = (selectorType: SelectorSheetType): { title: st
                 key: item,
                 label: item,
                 value: item,
+            })),
+        };
+    }
+
+    if (selectorType === 'assignees') {
+        const workers = ['Timothy', 'Arjun', 'Sarah', 'Alex'];
+        return {
+            title: 'Select Assignees',
+            isMulti: true,
+            options: workers.map((worker) => ({
+                key: worker,
+                label: worker,
+                value: worker,
             })),
         };
     }

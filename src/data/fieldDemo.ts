@@ -39,6 +39,8 @@ export type AssetRecord = {
     lastService: string;
     firmware: string;
     linkedWorkOrderId?: string;
+    pmAssignee?: string;
+    pmDurationMonths?: number;
 };
 
 export type AssetAlertPriority = 'Highest' | 'High' | 'Medium';
@@ -98,7 +100,7 @@ export type ActivityItem = {
     time: string;
 };
 
-export const WORK_ORDERS: WorkOrder[] = [
+export let WORK_ORDERS: WorkOrder[] = [
     {
         id: 'wo-101',
         projectId: 'PJ001',
@@ -397,6 +399,8 @@ export const ASSETS: AssetRecord[] = [
         lastService: '18 Mar 2026',
         firmware: 'v4.6.2',
         linkedWorkOrderId: 'wo-101',
+        pmAssignee: 'Tim',
+        pmDurationMonths: 3,
     },
     {
         id: 'asset-2',
@@ -419,6 +423,8 @@ export const ASSETS: AssetRecord[] = [
         lastService: '11 Mar 2026',
         firmware: 'v4.6.0',
         linkedWorkOrderId: 'wo-103',
+        pmAssignee: 'Arjun',
+        pmDurationMonths: 1, // Will be overdue if current month is June
     },
     {
         id: 'asset-4',
@@ -648,3 +654,103 @@ export const getAssetById = (assetId?: string) =>
 
 export const getAssetVisionDetailById = (assetId?: string) =>
     ASSET_VISION_DETAILS[assetId ?? ''] ?? ASSET_VISION_DETAILS[ASSETS[0].id];
+
+// --- PM Auto-Schedule and Request Logic ---
+export const addWorkOrder = (wo: WorkOrder) => {
+    WORK_ORDERS = [wo, ...WORK_ORDERS];
+    
+    if (ASSET_VISION_DETAILS[wo.assetId]) {
+        ASSET_VISION_DETAILS[wo.assetId].workHistory = [
+            {
+                id: `work-auto-${Date.now()}`,
+                title: wo.title,
+                date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+                status: 'Assigned',
+                linkedWorkOrderId: wo.id,
+            },
+            ...ASSET_VISION_DETAILS[wo.assetId].workHistory,
+        ];
+    }
+};
+
+export const autoSchedulePMs = () => {
+    const now = new Date();
+    
+    ASSETS.forEach((asset) => {
+        if (asset.pmAssignee && asset.pmDurationMonths) {
+            const lastServiceDate = new Date(asset.lastService);
+            const dueDate = new Date(lastServiceDate);
+            dueDate.setMonth(dueDate.getMonth() + asset.pmDurationMonths);
+            
+            if (now >= dueDate) {
+                // Check if a Preventive WO already exists for this asset in "To-Do" or "Working"
+                const existingPM = WORK_ORDERS.find(
+                    (wo) => wo.assetId === asset.id && wo.type === 'Preventive' && (wo.status === 'To-Do' || wo.status === 'Working')
+                );
+                
+                if (!existingPM) {
+                    const newWoId = `wo-auto-${Date.now()}-${asset.id}`;
+                    addWorkOrder({
+                        id: newWoId,
+                        projectId: `PJ-AUTO-${Math.floor(Math.random() * 1000)}`,
+                        title: 'Auto-Scheduled Preventive Maintenance',
+                        siteName: asset.location,
+                        address: 'Location Address',
+                        type: 'Preventive',
+                        stage: 'Inspection',
+                        status: 'To-Do',
+                        dueWindow: 'Scheduled by System',
+                        eta: 'Pending',
+                        distance: '0.0 km',
+                        checklistCompleted: 0,
+                        checklistTotal: 5,
+                        tools: ['Inspection kit'],
+                        parts: [],
+                        technicians: [asset.pmAssignee],
+                        assetId: asset.id,
+                        offlineReady: true,
+                        notes: 'System auto-scheduled PM based on maintenance due date.',
+                        latitude: 0,
+                        longitude: 0,
+                        priority: 'Medium',
+                        targetTime: dueDate.getTime(),
+                    });
+                }
+            }
+        }
+    });
+};
+
+export const requestPM = (assetId: string, notes: string, hasAttachment: boolean, user: string) => {
+    const asset = getAssetById(assetId);
+    const newWoId = `wo-req-${Date.now()}`;
+    addWorkOrder({
+        id: newWoId,
+        projectId: `PJ-REQ-${Math.floor(Math.random() * 1000)}`,
+        title: 'Requested Preventive Maintenance',
+        siteName: asset.location,
+        address: 'Location Address',
+        type: 'Preventive',
+        stage: 'Requested',
+        status: 'To-Do',
+        dueWindow: 'ASAP',
+        eta: 'Pending Dispatch',
+        distance: '0.0 km',
+        checklistCompleted: 0,
+        checklistTotal: 5,
+        tools: ['Inspection kit'],
+        parts: [],
+        technicians: [user],
+        assetId: asset.id,
+        offlineReady: true,
+        notes: `${notes}${hasAttachment ? ' (Attachment included)' : ''}`,
+        latitude: 0,
+        longitude: 0,
+        priority: 'High',
+        targetTime: Date.now() + 24 * 60 * 60 * 1000, // Due in 24 hours
+    });
+};
+
+// Run on load
+autoSchedulePMs();
+

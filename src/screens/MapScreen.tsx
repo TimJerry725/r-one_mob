@@ -94,6 +94,14 @@ const StationMarkerPin = ({
     );
 };
 
+const MOCK_USER_LOCATIONS = [
+    { name: 'Timothy', locationName: 'Mumbai', latitude: 19.0760, longitude: 72.8777, status: 'Active', avatar: 'T' },
+    { name: 'Arjun', locationName: 'Delhi', latitude: 28.7041, longitude: 77.1025, status: 'On Route', avatar: 'A' },
+    { name: 'Ravi', locationName: 'Bengaluru', latitude: 12.9716, longitude: 77.5946, status: 'At Site', avatar: 'R' },
+    { name: 'Neha', locationName: 'Kolkata', latitude: 22.5726, longitude: 88.3639, status: 'On Break', avatar: 'N' },
+    { name: 'Sara', locationName: 'Chennai', latitude: 13.0827, longitude: 80.2707, status: 'Active', avatar: 'S' },
+];
+
 export const MapScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
@@ -106,6 +114,7 @@ export const MapScreen = () => {
     const [locationState, setLocationState] = useState<'loading' | 'granted' | 'denied'>('loading');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrderId, setSelectedOrderId] = useState(WORK_ORDERS[0].id);
+    const [mapMode, setMapMode] = useState<'work' | 'live' | 'both'>('work');
 
     const filteredOrders = WORK_ORDERS.filter((item) => {
         const haystack = `${item.title} ${item.siteName} ${item.address}`.toLowerCase();
@@ -163,6 +172,21 @@ export const MapScreen = () => {
             }
         })();
     }, []);
+
+    useEffect(() => {
+        if (mapMode === 'live' || mapMode === 'both') {
+            // Animate map to show all of India
+            mapRef.current?.animateToRegion({
+                latitude: 20.5937,
+                longitude: 78.9629,
+                latitudeDelta: 20.0,
+                longitudeDelta: 20.0,
+            }, 600);
+        } else {
+            // Focus back to Pune / default user region
+            mapRef.current?.animateToRegion(region, 600);
+        }
+    }, [mapMode]);
 
     useEffect(() => {
         if (filteredOrders.length === 0) {
@@ -249,8 +273,43 @@ export const MapScreen = () => {
 
     const handleCardScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const rawIndex = event.nativeEvent.contentOffset.x / (MAP_CARD_WIDTH + MAP_CARD_GAP);
-        const index = Math.max(0, Math.min(Math.round(rawIndex), stationCards.length - 1));
-        const station = stationCards[index];
+        const index = Math.round(rawIndex);
+
+        if (mapMode === 'live') {
+            const userIndex = Math.max(0, Math.min(index, MOCK_USER_LOCATIONS.length - 1));
+            const user = MOCK_USER_LOCATIONS[userIndex];
+            if (user) {
+                mapRef.current?.animateToRegion({
+                    latitude: user.latitude,
+                    longitude: user.longitude,
+                    latitudeDelta: 3.0,
+                    longitudeDelta: 3.0,
+                }, 500);
+            }
+            return;
+        }
+
+        if (mapMode === 'both') {
+            if (index < stationCards.length) {
+                const station = stationCards[index];
+                if (station) focusStation(station.siteName);
+            } else {
+                const userIndex = Math.max(0, Math.min(index - stationCards.length, MOCK_USER_LOCATIONS.length - 1));
+                const user = MOCK_USER_LOCATIONS[userIndex];
+                if (user) {
+                    mapRef.current?.animateToRegion({
+                        latitude: user.latitude,
+                        longitude: user.longitude,
+                        latitudeDelta: 3.0,
+                        longitudeDelta: 3.0,
+                    }, 500);
+                }
+            }
+            return;
+        }
+
+        const stationIndex = Math.max(0, Math.min(index, stationCards.length - 1));
+        const station = stationCards[stationIndex];
 
         if (station) {
             focusStation(station.siteName);
@@ -268,12 +327,12 @@ export const MapScreen = () => {
                 showsUserLocation={locationState === 'granted'}
                 showsMyLocationButton={false}
             >
-                {stationCards.map((station) => {
+                {(mapMode === 'work' || mapMode === 'both') && stationCards.map((station) => {
                     const active = activeStationName === station.siteName;
                     const accent = getStationAccent(station);
                     return (
                         <Marker
-                            key={station.id}
+                            key={`station-${station.id}`}
                             coordinate={{ latitude: station.latitude, longitude: station.longitude }}
                             anchor={{ x: 0.5, y: 0.95 }}
                             onPress={() => openStationWork(station.siteName)}
@@ -282,6 +341,20 @@ export const MapScreen = () => {
                         </Marker>
                     );
                 })}
+
+                {(mapMode === 'live' || mapMode === 'both') && MOCK_USER_LOCATIONS.map((user) => (
+                    <Marker
+                        key={`user-${user.name}`}
+                        coordinate={{ latitude: user.latitude, longitude: user.longitude }}
+                        anchor={{ x: 0.5, y: 0.95 }}
+                    >
+                        <View style={styles.userMarkerWrap}>
+                            <View style={[styles.userAvatarCircle, { backgroundColor: colors.primary, borderColor: colors.background, borderWidth: 2 }]}>
+                                <Text style={{ color: colors.white, ...FONTS.bodyStrong, fontSize: 14 }}>{user.avatar}</Text>
+                            </View>
+                        </View>
+                    </Marker>
+                ))}
             </MapView>
 
             <SafeAreaView style={styles.overlay} edges={['top', 'left', 'right']} pointerEvents="box-none">
@@ -305,11 +378,9 @@ export const MapScreen = () => {
                             placeholderTextColor={colors.textSecondary}
                             style={[styles.searchInput, { color: colors.text }]}
                         />
-                        {route.params?.isAdmin && (
-                            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                                <Ionicons name="person-circle" size={28} color={colors.primary} />
-                            </TouchableOpacity>
-                        )}
+                        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+                            <Ionicons name="person-circle" size={28} color={colors.primary} />
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -318,6 +389,59 @@ export const MapScreen = () => {
                         style={{ gap: 12, alignItems: 'flex-end', paddingRight: 16, marginBottom: 16 }}
                         pointerEvents="box-none"
                     >
+                        <View
+                            style={[
+                                styles.verticalToggleContainer,
+                                {
+                                    backgroundColor: isDark ? colors.surface : colors.white,
+                                    borderColor: colors.border,
+                                    shadowColor: colors.shadow,
+                                },
+                            ]}
+                        >
+                            <TouchableOpacity
+                                onPress={() => setMapMode('work')}
+                                style={[
+                                    styles.verticalToggleButton,
+                                    { backgroundColor: mapMode === 'work' ? colors.primary : 'transparent' }
+                                ]}
+                            >
+                                <Ionicons
+                                    name={mapMode === 'work' ? "briefcase" : "briefcase-outline"}
+                                    size={22}
+                                    color={mapMode === 'work' ? colors.white : colors.textSecondary}
+                                />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => setMapMode('both')}
+                                style={[
+                                    styles.verticalToggleButton,
+                                    { backgroundColor: mapMode === 'both' ? colors.primary : 'transparent' }
+                                ]}
+                            >
+                                <Ionicons
+                                    name={mapMode === 'both' ? "map" : "map-outline"}
+                                    size={22}
+                                    color={mapMode === 'both' ? colors.white : colors.textSecondary}
+                                />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => setMapMode('live')}
+                                style={[
+                                    styles.verticalToggleButton,
+                                    { backgroundColor: mapMode === 'live' ? colors.primary : 'transparent' }
+                                ]}
+                            >
+                                <Ionicons
+                                    name={mapMode === 'live' ? "people" : "people-outline"}
+                                    size={22}
+                                    color={mapMode === 'live' ? colors.white : colors.textSecondary}
+                                />
+                            </TouchableOpacity>
+                        </View>
+
                         <TouchableOpacity
                             onPress={() => navigation.navigate('Notification')}
                             style={[
@@ -380,7 +504,9 @@ export const MapScreen = () => {
                     </View>
 
                     <View style={styles.bottomSheet}>
-                        <Text style={[styles.sheetLabel, { color: colors.textSecondary }]}>Nearby Stations</Text>
+                        <Text style={[styles.sheetLabel, { color: colors.textSecondary }]}>
+                            {mapMode === 'live' ? 'Active Field Workers' : mapMode === 'work' ? 'Nearby Stations' : 'Stations & Field Workers'}
+                        </Text>
                         <ScrollView
                             horizontal
                             showsHorizontalScrollIndicator={false}
@@ -389,60 +515,192 @@ export const MapScreen = () => {
                             onMomentumScrollEnd={handleCardScrollEnd}
                             contentContainerStyle={styles.sheetScroll}
                         >
-                            {stationCards.map((station) => {
-                                const active = activeStationName === station.siteName;
-                                const accent = getStationAccent(station);
-
-                                return (
+                            {mapMode === 'live' ? (
+                                MOCK_USER_LOCATIONS.map((user) => (
                                     <TouchableOpacity
-                                        key={station.id}
+                                        key={user.name}
                                         activeOpacity={0.92}
-                                        onPress={() => openStationWork(station.siteName)}
+                                        onPress={() => {
+                                            mapRef.current?.animateToRegion({
+                                                latitude: user.latitude,
+                                                longitude: user.longitude,
+                                                latitudeDelta: 3.0,
+                                                longitudeDelta: 3.0,
+                                            }, 500);
+                                        }}
                                         style={[
                                             styles.jobCard,
                                             {
-                                                backgroundColor: active ? colors.surface : colors.overlayStrong,
-                                                borderColor: active ? accent.border : `${accent.border}55`,
+                                                backgroundColor: colors.surface,
+                                                borderColor: colors.border,
                                                 shadowColor: colors.shadow,
                                             },
                                         ]}
                                     >
                                         <View style={styles.stationCardRow}>
-                                            <View style={styles.stationCardInfo}>
-                                                <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={2}>
-                                                    {station.siteName}
-                                                </Text>
-                                                <View style={styles.typeChipRow}>
-                                                    {station.types.map((type) => {
-                                                        const typeColors = getServiceTypeColors(type, isDark);
-
-                                                        return (
-                                                            <View
-                                                                key={type}
-                                                                style={[
-                                                                    styles.typeChip,
-                                                                    {
-                                                                        backgroundColor: typeColors.tint,
-                                                                        borderColor: typeColors.border,
-                                                                    },
-                                                                ]}
-                                                            >
-                                                                <Text style={[styles.typeChipText, { color: typeColors.tintText }]}>
-                                                                    {type}
-                                                                </Text>
-                                                            </View>
-                                                        );
-                                                    })}
-                                                </View>
+                                            <View style={[styles.avatar, { backgroundColor: colors.primary + '15', width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }]}>
+                                                <Text style={[{ color: colors.primary }, FONTS.h2]}>{user.avatar}</Text>
                                             </View>
-
-                                            <View style={[styles.stationCountBadge, { backgroundColor: accent.background }]}>
-                                                <Text style={[styles.stationCountText, { color: accent.text }]}>{station.count}</Text>
+                                            <View style={styles.stationCardInfo}>
+                                                <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={1}>
+                                                    {user.name}
+                                                </Text>
+                                                <Text style={[{ color: colors.textSecondary, marginTop: 2 }, FONTS.caption]}>
+                                                    {user.locationName}
+                                                </Text>
                                             </View>
                                         </View>
                                     </TouchableOpacity>
-                                );
-                            })}
+                                ))
+                            ) : mapMode === 'work' ? (
+                                stationCards.map((station) => {
+                                    const active = activeStationName === station.siteName;
+                                    const accent = getStationAccent(station);
+
+                                    return (
+                                        <TouchableOpacity
+                                            key={station.id}
+                                            activeOpacity={0.92}
+                                            onPress={() => openStationWork(station.siteName)}
+                                            style={[
+                                                styles.jobCard,
+                                                {
+                                                    backgroundColor: active ? colors.surface : colors.overlayStrong,
+                                                    borderColor: active ? accent.border : `${accent.border}55`,
+                                                    shadowColor: colors.shadow,
+                                                },
+                                            ]}
+                                        >
+                                            <View style={styles.stationCardRow}>
+                                                <View style={styles.stationCardInfo}>
+                                                    <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={2}>
+                                                        {station.siteName}
+                                                    </Text>
+                                                    <View style={styles.typeChipRow}>
+                                                        {station.types.map((type) => {
+                                                            const typeColors = getServiceTypeColors(type, isDark);
+
+                                                            return (
+                                                                <View
+                                                                    key={type}
+                                                                    style={[
+                                                                        styles.typeChip,
+                                                                        {
+                                                                            backgroundColor: typeColors.tint,
+                                                                            borderColor: typeColors.border,
+                                                                        },
+                                                                    ]}
+                                                                >
+                                                                    <Text style={[styles.typeChipText, { color: typeColors.tintText }]}>
+                                                                        {type}
+                                                                    </Text>
+                                                                </View>
+                                                            );
+                                                        })}
+                                                    </View>
+                                                </View>
+
+                                                <View style={[styles.stationCountBadge, { backgroundColor: accent.background }]}>
+                                                    <Text style={[styles.stationCountText, { color: accent.text }]}>{station.count}</Text>
+                                                </View>
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })
+                            ) : (
+                                <>
+                                    {stationCards.map((station) => {
+                                        const active = activeStationName === station.siteName;
+                                        const accent = getStationAccent(station);
+
+                                        return (
+                                            <TouchableOpacity
+                                                key={`both-station-${station.id}`}
+                                                activeOpacity={0.92}
+                                                onPress={() => openStationWork(station.siteName)}
+                                                style={[
+                                                    styles.jobCard,
+                                                    {
+                                                        backgroundColor: active ? colors.surface : colors.overlayStrong,
+                                                        borderColor: active ? accent.border : `${accent.border}55`,
+                                                        shadowColor: colors.shadow,
+                                                    },
+                                                ]}
+                                            >
+                                                <View style={styles.stationCardRow}>
+                                                    <View style={styles.stationCardInfo}>
+                                                        <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={2}>
+                                                            {station.siteName}
+                                                        </Text>
+                                                        <View style={styles.typeChipRow}>
+                                                            {station.types.map((type) => {
+                                                                const typeColors = getServiceTypeColors(type, isDark);
+
+                                                                return (
+                                                                    <View
+                                                                        key={type}
+                                                                        style={[
+                                                                            styles.typeChip,
+                                                                            {
+                                                                                backgroundColor: typeColors.tint,
+                                                                                borderColor: typeColors.border,
+                                                                            },
+                                                                        ]}
+                                                                    >
+                                                                        <Text style={[styles.typeChipText, { color: typeColors.tintText }]}>
+                                                                            {type}
+                                                                        </Text>
+                                                                    </View>
+                                                                );
+                                                            })}
+                                                        </View>
+                                                    </View>
+
+                                                    <View style={[styles.stationCountBadge, { backgroundColor: accent.background }]}>
+                                                        <Text style={[styles.stationCountText, { color: accent.text }]}>{station.count}</Text>
+                                                    </View>
+                                                </View>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                    {MOCK_USER_LOCATIONS.map((user) => (
+                                        <TouchableOpacity
+                                            key={`both-user-${user.name}`}
+                                            activeOpacity={0.92}
+                                            onPress={() => {
+                                                mapRef.current?.animateToRegion({
+                                                    latitude: user.latitude,
+                                                    longitude: user.longitude,
+                                                    latitudeDelta: 3.0,
+                                                    longitudeDelta: 3.0,
+                                                }, 500);
+                                            }}
+                                            style={[
+                                                styles.jobCard,
+                                                {
+                                                    backgroundColor: colors.surface,
+                                                    borderColor: colors.border,
+                                                    shadowColor: colors.shadow,
+                                                },
+                                            ]}
+                                        >
+                                            <View style={styles.stationCardRow}>
+                                                <View style={[styles.avatar, { backgroundColor: colors.primary + '15', width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }]}>
+                                                    <Text style={[{ color: colors.primary }, FONTS.h2]}>{user.avatar}</Text>
+                                                </View>
+                                                <View style={styles.stationCardInfo}>
+                                                    <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={1}>
+                                                        {user.name}
+                                                    </Text>
+                                                    <Text style={[{ color: colors.textSecondary, marginTop: 2 }, FONTS.caption]}>
+                                                        {user.locationName}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </>
+                            )}
                         </ScrollView>
 
                         {stationCards.length === 0 ? (
@@ -608,5 +866,56 @@ const styles = StyleSheet.create({
     },
     markerPinActive: {
         transform: [{ scale: 1.04 }],
+    },
+    verticalToggleContainer: {
+        width: 50,
+        borderRadius: 25,
+        borderWidth: 1,
+        padding: 3,
+        gap: 4,
+        alignItems: 'center',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 5,
+    },
+    verticalToggleButton: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    userMarkerWrap: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    userAvatarCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.16,
+        shadowRadius: 6,
+        elevation: 4,
+    },
+    userBadge: {
+        position: 'absolute',
+        bottom: -4,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: '#FFFFFF',
+    },
+    avatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

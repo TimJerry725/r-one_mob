@@ -107,7 +107,7 @@ export const AssetScanScreen = () => {
                         onPress={() => navigation.goBack()}
                         style={styles.backButton}
                     >
-                        <Ionicons name="chevron-back" size={28} color={colors.text} />
+                        <Ionicons name="chevron-back" size={22} color={colors.primary} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
                         <Text style={[styles.headerLabel, { color: colors.textSecondary }]}>Asset Scan</Text>
