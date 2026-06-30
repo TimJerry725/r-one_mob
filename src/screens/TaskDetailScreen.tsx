@@ -137,6 +137,8 @@ export const TaskDetailScreen = () => {
 
     const [approveModalVisible, setApproveModalVisible] = useState(false);
     const [approveComments, setApproveComments] = useState('');
+    const [rejectModalVisible, setRejectModalVisible] = useState(false);
+    const [rejectComments, setRejectComments] = useState('');
     const scrollViewRef = useRef<ScrollView>(null);
 
     useEffect(() => {
@@ -260,22 +262,31 @@ export const TaskDetailScreen = () => {
     };
 
     const handleRejectWork = () => {
+        setRejectModalVisible(true);
+    };
+
+    const handleConfirmReject = () => {
+        if (!rejectComments.trim()) {
+            Alert.alert('Comments Required', 'Please provide rejection comments.');
+            return;
+        }
+
+        const newAct = {
+            id: Date.now().toString(),
+            title: 'Andrea Meuschke (You)',
+            time: 'Just now',
+            type: 'comment' as const,
+            detail: `${rejectComments.trim()} (Rejected)`,
+        };
+        
+        setActivities([newAct, ...activities]);
+        workOrder.status = 'Working';
+
+        setRejectModalVisible(false);
         Alert.alert(
-            "Reject Work",
-            "Are you sure you want to reject this work order? It will be sent back to In Progress.",
-            [
-                { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Reject", 
-                    style: "destructive",
-                    onPress: () => {
-                        workOrder.status = 'Working';
-                        Alert.alert("Rejected", "The work order has been sent back for correction.", [
-                            { text: "OK", onPress: () => navigation.goBack() }
-                        ]);
-                    } 
-                }
-            ]
+            'Rejected',
+            'The work order has been sent back for correction.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
         );
     };
 
@@ -351,14 +362,14 @@ export const TaskDetailScreen = () => {
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Scheduled Dates</Text>
                         <View style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
                             <View style={{ flex: 1 }}>
-                                <Text style={[{ color: colors.textSecondary, fontSize: 10 }, FONTS.label]}>START DATE</Text>
-                                <Text style={[{ color: colors.text, marginTop: 2 }, FONTS.bodyStrong]}>
+                                <Text style={[FONTS.label, { color: colors.textSecondary, fontSize: 10 }]}>START DATE</Text>
+                                <Text style={[FONTS.bodyStrong, { color: colors.text, marginTop: 2, fontSize: 12 }]}>
                                     {new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </Text>
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={[{ color: colors.textSecondary, fontSize: 10 }, FONTS.label]}>END DATE</Text>
-                                <Text style={[{ color: colors.text, marginTop: 2 }, FONTS.bodyStrong]}>
+                                <Text style={[FONTS.label, { color: colors.textSecondary, fontSize: 10 }]}>END DATE</Text>
+                                <Text style={[FONTS.bodyStrong, { color: colors.text, marginTop: 2, fontSize: 12 }]}>
                                     {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </Text>
                             </View>
@@ -378,6 +389,9 @@ export const TaskDetailScreen = () => {
                             })}
                             <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
                                 <Text style={[styles.heroChipText, { color: colors.primary }]}>Approver: Dispatch</Text>
+                            </View>
+                            <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+                                <Text style={[styles.heroChipText, { color: colors.primary }]}>Assigned by: {workOrder.assignedBy || 'Dispatch'}</Text>
                             </View>
                         </View>
                     </View>
@@ -653,59 +667,32 @@ export const TaskDetailScreen = () => {
                     ) : null}
                 </ScrollView>
 
-                {activeTab === 'Tasks' && (
+                {activeTab === 'Tasks' && isUnderReview && (
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
                     >
-                        {isUnderReview ? (
-                            <>
-                                <TouchableOpacity
-                                    onPress={handleRejectWork}
-                                    style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger, borderWidth: 1 }]}
-                                >
-                                    <Text style={[styles.footerButtonText, { color: colors.danger, ...FONTS.bodyStrong }]}>Reject</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleApproveWork}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            backgroundColor: colors.success,
-                                            borderColor: colors.success,
-                                        },
-                                    ]}
-                                >
-                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
-                                        Approve
-                                    </Text>
-                                </TouchableOpacity>
-                            </>
-                        ) : (
-                            <>
-                                <TouchableOpacity
-                                    onPress={() => navigation.goBack()}
-                                    style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
-                                >
-                                    <Text style={[styles.footerButtonText, { color: colors.text }]}>Save</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleCompleteAction}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            backgroundColor: readyToComplete ? colors.primary : colors.surfaceHighlight,
-                                            borderColor: readyToComplete ? colors.primary : colors.border,
-                                            opacity: 1,
-                                        },
-                                    ]}
-                                >
-                                    <Text style={[styles.footerPrimaryText, { color: readyToComplete ? colors.white : colors.textSecondary }]}>
-                                        {completeActionLabel}
-                                    </Text>
-                                </TouchableOpacity>
-                            </>
-                        )}
+                        <TouchableOpacity
+                            onPress={handleRejectWork}
+                            style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger, borderWidth: 1 }]}
+                        >
+                            <Text style={[styles.footerButtonText, { color: colors.danger, ...FONTS.bodyStrong }]}>Reject</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={handleApproveWork}
+                            style={[
+                                styles.footerButton,
+                                {
+                                    backgroundColor: colors.success,
+                                    borderColor: colors.success,
+                                    opacity: 1,
+                                },
+                            ]}
+                        >
+                            <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
+                                Approve
+                            </Text>
+                        </TouchableOpacity>
                     </KeyboardAvoidingView>
                 )}
 
@@ -1025,6 +1012,65 @@ export const TaskDetailScreen = () => {
                                     onPress={handleConfirmApproval}
                                 >
                                     <Text style={[styles.footerBtnText, { color: colors.white }]}>Confirm Approve</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                <Modal visible={rejectModalVisible} transparent animationType="slide">
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setRejectModalVisible(false)} />
+                        <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+                            <View style={styles.modalHeader}>
+                                <View>
+                                    <Text style={[styles.modalTitle, { color: colors.text }]}>Reject Work</Text>
+                                    <Text style={[styles.modalSub, { color: colors.textSecondary, marginTop: 2 }]}>Provide feedback on why it was rejected</Text>
+                                </View>
+                                <TouchableOpacity onPress={() => setRejectModalVisible(false)} style={styles.modalClose}>
+                                    <Ionicons name="close" size={24} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                                <View style={{ gap: 16, paddingBottom: 36 }}>
+                                    <View style={{ gap: 4 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                            <Text style={{ color: colors.danger }}>* </Text>Rejection Comments
+                                        </Text>
+                                        <TextInput
+                                            value={rejectComments}
+                                            onChangeText={setRejectComments}
+                                            style={[
+                                                styles.commentInput, 
+                                                getInputShellStyle(colors), 
+                                                { 
+                                                    color: colors.text, 
+                                                    minHeight: 100, 
+                                                    textAlignVertical: 'top',
+                                                    paddingTop: 12,
+                                                }
+                                            ]}
+                                            placeholder="Please provide details for the rejection..."
+                                            placeholderTextColor={colors.textSecondary}
+                                            multiline
+                                        />
+                                    </View>
+                                </View>
+                            </ScrollView>
+
+                            <View style={styles.modalFooterRow}>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderWidth: 1 }]}
+                                    onPress={() => setRejectModalVisible(false)}
+                                >
+                                    <Text style={[styles.footerBtnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: colors.danger }]}
+                                    onPress={handleConfirmReject}
+                                >
+                                    <Text style={[styles.footerBtnText, { color: colors.white }]}>Confirm Reject</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>

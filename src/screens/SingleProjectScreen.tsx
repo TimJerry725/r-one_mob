@@ -386,11 +386,11 @@ export const SingleProjectScreen = () => {
                                 <View />
                             </View>
                             
-                            <Text style={[{ color: colors.text, marginHorizontal: 20, marginBottom: 16 }, FONTS.bodyStrong]}>
-                                Select the chargers to be take live
+                            <Text style={[{ color: colors.text, marginHorizontal: 20, marginBottom: 12 }, FONTS.bodyStrong]}>
+                                Select the chargers to be taken live
                             </Text>
 
-                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, gap: 12 }}>
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, gap: 8 }}>
                                 {projectAssets.map((asset) => {
                                     const detail = getAssetVisionDetailById(asset.id);
                                     const isSelected = selectedAssets.includes(asset.id);
@@ -422,14 +422,14 @@ export const SingleProjectScreen = () => {
                                                 <Ionicons name={isSelected ? "checkmark-circle" : "ellipse-outline"} size={26} color={isSelected ? colors.primary : colors.textSecondary} />
                                             </View>
                                             
-                                            <View style={[styles.chargerCardDetails, { backgroundColor: colors.surfaceHighlight }]}>
-                                                <View style={styles.chargerCardDetailItem}>
-                                                    <Text style={[styles.chargerCardDetailLabel, { color: colors.textSecondary }]}>Power</Text>
-                                                    <Text style={[styles.chargerCardDetailValue, { color: colors.text }]}>{detail.peakPower}</Text>
+                                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginHorizontal: 12, marginBottom: 12 }}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceHighlight, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, gap: 4 }}>
+                                                    <Text style={[FONTS.label, { color: colors.textSecondary, fontSize: 9 }]}>POWER</Text>
+                                                    <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 10 }]}>{detail.peakPower}</Text>
                                                 </View>
-                                                <View style={styles.chargerCardDetailItem}>
-                                                    <Text style={[styles.chargerCardDetailLabel, { color: colors.textSecondary }]}>Connectors</Text>
-                                                    <Text style={[styles.chargerCardDetailValue, { color: colors.text }]}>{detail.connectors}</Text>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceHighlight, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, gap: 4 }}>
+                                                    <Text style={[FONTS.label, { color: colors.textSecondary, fontSize: 9 }]}>CONNECTORS</Text>
+                                                    <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 10 }]}>{detail.connectors}</Text>
                                                 </View>
                                             </View>
 
@@ -606,43 +606,43 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
     },
     chargerCard: {
-        borderRadius: 16,
+        borderRadius: 12,
         overflow: 'hidden',
     },
     chargerCardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
+        padding: 12,
     },
     chargerCardTitle: {
         ...FONTS.h3,
-        fontSize: 16,
-        marginBottom: 4,
+        fontSize: 14,
+        marginBottom: 2,
     },
     chargerCardSub: {
         ...FONTS.caption,
     },
     chargerCardDetails: {
         flexDirection: 'row',
-        padding: 12,
-        marginHorizontal: 16,
-        marginBottom: 16,
-        borderRadius: 12,
-        gap: 16,
+        padding: 8,
+        marginHorizontal: 12,
+        marginBottom: 12,
+        borderRadius: 8,
+        gap: 12,
     },
     chargerCardDetailItem: {
         flex: 1,
     },
     chargerCardDetailLabel: {
         ...FONTS.label,
-        marginBottom: 4,
+        marginBottom: 2,
     },
     chargerCardDetailValue: {
         ...FONTS.bodyStrong,
     },
     chargerCardFooter: {
-        padding: 16,
+        padding: 12,
         borderTopWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
@@ -652,10 +652,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 6,
         borderRadius: 8,
-        minWidth: 140,
+        minWidth: 120,
     },
     modalFooterRow: {
         flexDirection: 'row',

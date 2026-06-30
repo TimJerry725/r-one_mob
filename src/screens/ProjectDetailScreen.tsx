@@ -9,7 +9,7 @@ import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { getServiceTypeColors } from '../styles/workTypeColors';
 import { WORK_ORDERS, WorkOrder, WorkOrderStatus, STATION_BUSINESS_IMPACT } from '../data/fieldDemo';
 
-const STATUS_TABS: WorkOrderStatus[] = ['To-Do', 'Working', 'Under Review', 'Completed'];
+const STATUS_TABS: WorkOrderStatus[] = ['Unassigned', 'Assigned', 'Working', 'Under Review', 'Completed'];
 
 type StationSummary = {
     id: string;
@@ -42,7 +42,7 @@ export const OrderCard = ({
     hideStationChip?: boolean;
 }) => {
     const actionConfig =
-        item.status === 'To-Do'
+        (item.status === 'Unassigned' || item.status === 'Assigned')
             ? {
                 secondaryLabel: 'Forward',
                 primaryLabel: 'Accept Work',
@@ -349,7 +349,7 @@ export const ProjectDetailScreen = () => {
     
     const filterCounts = useMemo(() => {
         const counts: Record<string, number> = { 
-            'To-Do': 0, 'Working': 0, 'Under Review': 0, 'Completed': 0,
+            'Unassigned': 0, 'Assigned': 0, 'Working': 0, 'Under Review': 0, 'Completed': 0,
             'Installation': 0, 'Service': 0, 'Preventive': 0
         };
         WORK_ORDERS.forEach((item) => {
@@ -940,9 +940,11 @@ const styles = StyleSheet.create({
     },
     actionButtonText: {
         ...FONTS.bodyStrong,
+        textAlign: 'center',
     },
     primaryActionText: {
         ...FONTS.bodyStrong,
+        textAlign: 'center',
     },
     stationCard: {
         borderRadius: 18,

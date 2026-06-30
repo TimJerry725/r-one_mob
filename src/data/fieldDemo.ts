@@ -1,4 +1,4 @@
-export type WorkOrderStatus = 'To-Do' | 'Working' | 'Under Review' | 'Completed';
+export type WorkOrderStatus = 'Unassigned' | 'Assigned' | 'Working' | 'Under Review' | 'Completed';
 
 export type WorkOrder = {
     id: string;
@@ -110,7 +110,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         address: 'Platform Road, Shivajinagar, Pune',
         type: 'Installation',
         stage: 'Site Prep',
-        status: 'To-Do',
+        status: 'Assigned',
         dueWindow: 'Today, 09:30 - 12:30',
         eta: 'Starts in 35 min',
         distance: '0.8 km',
@@ -162,7 +162,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         address: 'Platform Road, Shivajinagar, Pune',
         type: 'Installation',
         stage: 'Commissioning',
-        status: 'To-Do',
+        status: 'Assigned',
         dueWindow: 'Tomorrow, 09:30 - 12:30',
         eta: 'Not started',
         distance: '0.8 km',
@@ -237,7 +237,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         address: 'Platform Road, Shivajinagar, Pune',
         type: 'Installation',
         stage: 'Closeout',
-        status: 'To-Do',
+        status: 'Assigned',
         dueWindow: 'Next Week, 10:00 - 11:00',
         eta: 'Scheduled',
         distance: '0.8 km',
@@ -362,7 +362,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         address: 'Dock Access Road, Kochi',
         type: 'Preventive',
         stage: 'Draft',
-        status: 'To-Do',
+        status: 'Unassigned',
         dueWindow: 'Tomorrow, 14:00 - 16:00',
         eta: 'Checklist not configured yet',
         distance: '4.7 km',
@@ -439,6 +439,28 @@ export const ASSETS: AssetRecord[] = [
         lastService: '21 Mar 2026',
         firmware: 'v4.4.9',
         linkedWorkOrderId: 'wo-105',
+    },
+    {
+        id: 'asset-5',
+        cpid: 'CP-100240',
+        serial: 'RONE-778393',
+        model: 'ABB Terra 360',
+        status: 'Healthy',
+        location: 'Pune Central Station',
+        lastService: '18 Mar 2026',
+        firmware: 'v4.6.2',
+        linkedWorkOrderId: 'wo-101',
+    },
+    {
+        id: 'asset-6',
+        cpid: 'CP-100241',
+        serial: 'RONE-778394',
+        model: 'Kempower Satellite',
+        status: 'Healthy',
+        location: 'Pune Central Station',
+        lastService: '18 Mar 2026',
+        firmware: 'v2.1.0',
+        linkedWorkOrderId: 'wo-101',
     },
 ];
 
@@ -536,6 +558,34 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
             { id: 'rt-8', realTime: '07 Apr 2026 06:18 AM', receivedTime: '07 Apr 2026 06:19 AM', recordId: '13008721-res-31' },
             { id: 'rt-9', realTime: '06 Apr 2026 10:31 PM', receivedTime: '06 Apr 2026 10:31 PM', recordId: '13008721-res-32' },
         ],
+    },
+    'asset-5': {
+        chargerLabel: 'Charge Point 1002',
+        commissionedOn: '12 Oct 2023',
+        siteLead: 'Rohit',
+        contactNumber: '+91 82488 6155',
+        peakPower: '360 kW',
+        voltageRange: '400 - 920 V',
+        currentRating: '250 A',
+        connectors: '4',
+        warrantyTill: '18 Oct 2027',
+        alerts: [],
+        workHistory: [],
+        realtimeEvents: [],
+    },
+    'asset-6': {
+        chargerLabel: 'Charge Point 1003',
+        commissionedOn: '12 Oct 2023',
+        siteLead: 'Rohit',
+        contactNumber: '+91 82488 6155',
+        peakPower: '200 kW',
+        voltageRange: '400 - 920 V',
+        currentRating: '200 A',
+        connectors: '2',
+        warrantyTill: '18 Oct 2027',
+        alerts: [],
+        workHistory: [],
+        realtimeEvents: [],
     },
 };
 
@@ -686,9 +736,9 @@ export const autoSchedulePMs = () => {
             dueDate.setMonth(dueDate.getMonth() + asset.pmDurationMonths);
             
             if (now >= dueDate) {
-                // Check if a Preventive WO already exists for this asset in "To-Do" or "Working"
+                // Check if a Preventive WO already exists for this asset in "Unassigned" or "Assigned" or "Working"
                 const existingPM = WORK_ORDERS.find(
-                    (wo) => wo.assetId === asset.id && wo.type === 'Preventive' && (wo.status === 'To-Do' || wo.status === 'Working')
+                    (wo) => wo.assetId === asset.id && wo.type === 'Preventive' && (wo.status === 'Unassigned' || wo.status === 'Assigned' || wo.status === 'Working')
                 );
                 
                 if (!existingPM) {
@@ -701,7 +751,7 @@ export const autoSchedulePMs = () => {
                         address: 'Location Address',
                         type: 'Preventive',
                         stage: 'Inspection',
-                        status: 'To-Do',
+                        status: 'Unassigned',
                         dueWindow: 'Scheduled by System',
                         eta: 'Pending',
                         distance: '0.0 km',
@@ -735,7 +785,7 @@ export const requestPM = (assetId: string, notes: string, hasAttachment: boolean
         address: 'Location Address',
         type: 'Preventive',
         stage: 'Requested',
-        status: 'To-Do',
+        status: 'Unassigned',
         dueWindow: 'ASAP',
         eta: 'Pending Dispatch',
         distance: '0.0 km',

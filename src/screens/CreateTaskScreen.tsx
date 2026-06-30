@@ -130,7 +130,7 @@ export const CreateTaskScreen = () => {
             address: 'Platform Road, Shivajinagar, Pune',
             type: serviceType === 'Request Preventive' ? 'Preventive' as const : 'Service' as const,
             stage: serviceType === 'Service' ? 'Site Prep' : 'Commissioning',
-            status: 'To-Do' as const,
+            status: 'Unassigned' as const,
             dueWindow: 'Today, 14:00 - 17:00',
             eta: 'Not started',
             distance: '1.2 km',
@@ -329,6 +329,19 @@ export const CreateTaskScreen = () => {
                                                     }}
                                                 />
 
+                                                {/* Charge Point */}
+                                                <PopoverDropdown
+                                                    label="* Charge Point"
+                                                    placeholder="Choose CPID"
+                                                    options={[
+                                                        { label: 'CP-01 (MUM-FAST-1)', value: 'CP-01' },
+                                                        { label: 'CP-02 (MUM-FAST-2)', value: 'CP-02' },
+                                                        { label: 'CP-03 (DEL-FAST-1)', value: 'CP-03' },
+                                                    ]}
+                                                    value={chargePoint}
+                                                    onSelect={(val) => setChargePoint(val as string)}
+                                                />
+
                                             {serviceType === 'Service' && (
                                                 <View style={{ gap: 4 }}>
                                                     {/* Work Title */}
@@ -369,19 +382,6 @@ export const CreateTaskScreen = () => {
                                                         onSelect={(val) => setPriority(val as string)}
                                                     />
 
-                                                    {/* Charge Point */}
-                                                    <PopoverDropdown
-                                                        label="* Charge Point"
-                                                        placeholder="Choose CPID"
-                                                        options={[
-                                                            { label: 'CP-01 (MUM-FAST-1)', value: 'CP-01' },
-                                                            { label: 'CP-02 (MUM-FAST-2)', value: 'CP-02' },
-                                                            { label: 'CP-03 (DEL-FAST-1)', value: 'CP-03' },
-                                                        ]}
-                                                        value={chargePoint}
-                                                        onSelect={(val) => setChargePoint(val as string)}
-                                                    />
-
                                                     {/* Date Range */}
                                                     <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
                                                         <Text style={{ color: colors.danger }}>* </Text>Date Range
@@ -410,28 +410,32 @@ export const CreateTaskScreen = () => {
                                                 </View>
                                             )}
 
-                                            {/* Team Lead - Universal */}
-                                            <PopoverDropdown
-                                                label="* Team Lead"
-                                                placeholder="Choose lead"
-                                                options={[
-                                                    { label: 'Timothy Field (Self)', value: 'Timothy' },
-                                                    { label: 'Andrea Meuschke', value: 'Andrea' },
-                                                    { label: 'Marcus Aurelius', value: 'Marcus' },
-                                                ]}
-                                                value={teamLead}
-                                                onSelect={(val) => setTeamLead(val as string)}
-                                            />
+                                            {serviceType === 'Service' && (
+                                                <>
+                                                    {/* Team Lead */}
+                                                    <PopoverDropdown
+                                                        label="* Team Lead"
+                                                        placeholder="Choose lead"
+                                                        options={[
+                                                            { label: 'Timothy Field (Self)', value: 'Timothy' },
+                                                            { label: 'Andrea Meuschke', value: 'Andrea' },
+                                                            { label: 'Marcus Aurelius', value: 'Marcus' },
+                                                        ]}
+                                                        value={teamLead}
+                                                        onSelect={(val) => setTeamLead(val as string)}
+                                                    />
 
-                                            {/* Team Members - Universal */}
-                                            <PopoverDropdown
-                                                label="* Team Members"
-                                                placeholder="Choose team members"
-                                                options={getSelectorOptions('assignees').options}
-                                                value={assignees}
-                                                onSelect={(val) => setAssignees(val as string[])}
-                                                isMulti={true}
-                                            />
+                                                    {/* Team Members */}
+                                                    <PopoverDropdown
+                                                        label="* Team Members"
+                                                        placeholder="Choose team members"
+                                                        options={getSelectorOptions('assignees').options}
+                                                        value={assignees}
+                                                        onSelect={(val) => setAssignees(val as string[])}
+                                                        isMulti={true}
+                                                    />
+                                                </>
+                                            )}
 
                                             {/* Attachments - Universal */}
                                             <View style={{ gap: 4, marginBottom: 12, marginTop: 8 }}>

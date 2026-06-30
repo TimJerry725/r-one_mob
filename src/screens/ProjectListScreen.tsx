@@ -21,10 +21,21 @@ export const ProjectListScreen = () => {
                     id: item.projectId,
                     projectName: item.title,
                     siteName: item.siteName,
+                    chargers: new Set([item.assetId]),
+                    startDate: item.targetTime,
+                    endDate: item.targetTime,
                 });
+            } else {
+                const proj = uniqueProjects.get(item.projectId);
+                proj.chargers.add(item.assetId);
+                if (item.targetTime < proj.startDate) proj.startDate = item.targetTime;
+                if (item.targetTime > proj.endDate) proj.endDate = item.targetTime;
             }
         });
-        return Array.from(uniqueProjects.values());
+        return Array.from(uniqueProjects.values()).map(p => ({
+            ...p,
+            chargerCount: p.chargers.size
+        }));
     }, []);
 
     const visibleProjects = projects.filter((item) => {
@@ -51,12 +62,12 @@ export const ProjectListScreen = () => {
                     <View style={styles.metricsRow}>
                         <View style={[styles.metricCard, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
                             <Text style={[styles.metricValue, { color: colors.primary }]}>{projects.length}</Text>
-                            <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Total Projects</Text>
+                            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Total Projects</Text>
                         </View>
 
                         <View style={[styles.metricCard, { backgroundColor: colors.secondary + '15', borderColor: colors.secondary }]}>
                             <Text style={[styles.metricValue, { color: colors.secondary }]}>4</Text>
-                            <Text style={[styles.metricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Chargers to be taken live</Text>
+                            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Chargers to be taken live</Text>
                         </View>
                     </View>
 
@@ -73,10 +84,20 @@ export const ProjectListScreen = () => {
                                         <Text style={[styles.projectTitle, { color: colors.text, flex: 1, marginBottom: 0 }]}>{item.projectName}</Text>
                                         <Text style={[{ ...FONTS.label, color: colors.primary, marginTop: 2 }]}>{item.id}</Text>
                                     </View>
-                                    <View style={styles.infoChipRow}>
-                                        <View style={[styles.infoChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                            <Text style={[styles.infoChipText, { color: colors.textSecondary }]}>Station:</Text>
-                                            <Text style={[styles.infoChipValue, { color: colors.text }]}>{item.siteName}</Text>
+
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                            <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
+                                            <Text style={[{ ...FONTS.caption, color: colors.textSecondary }]}>
+                                                {new Date(item.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                                {item.startDate !== item.endDate ? ` - ${new Date(item.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}` : ''}
+                                            </Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                            <Ionicons name="flash-outline" size={14} color={colors.textSecondary} />
+                                            <Text style={[{ ...FONTS.caption, color: colors.textSecondary }]}>
+                                                {item.chargerCount} {item.chargerCount === 1 ? 'Charger' : 'Chargers'}
+                                            </Text>
                                         </View>
                                     </View>
                                 </TouchableOpacity>
@@ -175,20 +196,22 @@ const styles = StyleSheet.create({
     },
     metricCard: {
         flex: 1,
-        flexDirection: 'row',
+        flexDirection: 'column',
         borderRadius: 8,
         borderWidth: 1,
-        paddingVertical: 8,
-        paddingHorizontal: 8,
+        paddingVertical: 6,
+        paddingHorizontal: 4,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
+        gap: 2,
     },
     metricValue: {
         ...FONTS.h3,
+        fontSize: 18,
     },
     metricLabel: {
-        ...FONTS.bodyStrong,
-        fontSize: 12,
+        ...FONTS.caption,
+        fontSize: 10,
+        textAlign: 'center',
     },
 });

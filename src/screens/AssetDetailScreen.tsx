@@ -70,7 +70,8 @@ export const AssetDetailScreen = () => {
         [asset.linkedWorkOrderId],
     );
 
-    const [activeTab, setActiveTab] = useState<'overview' | 'alerts' | 'history'>('overview');
+    const [activeTab, setActiveTab] = useState<'alerts' | 'history'>('alerts');
+    const [specsModalVisible, setSpecsModalVisible] = useState(false);
 
     const [ocppModalVisible, setOcppModalVisible] = useState(false);
     const [callsModalVisible, setCallsModalVisible] = useState(false);
@@ -174,7 +175,12 @@ export const AssetDetailScreen = () => {
                                         {asset.model.split(' ')[0]}
                                     </Text>
                                 </View>
-                                <Text style={[styles.heroTitle, { color: colors.text }]}>{detail.chargerLabel}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                    <Text style={[styles.heroTitle, { color: colors.text, marginBottom: 0 }]}>{detail.chargerLabel}</Text>
+                                    <TouchableOpacity onPress={() => setSpecsModalVisible(true)}>
+                                        <Ionicons name="information-circle" size={22} color={colors.primary} />
+                                    </TouchableOpacity>
+                                </View>
                                 <Text style={[styles.heroMeta, { color: colors.textSecondary }]}>
                                     {asset.model} • {asset.location}
                                 </Text>
@@ -191,13 +197,6 @@ export const AssetDetailScreen = () => {
                     {/* Navigation Tabs */}
                     <View style={[styles.tabsContainer, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
                         <TouchableOpacity
-                            onPress={() => setActiveTab('overview')}
-                            style={[styles.tabButton, activeTab === 'overview' && { backgroundColor: colors.primary }]}
-                        >
-                            <Text style={[styles.tabText, { color: activeTab === 'overview' ? '#FFF' : colors.textSecondary }]}>Specs</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
                             onPress={() => setActiveTab('alerts')}
                             style={[styles.tabButton, activeTab === 'alerts' && { backgroundColor: colors.primary }]}
                         >
@@ -211,48 +210,6 @@ export const AssetDetailScreen = () => {
                             <Text style={[styles.tabText, { color: activeTab === 'history' ? '#FFF' : colors.textSecondary }]}>History</Text>
                         </TouchableOpacity>
                     </View>
-
-                    {/* Tab 1: Specs / Overview */}
-                    {activeTab === 'overview' && (
-                        <View style={styles.tabContent}>
-                            {/* Specs Card */}
-                            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                <Text style={[styles.cardTitle, { color: colors.text }]}>Technical specifications</Text>
-                                <View style={styles.specGridCompact}>
-                                    {specFields.map((field) => (
-                                        <View key={field.label} style={[styles.specItemCompact, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                            <View style={[styles.specIconCompact, { backgroundColor: field.color + '12' }]}>
-                                                {field.isSvg ? (
-                                                    <SvgXml xml={field.icon} width={13} height={18} color={field.color} />
-                                                ) : (
-                                                    <Ionicons name={field.icon as any} size={14} color={field.color} />
-                                                )}
-                                            </View>
-                                            <View style={{ flex: 1 }}>
-                                                <Text style={[styles.specLabelCompact, { color: colors.textSecondary }]}>{field.label}</Text>
-                                                <Text style={[styles.specValueCompact, { color: colors.text }]} numberOfLines={1}>{field.value}</Text>
-                                            </View>
-                                        </View>
-                                    ))}
-                                </View>
-                            </View>
-
-                            {/* Site Location card */}
-                            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 8 }]}>Installation site</Text>
-                                <View style={styles.siteCardCompact}>
-                                    <Ionicons name="location" size={16} color={colors.secondary} style={{ marginTop: 2 }} />
-                                    <View style={{ flex: 1, marginLeft: 6, marginRight: 8 }}>
-                                        <Text style={[styles.siteName, { color: colors.text }]}>{linkedWorkOrder?.siteName ?? 'Primary Station Hub'}</Text>
-                                        <Text style={[styles.siteAddress, { color: colors.textSecondary }]}>{linkedWorkOrder?.address ?? asset.location}</Text>
-                                    </View>
-                                    <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.primary + '15' }]}>
-                                        <Ionicons name="navigate" size={16} color={colors.primary} />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </View>
-                    )}
 
                     {/* Tab 2: Logs & Alerts */}
                     {activeTab === 'alerts' && (
@@ -461,6 +418,55 @@ export const AssetDetailScreen = () => {
                     )}
                 </ScrollView>
             </SafeAreaView>
+
+            {/* Specs Modal */}
+            <Modal visible={specsModalVisible} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setSpecsModalVisible(false)} />
+                    <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>Asset Specifications</Text>
+                            <TouchableOpacity onPress={() => setSpecsModalVisible(false)} style={styles.modalClose}>
+                                <Ionicons name="close" size={24} color={colors.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                            {/* Technical specifications */}
+                            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 0, paddingHorizontal: 0, paddingTop: 0, shadowOpacity: 0 }]}>
+                                <View style={styles.specGridCompact}>
+                                    {specFields.map((field) => (
+                                        <View key={field.label} style={[styles.specItemCompact, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                            <View style={[styles.specIconCompact, { backgroundColor: field.color + '12' }]}>
+                                                {field.isSvg ? (
+                                                    <SvgXml xml={field.icon} width={13} height={18} color={field.color} />
+                                                ) : (
+                                                    <Ionicons name={field.icon as any} size={14} color={field.color} />
+                                                )}
+                                            </View>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={[styles.specLabelCompact, { color: colors.textSecondary }]}>{field.label}</Text>
+                                                <Text style={[styles.specValueCompact, { color: colors.text }]} numberOfLines={1}>{field.value}</Text>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+
+                            {/* Site Location */}
+                            <View style={[styles.card, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, marginTop: 16 }]}>
+                                <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 8 }]}>Installation site</Text>
+                                <View style={styles.siteCardCompact}>
+                                    <Ionicons name="location" size={16} color={colors.secondary} style={{ marginTop: 2 }} />
+                                    <View style={{ flex: 1, marginLeft: 6, marginRight: 8 }}>
+                                        <Text style={[styles.siteName, { color: colors.text }]}>{linkedWorkOrder?.siteName ?? 'Primary Station Hub'}</Text>
+                                        <Text style={[styles.siteAddress, { color: colors.textSecondary }]}>{linkedWorkOrder?.address ?? asset.location}</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
 
             {/* OCPP Logs Modal */}
             <Modal visible={ocppModalVisible} transparent animationType="slide">
