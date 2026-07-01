@@ -68,13 +68,13 @@ export const OrderCard = ({
                     <Text style={{ ...FONTS.caption, color: colors.textSecondary }}>
                         {!hideTypeChip && (
                             <>
-                                <Text style={{ color: typeColors.tintText, fontWeight: '600' }}>{item.type}</Text>
+                                <Text style={{ color: isDark ? typeColors.background : typeColors.tintText, fontWeight: '600' }}>{item.type}</Text>
                                 {' • '}
                             </>
                         )}
                         {item.type === 'Installation' && (
                             <>
-                                <Text style={{ color: colors.primary, fontWeight: '600' }}>{item.stage}</Text>
+                                <Text style={{ color: isDark ? colors.primaryLight : colors.primary, fontWeight: '600' }}>{item.stage}</Text>
                                 {' • '}
                             </>
                         )}

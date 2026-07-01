@@ -27,10 +27,11 @@ type ChecklistStateItem = {
     type: 'toggle' | 'text' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'media' | 'remarks_response';
     required: boolean;
     options?: string[];
-    value: string | number | string[];
+    value: string | number | string[] | string[][];
+    isNa?: boolean;
 };
 
-const getCompletedChecklistValue = (item: ChecklistTemplateItem): string | number | string[] => {
+const getCompletedChecklistValue = (item: ChecklistTemplateItem): string | number | string[] | string[][] => {
     switch (item.type) {
         case 'date':
             return new Date().toISOString().slice(0, 10);
@@ -50,7 +51,7 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): string | numbe
         case 'multiselect':
             return item.options?.slice(0, 2) ?? ['Completed'];
         case 'remarks_response':
-            return ['Checked on site.', 'No issues found.'];
+            return [['Checked on site.', 'No issues found.']];
         default:
             return 'Completed';
     }
@@ -63,13 +64,15 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
             ? getCompletedChecklistValue(item)
             : item.type === 'photo' || item.type === 'media'
                 ? 0
-                : item.type === 'remarks_response' ? ['', ''] : '',
+                : item.type === 'remarks_response' ? [['', '']] : '',
     }));
 
 const isComplete = (item: ChecklistStateItem) => {
+    if (item.isNa) return true;
     if (item.type === 'remarks_response') {
-        const val = item.value as string[];
-        return val && val[0]?.trim().length > 0 && val[1]?.trim().length > 0;
+        const val = item.value as string[][];
+        if (!val || val.length === 0) return false;
+        return val.every(pair => pair && pair[0]?.trim().length > 0 && pair[1]?.trim().length > 0);
     }
     if (item.type === 'not_applicable') return String(item.value).length > 0;
     if (item.type === 'photo' || item.type === 'media') {
@@ -116,6 +119,28 @@ export const TaskDetailScreen = () => {
     const [mediaModalVisible, setMediaModalVisible] = useState(false);
     const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
     const [actionModalVisible, setActionModalVisible] = useState(false);
+    const [editingTask, setEditingTask] = useState<ChecklistStateItem | null>(null);
+    const [editTaskLabel, setEditTaskLabel] = useState('');
+
+    const startEditTask = (task: ChecklistStateItem) => {
+        setEditingTask(task);
+        setEditTaskLabel(task.label);
+    };
+
+    const saveEditTask = () => {
+        if (editingTask && editTaskLabel.trim()) {
+            setItems(items.map(item => item.id === editingTask.id ? { ...item, label: editTaskLabel.trim() } : item));
+        }
+        setEditingTask(null);
+    };
+
+    const deleteTask = (id: string) => {
+        setItems(items.filter(item => item.id !== id));
+    };
+
+    const markTaskNa = (id: string) => {
+        setItems(items.map(item => item.id === id ? { ...item, isNa: !item.isNa } : item));
+    };
 
     const handleShareWork = async () => {
         try {
@@ -203,7 +228,7 @@ export const TaskDetailScreen = () => {
         setEditingCommentText(text);
     };
 
-    const updateItem = (id: string, value: string | number | string[]) => {
+    const updateItem = (id: string, value: string | number | string[] | string[][]) => {
         setItems((current) => current.map((item) => (item.id === id ? { ...item, value } : item)));
     };
 
@@ -331,8 +356,8 @@ export const TaskDetailScreen = () => {
                                 </View>
                                 {workOrder.type === 'Installation' ? (
                                     <View style={styles.heroTopChipRow}>
-                                        <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-                                            <Text style={[styles.heroChipText, { color: colors.primary }]}>{workOrder.stage}</Text>
+                                        <View style={[styles.heroChip, { backgroundColor: (isDark ? colors.primaryLight : colors.primary) + '15', borderColor: isDark ? colors.primaryLight : colors.primary }]}>
+                                            <Text style={[styles.heroChipText, { color: isDark ? colors.primaryLight : colors.primary }]}>{workOrder.stage}</Text>
                                         </View>
                                     </View>
                                 ) : null}
@@ -393,12 +418,10 @@ export const TaskDetailScreen = () => {
                                     </View>
                                 );
                             })}
-                            <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-                                <Text style={[styles.heroChipText, { color: colors.primary }]}>Approver: Dispatch</Text>
-                            </View>
-                            <View style={[styles.heroChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-                                <Text style={[styles.heroChipText, { color: colors.primary }]}>Assigned by: {workOrder.assignedBy || 'Dispatch'}</Text>
-                            </View>
+                        </View>
+                        <View style={{ marginTop: 12, flexDirection: 'row', gap: 16 }}>
+                            <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>Approver: Marcus Aurelius</Text>
+                            <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>Assigned by: {workOrder.assignedBy || 'Andrea Meuschke'}</Text>
                         </View>
                     </View>
 
@@ -437,7 +460,7 @@ export const TaskDetailScreen = () => {
                                     <View style={styles.listColumn}>
                                         {items.map((item) => {
                                             return (
-                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, opacity: item.isNa ? 0.5 : 1 }]}>
                                             <View style={styles.stepHeader}>
                                                     <View style={[styles.stepIcon, { backgroundColor: isComplete(item) ? colors.success : colors.surfaceHighlight }]}>
                                                         <Ionicons
@@ -446,84 +469,146 @@ export const TaskDetailScreen = () => {
                                                             color={isComplete(item) ? colors.white : colors.textSecondary}
                                                         />
                                                     </View>
-                                                    {item.type === 'remarks_response' ? (
-                                                        <View style={{ flex: 1, marginLeft: 12 }}>
+                                                    {editingTask?.id === item.id ? (
+                                                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 12 }}>
                                                             <TextInput
-                                                                placeholder="Remarks"
-                                                                placeholderTextColor={colors.textSecondary}
-                                                                style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, minHeight: 40, paddingHorizontal: 12, paddingVertical: 8 }]}
-                                                                value={(item.value as string[])?.[0] || ''}
-                                                                onChangeText={(value) => {
-                                                                    const current = (item.value as string[]) || ['', ''];
-                                                                    updateItem(item.id, [value, current[1]]);
-                                                                }}
+                                                                style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text, paddingHorizontal: 12, minHeight: 40 }]}
+                                                                value={editTaskLabel}
+                                                                onChangeText={setEditTaskLabel}
+                                                                autoFocus
                                                             />
+                                                            <TouchableOpacity onPress={saveEditTask}>
+                                                                <FontAwesome name="check-circle" size={24} color={colors.primary} />
+                                                            </TouchableOpacity>
+                                                            <TouchableOpacity onPress={() => setEditingTask(null)}>
+                                                                <FontAwesome name="times-circle" size={24} color={colors.textSecondary} />
+                                                            </TouchableOpacity>
                                                         </View>
                                                     ) : (
-                                                        <View style={{ flex: 1 }}>
-                                                            {item.label ? (
-                                                                <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
-                                                            ) : null}
-                                                            <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
-                                                                {item.required ? 'Required before completion' : 'Optional'}
-                                                            </Text>
+                                                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginLeft: 12 }}>
+                                                            <View style={{ flex: 1 }}>
+                                                                {item.label ? (
+                                                                    <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
+                                                                ) : null}
+                                                                <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
+                                                                    {item.isNa ? 'Not Applicable' : item.required ? 'Required before completion' : 'Optional'}
+                                                                </Text>
+                                                            </View>
+                                                            {!isUnderReview && (
+                                                                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', marginLeft: 8 }}>
+                                                                    <TouchableOpacity onPress={() => startEditTask(item)}>
+                                                                        <FontAwesome name="pencil" size={20} color={colors.primary} />
+                                                                    </TouchableOpacity>
+                                                                    <TouchableOpacity onPress={() => markTaskNa(item.id)}>
+                                                                        <FontAwesome name={item.isNa ? "check" : "ban"} size={20} color={item.isNa ? colors.success : colors.textSecondary} />
+                                                                    </TouchableOpacity>
+                                                                    <TouchableOpacity onPress={() => deleteTask(item.id)}>
+                                                                        <FontAwesome name="trash-o" size={20} color={colors.danger} />
+                                                                    </TouchableOpacity>
+                                                                </View>
+                                                            )}
                                                         </View>
                                                     )}
                                                 </View>
 
-                                                {item.type === 'photo' || item.type === 'media' ? (
-                                                    <TouchableOpacity
-                                                        onPress={() => {
-                                                            setActiveMediaId(item.id);
-                                                            setMediaModalVisible(true);
-                                                        }}
-                                                        style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
-                                                    >
-                                                        <FontAwesome name="paperclip" size={18} color={colors.primary} />
-                                                        <View style={{ alignItems: 'flex-start' }}>
-                                                            <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
-                                                            <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                                ) : item.type === 'remarks_response' ? (
-                                                    <View>
-                                                        <TextInput
-                                                            multiline
-                                                            placeholder="Response"
-                                                            placeholderTextColor={colors.textSecondary}
-                                                            style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text }]}
-                                                            value={(item.value as string[])?.[1] || ''}
-                                                            onChangeText={(value) => {
-                                                                const current = (item.value as string[]) || ['', ''];
-                                                                updateItem(item.id, [current[0], value]);
-                                                            }}
-                                                        />
-                                                    </View>
-                                                ) : item.type === 'text' ? (
-                                                    <TextInput
-                                                        multiline
-                                                        placeholder={getChecklistPlaceholder(item)}
-                                                        placeholderTextColor={colors.textSecondary}
-                                                        style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text }]}
-                                                        value={String(item.value)}
-                                                        onChangeText={(value) => updateItem(item.id, value)}
-                                                    />
-                                                ) : (
-                                                    <TextInput
-                                                        keyboardType={item.type === 'number' ? 'numeric' : 'default'}
-                                                        placeholder={getChecklistPlaceholder(item)}
-                                                        placeholderTextColor={colors.textSecondary}
-                                                        style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
-                                                        value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value)}
-                                                        onChangeText={(value) => updateItem(item.id, value)}
-                                                    />
-                                                )}
+                                                {!item.isNa && (
+                                                    <>
+                                                        {item.type === 'photo' || item.type === 'media' ? (
+                                                            <TouchableOpacity
+                                                                onPress={() => {
+                                                                    setActiveMediaId(item.id);
+                                                                    setMediaModalVisible(true);
+                                                                }}
+                                                                style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                                            >
+                                                                <FontAwesome name="paperclip" size={18} color={colors.primary} />
+                                                                <View style={{ alignItems: 'flex-start' }}>
+                                                                    <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
+                                                                    <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
+                                                                </View>
+                                                            </TouchableOpacity>
+                                                        ) : item.type === 'remarks_response' ? (
+                                                            <View style={{ gap: 12 }}>
+                                                                {((item.value as string[][]) || []).map((pair, index) => (
+                                                                    <View key={index} style={{ gap: 8, padding: 12, backgroundColor: colors.surfaceHighlight, borderRadius: 8 }}>
+                                                                        <TextInput
+                                                                            placeholder="Remark"
+                                                                            placeholderTextColor={colors.textSecondary}
+                                                                            style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, minHeight: 40, paddingHorizontal: 12 }]}
+                                                                            value={pair[0] || ''}
+                                                                            onChangeText={(val) => {
+                                                                                const current = [...((item.value as string[][]) || [['', '']])];
+                                                                                current[index] = [val, current[index]?.[1] || ''];
+                                                                                updateItem(item.id, current);
+                                                                            }}
+                                                                        />
+                                                                        <TextInput
+                                                                            multiline
+                                                                            placeholder="Response"
+                                                                            placeholderTextColor={colors.textSecondary}
+                                                                            style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text, minHeight: 60 }]}
+                                                                            value={pair[1] || ''}
+                                                                            onChangeText={(val) => {
+                                                                                const current = [...((item.value as string[][]) || [['', '']])];
+                                                                                current[index] = [current[index]?.[0] || '', val];
+                                                                                updateItem(item.id, current);
+                                                                            }}
+                                                                        />
+                                                                        {((item.value as string[][]) || []).length > 1 && !isUnderReview && (
+                                                                            <TouchableOpacity 
+                                                                                style={{ alignSelf: 'flex-end', marginTop: 4 }}
+                                                                                onPress={() => {
+                                                                                    const current = [...((item.value as string[][]) || [['', '']])];
+                                                                                    current.splice(index, 1);
+                                                                                    updateItem(item.id, current);
+                                                                                }}
+                                                                            >
+                                                                                <Text style={{ color: colors.danger, fontSize: 12 }}>Remove</Text>
+                                                                            </TouchableOpacity>
+                                                                        )}
+                                                                    </View>
+                                                                ))}
+                                                                {!isUnderReview && (
+                                                                    <TouchableOpacity 
+                                                                        style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, padding: 8 }}
+                                                                        onPress={() => {
+                                                                            const current = [...((item.value as string[][]) || [['', '']])];
+                                                                            current.push(['', '']);
+                                                                            updateItem(item.id, current);
+                                                                        }}
+                                                                    >
+                                                                        <FontAwesome name="plus" size={14} color={colors.primary} />
+                                                                        <Text style={{ color: colors.primary, fontWeight: '500' }}>Add another remark</Text>
+                                                                    </TouchableOpacity>
+                                                                )}
+                                                            </View>
+                                                        ) : item.type === 'text' ? (
+                                                            <TextInput
+                                                                multiline
+                                                                placeholder={getChecklistPlaceholder(item)}
+                                                                placeholderTextColor={colors.textSecondary}
+                                                                style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text }]}
+                                                                value={String(item.value)}
+                                                                onChangeText={(value) => updateItem(item.id, value)}
+                                                            />
+                                                        ) : (
+                                                            <TextInput
+                                                                keyboardType={item.type === 'number' ? 'numeric' : 'default'}
+                                                                placeholder={getChecklistPlaceholder(item)}
+                                                                placeholderTextColor={colors.textSecondary}
+                                                                style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                                                value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value)}
+                                                                onChangeText={(value) => updateItem(item.id, value)}
+                                                            />
+                                                        )}
 
-                                                {item.options?.length ? (
-                                                    <Text style={[styles.stepHint, { color: colors.textSecondary }]}>
-                                                        {item.options.join(', ')}
-                                                    </Text>
-                                                ) : null}
+                                                        {item.options?.length ? (
+                                                            <Text style={[styles.stepHint, { color: colors.textSecondary }]}>
+                                                                {item.options.join(', ')}
+                                                            </Text>
+                                                        ) : null}
+                                                    </>
+                                                )}
                                                 </View>
                                             );
                                         })}

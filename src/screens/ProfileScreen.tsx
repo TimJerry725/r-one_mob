@@ -31,7 +31,6 @@ export const ProfileScreen = () => {
                                     <Text style={[styles.avatarInitialsText, { color: colors.white }]}>TF</Text>
                                 </View>
                             </View>
-                            <View style={[styles.statusDot, { backgroundColor: colors.success, borderColor: colors.surface }]} />
                         </View>
                         <View style={styles.profileDetails}>
                             <Text style={[styles.name, { color: colors.text }]}>Timothy Field</Text>
@@ -165,15 +164,6 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         fontFamily: 'RedHatDisplay_600SemiBold',
-    },
-    statusDot: {
-        position: 'absolute',
-        bottom: 2,
-        right: 2,
-        width: 14,
-        height: 14,
-        borderRadius: 7,
-        borderWidth: 2,
     },
     profileDetails: {
         flex: 1,

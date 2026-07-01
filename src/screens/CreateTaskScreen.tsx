@@ -76,22 +76,15 @@ export const CreateTaskScreen = () => {
     const prefill = route.params?.prefill ?? {};
     const [selectedFlow, setSelectedFlow] = useState<CreateFlow>(fromDetail ? 'task' : 'checklist');
     
-    const [checklistName, setChecklistName] = useState<typeof CHECKLIST_NAMES[number] | ''>(prefill.checklistName || '');
     const [taskTitle, setTaskTitle] = useState('');
     const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
     const [siteName, setSiteName] = useState<string>(prefill.siteName || '');
     const [projectId, setProjectId] = useState<string>(prefill.projectId || '');
-    const [assignmentMode, setAssignmentMode] = useState<string>('self');
     const [assignees, setAssignees] = useState<string[]>([]);
-    const [instructions, setInstructions] = useState('');
-    const [serviceType, setServiceType] = useState<typeof SERVICE_TYPES[number]>(prefill.serviceType || 'Service');
-    const [stageName, setStageName] = useState<typeof STAGE_NAMES[number]>(prefill.stageName || 'Site Prep');
     const [dataType, setDataType] = useState<typeof DATA_TYPES[number]>('Text');
     const [taskOptions, setTaskOptions] = useState<string[]>([]);
     const [newOption, setNewOption] = useState('');
-    const [needsPhotos, setNeedsPhotos] = useState(true);
-    const [needsSignature, setNeedsSignature] = useState(true);
-    const [needsPartsLog, setNeedsPartsLog] = useState(true);
     const [tasks, setTasks] = useState<ChecklistTaskDraft[]>([]);
     const [hasAttachment, setHasAttachment] = useState(false);
 
@@ -100,13 +93,14 @@ export const CreateTaskScreen = () => {
     const [chargePoint, setChargePoint] = useState('CP-01');
     const [startDate, setStartDate] = useState('30 Jun 2026');
     const [endDate, setEndDate] = useState('05 Jul 2026');
-    const [teamLead, setTeamLead] = useState('Timothy');
+    const [task, setTask] = useState('');
+    const [assignmentType, setAssignmentType] = useState('Self');
 
     const handledSelectorToken = useRef<number | null>(null);
     const handledTaskToken = useRef<number | null>(null);
 
     const handleCreateWorkOrder = () => {
-        if (serviceType === 'Service' && !title.trim()) {
+        if (!title.trim()) {
             Alert.alert('Required Field', 'Please enter a work title.');
             return;
         }
@@ -115,21 +109,17 @@ export const CreateTaskScreen = () => {
             return;
         }
 
-        const techs = [teamLead].filter(Boolean);
-        assignees.forEach(member => {
-            if (!techs.includes(member)) {
-                techs.push(member);
-            }
-        });
+        const techs = assignmentType === 'Self' ? ['Self'] : assignees;
 
         const newWO = {
             id: `wo-${Date.now()}`,
             projectId: projectId || 'PJ001',
-            title: serviceType === 'Service' ? title.trim() : `Request Preventive - ${checklistName || 'Preventive closeout'}`,
+            title: title.trim(),
+            description: description.trim(),
             siteName: siteName,
             address: 'Platform Road, Shivajinagar, Pune',
-            type: serviceType === 'Request Preventive' ? 'Preventive' as const : 'Service' as const,
-            stage: serviceType === 'Service' ? 'Site Prep' : 'Commissioning',
+            type: 'Service' as const,
+            stage: 'Site Prep',
             status: 'Unassigned' as const,
             dueWindow: 'Today, 14:00 - 17:00',
             eta: 'Not started',
@@ -141,7 +131,7 @@ export const CreateTaskScreen = () => {
             technicians: techs,
             assetId: chargePoint || 'CP-100239',
             offlineReady: true,
-            notes: serviceType === 'Service' ? 'Service job' : 'Requested preventive task sequence.',
+            notes: description.trim() || 'Service job',
             latitude: 18.5314,
             longitude: 73.8446,
             priority: (priority || 'Medium') as any,
@@ -152,8 +142,8 @@ export const CreateTaskScreen = () => {
         WORK_ORDERS.unshift(newWO);
 
         Alert.alert(
-            serviceType === 'Request Preventive' ? 'Request Sent' : 'Work Created',
-            `Work order has been successfully created. Both Team Lead (${teamLead}) and Team Members (${assignees.join(', ') || 'none'}) have been linked.`,
+            'Work Created',
+            `Work order has been successfully created.`,
             [{ text: 'OK', onPress: () => navigation.goBack() }]
         );
     };
@@ -213,25 +203,17 @@ export const CreateTaskScreen = () => {
         setSelectedFlow(flow);
 
         if (flow === 'task') {
-            setChecklistName('');
             setTaskTitle('');
             setSiteName('');
             setProjectId('');
             setDataType('Text');
-            setServiceType('Service');
-            setStageName('Site Prep');
             return;
         }
 
-        setTitle('Preventive closeout tasks');
+        setTitle('');
         setSiteName('');
         setProjectId('');
-        setInstructions('List the essential closeout steps, expected evidence, and sign-off rules for repeat visits.');
-        setServiceType('Request Preventive');
-        setNeedsPhotos(true);
-        setNeedsSignature(true);
-        setNeedsPartsLog(false);
-        setAssignees(['Timothy']);
+        setAssignees([]);
     };
 
     const openChecklistTaskSheet = () => {
@@ -270,7 +252,7 @@ export const CreateTaskScreen = () => {
                                             </Text>
                                         ) : (
                                             <Text style={[styles.headerTitle, { color: colors.text }]}>
-                                                {serviceType === 'Service' ? 'Create Service Work' : 'Request Preventive'}
+                                                Create Service Work
                                             </Text>
                                         )}
                                     </View>
@@ -285,35 +267,29 @@ export const CreateTaskScreen = () => {
                                 <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
                                     <View style={{ gap: 4 }}>
                                         {selectedFlow === 'checklist' && (
-                                            <>
-                                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Work type</Text>
-                                                <View style={styles.chipRow}>
-                                                    {SERVICE_TYPES.map((item) => {
-                                                        const typeColors = getServiceTypeColors(item, isDark);
-                                                        return (
-                                                        <TouchableOpacity
-                                                            key={item}
-                                                            onPress={() => setServiceType(item)}
-                                                            style={[
-                                                                styles.choiceChip,
-                                                                {
-                                                                    backgroundColor: serviceType === item ? typeColors.background : typeColors.tint,
-                                                                    borderColor: typeColors.border,
-                                                                },
-                                                            ]}
-                                                        >
-                                                            <Text
-                                                                style={[
-                                                                    styles.choiceChipText,
-                                                                    { color: serviceType === item ? typeColors.text : typeColors.tintText },
-                                                                ]}
-                                                            >
-                                                                {item}
-                                                            </Text>
-                                                        </TouchableOpacity>
-                                                        );
-                                                    })}
-                                                </View>
+                                            <View style={{ gap: 4 }}>
+                                                {/* Title */}
+                                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                                    <Text style={{ color: colors.danger }}>* </Text>Title
+                                                </Text>
+                                                <TextInput
+                                                    value={title}
+                                                    onChangeText={setTitle}
+                                                    style={[styles.input, getInputShellStyle(colors), { color: colors.text, marginBottom: 12 }]}
+                                                    placeholder="Enter work title (max 100 characters)"
+                                                    placeholderTextColor={colors.textSecondary}
+                                                />
+
+                                                {/* Description */}
+                                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Description</Text>
+                                                <TextInput
+                                                    value={description}
+                                                    onChangeText={setDescription}
+                                                    style={[styles.input, getInputShellStyle(colors), styles.textArea, { color: colors.text, marginBottom: 12 }]}
+                                                    placeholder="Enter description"
+                                                    placeholderTextColor={colors.textSecondary}
+                                                    multiline
+                                                />
 
                                                 <PopoverDropdown
                                                     label="* Charging Station"
@@ -331,7 +307,7 @@ export const CreateTaskScreen = () => {
 
                                                 {/* Charge Point */}
                                                 <PopoverDropdown
-                                                    label="* Charge Point"
+                                                    label="* Charge Point (CPID)"
                                                     placeholder="Choose CPID"
                                                     options={[
                                                         { label: 'CP-01 (MUM-FAST-1)', value: 'CP-01' },
@@ -342,129 +318,110 @@ export const CreateTaskScreen = () => {
                                                     onSelect={(val) => setChargePoint(val as string)}
                                                 />
 
-                                            {serviceType === 'Service' && (
-                                                <View style={{ gap: 4 }}>
-                                                    {/* Work Title */}
-                                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                                                        <Text style={{ color: colors.danger }}>* </Text>Work Title
-                                                    </Text>
-                                                    <TextInput
-                                                        value={title}
-                                                        onChangeText={setTitle}
-                                                        style={[styles.input, getInputShellStyle(colors), { color: colors.text, marginBottom: 12 }]}
-                                                        placeholder="Enter work title (max 100 characters)"
-                                                        placeholderTextColor={colors.textSecondary}
-                                                    />
+                                                {/* Priority */}
+                                                <PopoverDropdown
+                                                    label="* Priority"
+                                                    placeholder="Choose priority"
+                                                    options={[
+                                                        { label: 'Low', value: 'Low' },
+                                                        { label: 'Medium', value: 'Medium' },
+                                                        { label: 'High', value: 'High' },
+                                                    ]}
+                                                    value={priority}
+                                                    onSelect={(val) => setPriority(val as string)}
+                                                />
 
-                                                    {/* Choose Template */}
-                                                    <PopoverDropdown
-                                                        label="* Choose Template"
-                                                        placeholder="Choose template"
-                                                        options={[
-                                                            { label: 'Pedestal Repair', value: 'Pedestal Repair' },
-                                                            { label: 'Grounding Check', value: 'Grounding Check' },
-                                                            { label: 'Annual Maintenance', value: 'Annual Maintenance' },
-                                                        ]}
-                                                        value={checklistName}
-                                                        onSelect={(val) => setChecklistName(val as any)}
-                                                    />
-
-                                                    {/* Priority */}
-                                                    <PopoverDropdown
-                                                        label="* Priority"
-                                                        placeholder="Choose priority"
-                                                        options={[
-                                                            { label: 'Low', value: 'Low' },
-                                                            { label: 'Medium', value: 'Medium' },
-                                                            { label: 'High', value: 'High' },
-                                                        ]}
-                                                        value={priority}
-                                                        onSelect={(val) => setPriority(val as string)}
-                                                    />
-
-                                                    {/* Date Range */}
-                                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                                                        <Text style={{ color: colors.danger }}>* </Text>Date Range
-                                                    </Text>
-                                                    <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12, alignItems: 'center' }}>
-                                                        <View style={{ flex: 1 }}>
-                                                            <TextInput
-                                                                value={startDate}
-                                                                onChangeText={setStartDate}
-                                                                style={[styles.input, getInputShellStyle(colors), { color: colors.text }]}
-                                                                placeholder="Start date"
-                                                                placeholderTextColor={colors.textSecondary}
-                                                            />
-                                                        </View>
-                                                        <Ionicons name="arrow-forward" size={16} color={colors.textSecondary} />
-                                                        <View style={{ flex: 1 }}>
-                                                            <TextInput
-                                                                value={endDate}
-                                                                onChangeText={setEndDate}
-                                                                style={[styles.input, getInputShellStyle(colors), { color: colors.text }]}
-                                                                placeholder="End date"
-                                                                placeholderTextColor={colors.textSecondary}
-                                                            />
-                                                        </View>
+                                                {/* Date Range */}
+                                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                                    <Text style={{ color: colors.danger }}>* </Text>Date Range
+                                                </Text>
+                                                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12, alignItems: 'center' }}>
+                                                    <View style={{ flex: 1 }}>
+                                                        <TextInput
+                                                            value={startDate}
+                                                            onChangeText={setStartDate}
+                                                            style={[styles.input, getInputShellStyle(colors), { color: colors.text }]}
+                                                            placeholder="Start date"
+                                                            placeholderTextColor={colors.textSecondary}
+                                                        />
+                                                    </View>
+                                                    <Ionicons name="arrow-forward" size={16} color={colors.textSecondary} />
+                                                    <View style={{ flex: 1 }}>
+                                                        <TextInput
+                                                            value={endDate}
+                                                            onChangeText={setEndDate}
+                                                            style={[styles.input, getInputShellStyle(colors), { color: colors.text }]}
+                                                            placeholder="End date"
+                                                            placeholderTextColor={colors.textSecondary}
+                                                        />
                                                     </View>
                                                 </View>
-                                            )}
 
-                                            {serviceType === 'Service' && (
-                                                <>
-                                                    {/* Team Lead */}
-                                                    <PopoverDropdown
-                                                        label="* Team Lead"
-                                                        placeholder="Choose lead"
-                                                        options={[
-                                                            { label: 'Timothy Field (Self)', value: 'Timothy' },
-                                                            { label: 'Andrea Meuschke', value: 'Andrea' },
-                                                            { label: 'Marcus Aurelius', value: 'Marcus' },
-                                                        ]}
-                                                        value={teamLead}
-                                                        onSelect={(val) => setTeamLead(val as string)}
-                                                    />
+                                                {/* Task */}
+                                                <PopoverDropdown
+                                                    label="Task"
+                                                    placeholder="Choose task"
+                                                    options={[
+                                                        { label: 'Pedestal Repair', value: 'Pedestal Repair' },
+                                                        { label: 'Grounding Check', value: 'Grounding Check' },
+                                                        { label: 'Annual Maintenance', value: 'Annual Maintenance' },
+                                                    ]}
+                                                    value={task}
+                                                    onSelect={(val) => setTask(val as string)}
+                                                />
 
-                                                    {/* Team Members */}
+                                                {/* Assignment Type */}
+                                                <PopoverDropdown
+                                                    label="* Assignment Type"
+                                                    placeholder="Choose assignment type"
+                                                    options={[
+                                                        { label: 'Self', value: 'Self' },
+                                                        { label: 'Team', value: 'Team' },
+                                                    ]}
+                                                    value={assignmentType}
+                                                    onSelect={(val) => setAssignmentType(val as string)}
+                                                />
+
+                                                {/* Assignees (Conditional) */}
+                                                {assignmentType === 'Team' && (
                                                     <PopoverDropdown
-                                                        label="* Team Members"
+                                                        label="* Assignees"
                                                         placeholder="Choose team members"
                                                         options={getSelectorOptions('assignees').options}
                                                         value={assignees}
                                                         onSelect={(val) => setAssignees(val as string[])}
                                                         isMulti={true}
                                                     />
-                                                </>
-                                            )}
+                                                )}
 
-                                            {/* Attachments - Universal */}
-                                            <View style={{ gap: 4, marginBottom: 12, marginTop: 8 }}>
-                                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Attachments</Text>
-                                                <TouchableOpacity 
-                                                    activeOpacity={0.8}
-                                                    onPress={() => setHasAttachment(!hasAttachment)}
-                                                    style={[
-                                                        styles.captureButton, 
-                                                        { 
-                                                            backgroundColor: hasAttachment ? colors.primary + '12' : colors.surfaceHighlight,
-                                                            borderColor: hasAttachment ? colors.primary : colors.border,
-                                                        }
-                                                    ]}
-                                                >
-                                                    <Ionicons 
-                                                        name={hasAttachment ? "checkmark-circle" : "attach"}
-                                                        size={18} 
-                                                        color={colors.primary} 
-                                                    />
-                                                    <View style={{ alignItems: 'flex-start' }}>
-                                                        <Text style={[styles.captureButtonText, { color: hasAttachment ? colors.primary : colors.text }]}>
-                                                            {hasAttachment ? 'Attachment Added' : 'Add attachment'}
-                                                        </Text>
-                                                        <Text style={[{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
-                                                    </View>
-                                                </TouchableOpacity>
+                                                {/* Attachments */}
+                                                <View style={{ gap: 4, marginBottom: 12, marginTop: 8 }}>
+                                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Attachments</Text>
+                                                    <TouchableOpacity 
+                                                        activeOpacity={0.8}
+                                                        onPress={() => setHasAttachment(!hasAttachment)}
+                                                        style={[
+                                                            styles.captureButton, 
+                                                            { 
+                                                                backgroundColor: hasAttachment ? colors.primary + '12' : colors.surfaceHighlight,
+                                                                borderColor: hasAttachment ? colors.primary : colors.border,
+                                                            }
+                                                        ]}
+                                                    >
+                                                        <Ionicons 
+                                                            name={hasAttachment ? "checkmark-circle" : "attach"}
+                                                            size={18} 
+                                                            color={colors.primary} 
+                                                        />
+                                                        <View style={{ alignItems: 'flex-start' }}>
+                                                            <Text style={[styles.captureButtonText, { color: hasAttachment ? colors.primary : colors.text }]}>
+                                                                {hasAttachment ? 'Attachment Added' : 'Add attachment'}
+                                                            </Text>
+                                                            <Text style={[{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
+                                                        </View>
+                                                    </TouchableOpacity>
+                                                </View>
                                             </View>
-                                            </>
                                         )}
 
                                         {selectedFlow === 'task' && (
@@ -517,7 +474,7 @@ export const CreateTaskScreen = () => {
                                     </View>
                                 </ScrollView>
                                 <View style={{ paddingHorizontal: 16, paddingBottom: 40, paddingTop: 0 }}>
-                                    <NeonButton title={serviceType === 'Request Preventive' ? 'Send Request' : (selectedCopy?.primary ?? 'Create')} onPress={handleCreateWorkOrder} />
+                                    <NeonButton title={selectedCopy?.primary ?? 'Create'} onPress={handleCreateWorkOrder} />
                                 </View>
                 </View>
             </KeyboardAvoidingView>
