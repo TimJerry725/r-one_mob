@@ -303,7 +303,10 @@ export const SingleProjectScreen = () => {
 
                             <TouchableOpacity style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, marginTop: 16 }]}>
                                 <Ionicons name="cloud-upload-outline" size={24} color={colors.primary} />
-                                <Text style={[styles.captureButtonText, { color: colors.text }]}>Upload New Attachment</Text>
+                                <View style={{ alignItems: 'flex-start' }}>
+                                    <Text style={[styles.captureButtonText, { color: colors.text }]}>Upload New Attachment</Text>
+                                    <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
+                                </View>
                             </TouchableOpacity>
                         </>
                     ) : null}

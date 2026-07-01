@@ -24,7 +24,7 @@ import { getServiceTypeColors } from '../styles/workTypeColors';
 type ChecklistStateItem = {
     id: string;
     label: string;
-    type: 'toggle' | 'text' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'media';
+    type: 'toggle' | 'text' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'media' | 'remarks_response';
     required: boolean;
     options?: string[];
     value: string | number | string[];
@@ -49,6 +49,8 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): string | numbe
             return 'N/A';
         case 'multiselect':
             return item.options?.slice(0, 2) ?? ['Completed'];
+        case 'remarks_response':
+            return ['Checked on site.', 'No issues found.'];
         default:
             return 'Completed';
     }
@@ -61,10 +63,14 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
             ? getCompletedChecklistValue(item)
             : item.type === 'photo' || item.type === 'media'
                 ? 0
-                : '',
+                : item.type === 'remarks_response' ? ['', ''] : '',
     }));
 
 const isComplete = (item: ChecklistStateItem) => {
+    if (item.type === 'remarks_response') {
+        const val = item.value as string[];
+        return val && val[0]?.trim().length > 0 && val[1]?.trim().length > 0;
+    }
     if (item.type === 'not_applicable') return String(item.value).length > 0;
     if (item.type === 'photo' || item.type === 'media') {
         return Number(item.value) > 0;
@@ -440,12 +446,29 @@ export const TaskDetailScreen = () => {
                                                             color={isComplete(item) ? colors.white : colors.textSecondary}
                                                         />
                                                     </View>
-                                                    <View style={{ flex: 1 }}>
-                                                        <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
-                                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
-                                                            {item.required ? 'Required before completion' : 'Optional'}
-                                                        </Text>
-                                                    </View>
+                                                    {item.type === 'remarks_response' ? (
+                                                        <View style={{ flex: 1, marginLeft: 12 }}>
+                                                            <TextInput
+                                                                placeholder="Remarks"
+                                                                placeholderTextColor={colors.textSecondary}
+                                                                style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, minHeight: 40, paddingHorizontal: 12, paddingVertical: 8 }]}
+                                                                value={(item.value as string[])?.[0] || ''}
+                                                                onChangeText={(value) => {
+                                                                    const current = (item.value as string[]) || ['', ''];
+                                                                    updateItem(item.id, [value, current[1]]);
+                                                                }}
+                                                            />
+                                                        </View>
+                                                    ) : (
+                                                        <View style={{ flex: 1 }}>
+                                                            {item.label ? (
+                                                                <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
+                                                            ) : null}
+                                                            <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
+                                                                {item.required ? 'Required before completion' : 'Optional'}
+                                                            </Text>
+                                                        </View>
+                                                    )}
                                                 </View>
 
                                                 {item.type === 'photo' || item.type === 'media' ? (
@@ -457,8 +480,25 @@ export const TaskDetailScreen = () => {
                                                         style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                                                     >
                                                         <FontAwesome name="paperclip" size={18} color={colors.primary} />
-                                                        <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
+                                                        <View style={{ alignItems: 'flex-start' }}>
+                                                            <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
+                                                            <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
+                                                        </View>
                                                     </TouchableOpacity>
+                                                ) : item.type === 'remarks_response' ? (
+                                                    <View>
+                                                        <TextInput
+                                                            multiline
+                                                            placeholder="Response"
+                                                            placeholderTextColor={colors.textSecondary}
+                                                            style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text }]}
+                                                            value={(item.value as string[])?.[1] || ''}
+                                                            onChangeText={(value) => {
+                                                                const current = (item.value as string[]) || ['', ''];
+                                                                updateItem(item.id, [current[0], value]);
+                                                            }}
+                                                        />
+                                                    </View>
                                                 ) : item.type === 'text' ? (
                                                     <TextInput
                                                         multiline
@@ -661,7 +701,10 @@ export const TaskDetailScreen = () => {
 
                             <TouchableOpacity style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, marginTop: 16 }]}>
                                 <Ionicons name="cloud-upload-outline" size={24} color={colors.primary} />
-                                <Text style={[styles.captureButtonText, { color: colors.text }]}>Upload New Attachment</Text>
+                                <View style={{ alignItems: 'flex-start' }}>
+                                    <Text style={[styles.captureButtonText, { color: colors.text }]}>Upload New Attachment</Text>
+                                    <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
+                                </View>
                             </TouchableOpacity>
                         </>
                     ) : null}

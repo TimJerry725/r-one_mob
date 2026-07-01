@@ -38,7 +38,7 @@ import { WORK_ORDERS } from '../data/fieldDemo';
 const CREATE_OPTIONS = [
     {
         id: 'checklist',
-        title: 'Add Checklist',
+        title: 'Add Tasks',
         icon: 'check-square-o',
     },
     {
@@ -52,15 +52,15 @@ type CreateFlow = typeof CREATE_OPTIONS[number]['id'] | null;
 
 const FLOW_COPY: Record<Exclude<CreateFlow, null>, { label: string; title: string; subtitle: string; primary: string }> = {
     checklist: {
-        label: 'Checklist',
-        title: 'Create Checklist',
+        label: 'Tasks',
+        title: 'Create Tasks',
         subtitle: 'Define the steps technicians must follow.',
-        primary: 'Create Checklist',
+        primary: 'Create Tasks',
     },
     task: {
         label: 'Task',
         title: 'Create Task',
-        subtitle: 'Add a new task or checklist step.',
+        subtitle: 'Add a new task or step.',
         primary: 'Create Task',
     },
 };
@@ -223,7 +223,7 @@ export const CreateTaskScreen = () => {
             return;
         }
 
-        setTitle('Preventive closeout checklist');
+        setTitle('Preventive closeout tasks');
         setSiteName('');
         setProjectId('');
         setInstructions('List the essential closeout steps, expected evidence, and sign-off rules for repeat visits.');
@@ -456,9 +456,12 @@ export const CreateTaskScreen = () => {
                                                         size={18} 
                                                         color={colors.primary} 
                                                     />
-                                                    <Text style={[styles.captureButtonText, { color: colors.text }]}>
-                                                        {hasAttachment ? 'Attachment Added' : 'Add attachment'}
-                                                    </Text>
+                                                    <View style={{ alignItems: 'flex-start' }}>
+                                                        <Text style={[styles.captureButtonText, { color: hasAttachment ? colors.primary : colors.text }]}>
+                                                            {hasAttachment ? 'Attachment Added' : 'Add attachment'}
+                                                        </Text>
+                                                        <Text style={[{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
+                                                    </View>
                                                 </TouchableOpacity>
                                             </View>
                                             </>

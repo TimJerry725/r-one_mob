@@ -88,7 +88,7 @@ export type AssetVisionDetail = {
 export type ChecklistTemplateItem = {
     id: string;
     label: string;
-    type: 'toggle' | 'text' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'media';
+    type: 'toggle' | 'text' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'media' | 'remarks_response';
     required: boolean;
     options?: string[];
 };
@@ -100,6 +100,92 @@ export type ActivityItem = {
     detail: string;
     time: string;
 };
+
+export const CHECKLIST_TEMPLATE: ChecklistTemplateItem[] = [
+    {
+        id: 'step-1',
+        label: 'Date of service',
+        type: 'date',
+        required: true,
+    },
+    {
+        id: 'step-2',
+        label: 'Charger visual condition',
+        type: 'radio',
+        required: true,
+        options: ['Pass', 'Needs cleaning', 'Damage found'],
+    },
+    {
+        id: 'step-3',
+        label: 'Connector temperature or voltage note',
+        type: 'text',
+        required: true,
+    },
+    {
+        id: 'step-4',
+        label: 'Capture enclosure and connector photos',
+        type: 'photo',
+        required: true,
+    },
+    {
+        id: 'step-5',
+        label: 'Customer access area restored and verified',
+        type: 'toggle',
+        required: true,
+    },
+    {
+        id: 'step-6',
+        label: 'Parts used',
+        type: 'radio',
+        required: false,
+        options: ['None', 'Fuse set', 'Cable', 'Connector latch'],
+    },
+    {
+        id: 'step-7',
+        label: 'Voltage reading (V)',
+        type: 'number',
+        required: true,
+    },
+    {
+        id: 'step-8',
+        label: 'Next service date',
+        type: 'date',
+        required: false,
+    },
+    {
+        id: 'step-9',
+        label: 'Hardware upgrade needed?',
+        type: 'not_applicable',
+        required: false,
+    },
+    {
+        id: 'step-10',
+        label: 'Cellular network',
+        type: 'radio',
+        required: true,
+        options: ['Vodafone', 'AT&T', 'Verizon', 'T-Mobile'],
+    },
+    {
+        id: 'step-11',
+        label: 'Power module type',
+        type: 'radio',
+        required: true,
+        options: ['AC 22kW', 'DC 50kW', 'DC 150kW'],
+    },
+    {
+        id: 'step-12',
+        label: 'Consumables applied',
+        type: 'multiselect',
+        required: false,
+        options: ['Thermal paste', 'Cable ties', 'Insulation tape', 'Screws'],
+    },
+    {
+        id: 'step-13',
+        label: 'Attach site survey files',
+        type: 'media',
+        required: true,
+    },
+];
 
 export let WORK_ORDERS: WorkOrder[] = [
     {
@@ -192,11 +278,20 @@ export let WORK_ORDERS: WorkOrder[] = [
         eta: 'Done',
         distance: '0.8 km',
         checklistCompleted: 5,
-        checklistTotal: 5,
+        checklistTotal: 6,
         tools: ['Trench digger', 'Conduit'],
         parts: ['PVC Conduit', 'Warning Tape'],
         technicians: ['Arjun', 'Ravi'],
         assetId: 'CP-100239',
+        checklistItems: [
+            ...CHECKLIST_TEMPLATE.slice(0, 5),
+            {
+                id: 'step-cr-remarks',
+                label: '',
+                type: 'remarks_response',
+                required: true,
+            }
+        ],
         offlineReady: true,
         notes: 'Trenching completed successfully without hitting utility lines.',
         latitude: 18.5314,
@@ -589,91 +684,6 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
     },
 };
 
-export const CHECKLIST_TEMPLATE: ChecklistTemplateItem[] = [
-    {
-        id: 'step-1',
-        label: 'Date of service',
-        type: 'date',
-        required: true,
-    },
-    {
-        id: 'step-2',
-        label: 'Charger visual condition',
-        type: 'radio',
-        required: true,
-        options: ['Pass', 'Needs cleaning', 'Damage found'],
-    },
-    {
-        id: 'step-3',
-        label: 'Connector temperature or voltage note',
-        type: 'text',
-        required: true,
-    },
-    {
-        id: 'step-4',
-        label: 'Capture enclosure and connector photos',
-        type: 'photo',
-        required: true,
-    },
-    {
-        id: 'step-5',
-        label: 'Customer access area restored and verified',
-        type: 'toggle',
-        required: true,
-    },
-    {
-        id: 'step-6',
-        label: 'Parts used',
-        type: 'radio',
-        required: false,
-        options: ['None', 'Fuse set', 'Cable', 'Connector latch'],
-    },
-    {
-        id: 'step-7',
-        label: 'Voltage reading (V)',
-        type: 'number',
-        required: true,
-    },
-    {
-        id: 'step-8',
-        label: 'Next service date',
-        type: 'date',
-        required: false,
-    },
-    {
-        id: 'step-9',
-        label: 'Hardware upgrade needed?',
-        type: 'not_applicable',
-        required: false,
-    },
-    {
-        id: 'step-10',
-        label: 'Cellular network',
-        type: 'radio',
-        required: true,
-        options: ['Vodafone', 'AT&T', 'Verizon', 'T-Mobile'],
-    },
-    {
-        id: 'step-11',
-        label: 'Power module type',
-        type: 'radio',
-        required: true,
-        options: ['AC 22kW', 'DC 50kW', 'DC 150kW'],
-    },
-    {
-        id: 'step-12',
-        label: 'Consumables applied',
-        type: 'multiselect',
-        required: false,
-        options: ['Thermal paste', 'Cable ties', 'Insulation tape', 'Screws'],
-    },
-    {
-        id: 'step-13',
-        label: 'Attach site survey files',
-        type: 'media',
-        required: true,
-    },
-];
 
 export const ACTIVITY_LOG: ActivityItem[] = [
     {
