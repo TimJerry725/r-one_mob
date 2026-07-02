@@ -121,6 +121,7 @@ export const TaskDetailScreen = () => {
     const [actionModalVisible, setActionModalVisible] = useState(false);
     const [editingTask, setEditingTask] = useState<ChecklistStateItem | null>(null);
     const [editTaskLabel, setEditTaskLabel] = useState('');
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     const startEditTask = (task: ChecklistStateItem) => {
         setEditingTask(task);
@@ -390,20 +391,11 @@ export const TaskDetailScreen = () => {
                             </>
                         ) : null}
 
-                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Scheduled Dates</Text>
-                        <View style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[FONTS.label, { color: colors.textSecondary, fontSize: 10 }]}>START DATE</Text>
-                                <Text style={[FONTS.bodyStrong, { color: colors.text, marginTop: 2, fontSize: 12 }]}>
-                                    {new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </Text>
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[FONTS.label, { color: colors.textSecondary, fontSize: 10 }]}>END DATE</Text>
-                                <Text style={[FONTS.bodyStrong, { color: colors.text, marginTop: 2, fontSize: 12 }]}>
-                                    {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </Text>
-                            </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+                            <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
+                            <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 13 }]}>
+                                {new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} - {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </Text>
                         </View>
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
@@ -460,8 +452,8 @@ export const TaskDetailScreen = () => {
                                     <View style={styles.listColumn}>
                                         {items.map((item) => {
                                             return (
-                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, opacity: item.isNa ? 0.5 : 1 }]}>
-                                            <View style={styles.stepHeader}>
+                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, opacity: item.isNa ? 0.5 : 1, zIndex: openMenuId === item.id ? 100 : 1 }]}>
+                                            <View style={[styles.stepHeader, { zIndex: openMenuId === item.id ? 100 : 1 }]}>
                                                     <View style={[styles.stepIcon, { backgroundColor: isComplete(item) ? colors.success : colors.surfaceHighlight }]}>
                                                         <Ionicons
                                                             name={isComplete(item) ? 'checkmark' : 'ellipse-outline'}
@@ -495,16 +487,41 @@ export const TaskDetailScreen = () => {
                                                                 </Text>
                                                             </View>
                                                             {!isUnderReview && (
-                                                                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', marginLeft: 8 }}>
-                                                                    <TouchableOpacity onPress={() => startEditTask(item)}>
-                                                                        <FontAwesome name="pencil" size={20} color={colors.primary} />
+                                                                <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 10 : 1, marginLeft: 8 }}>
+                                                                    <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
+                                                                        <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
                                                                     </TouchableOpacity>
-                                                                    <TouchableOpacity onPress={() => markTaskNa(item.id)}>
-                                                                        <FontAwesome name={item.isNa ? "check" : "ban"} size={20} color={item.isNa ? colors.success : colors.textSecondary} />
-                                                                    </TouchableOpacity>
-                                                                    <TouchableOpacity onPress={() => deleteTask(item.id)}>
-                                                                        <FontAwesome name="trash-o" size={20} color={colors.danger} />
-                                                                    </TouchableOpacity>
+                                                                    {openMenuId === item.id && (
+                                                                        <View style={{
+                                                                            position: 'absolute',
+                                                                            top: 30,
+                                                                            right: 0,
+                                                                            backgroundColor: colors.surfaceHighlight,
+                                                                            borderRadius: 8,
+                                                                            paddingVertical: 8,
+                                                                            paddingHorizontal: 12,
+                                                                            width: 150,
+                                                                            shadowColor: '#000',
+                                                                            shadowOffset: { width: 0, height: 2 },
+                                                                            shadowOpacity: 0.15,
+                                                                            shadowRadius: 4,
+                                                                            elevation: 4,
+                                                                            zIndex: 100
+                                                                        }}>
+                                                                            <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
+                                                                                <FontAwesome name="pencil" size={16} color={colors.primary} />
+                                                                                <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                            </TouchableOpacity>
+                                                                            <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); markTaskNa(item.id); }}>
+                                                                                <FontAwesome name={item.isNa ? "check" : "ban"} size={16} color={item.isNa ? colors.success : colors.textSecondary} />
+                                                                                <Text style={[FONTS.body, { color: colors.text }]}>{item.isNa ? 'Applicable' : 'N/A'}</Text>
+                                                                            </TouchableOpacity>
+                                                                            <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
+                                                                                <FontAwesome name="trash-o" size={16} color={colors.danger} />
+                                                                                <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
+                                                                            </TouchableOpacity>
+                                                                        </View>
+                                                                    )}
                                                                 </View>
                                                             )}
                                                         </View>
