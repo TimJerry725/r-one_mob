@@ -122,6 +122,10 @@ export const TaskDetailScreen = () => {
     const [editingTask, setEditingTask] = useState<ChecklistStateItem | null>(null);
     const [editTaskLabel, setEditTaskLabel] = useState('');
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [naConfirmModalVisible, setNaConfirmModalVisible] = useState(false);
+    const [taskToMarkNa, setTaskToMarkNa] = useState<string | null>(null);
+    const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] = useState(false);
+    const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
     const startEditTask = (task: ChecklistStateItem) => {
         setEditingTask(task);
@@ -136,11 +140,29 @@ export const TaskDetailScreen = () => {
     };
 
     const deleteTask = (id: string) => {
-        setItems(items.filter(item => item.id !== id));
+        setTaskToDelete(id);
+        setDeleteConfirmModalVisible(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (taskToDelete) {
+            setItems(currentItems => currentItems.filter(item => item.id !== taskToDelete));
+        }
+        setDeleteConfirmModalVisible(false);
+        setTaskToDelete(null);
     };
 
     const markTaskNa = (id: string) => {
-        setItems(items.map(item => item.id === id ? { ...item, isNa: !item.isNa } : item));
+        setTaskToMarkNa(id);
+        setNaConfirmModalVisible(true);
+    };
+
+    const handleConfirmNa = () => {
+        if (taskToMarkNa) {
+            setItems(currentItems => currentItems.map(i => i.id === taskToMarkNa ? { ...i, isNa: !i.isNa } : i));
+        }
+        setNaConfirmModalVisible(false);
+        setTaskToMarkNa(null);
     };
 
     const handleShareWork = async () => {
@@ -1021,6 +1043,78 @@ export const TaskDetailScreen = () => {
                     </View>
                 </Modal>
 
+                <Modal visible={naConfirmModalVisible} transparent animationType="fade">
+                    <View style={styles.popupOverlay}>
+                        <View style={[styles.popupModal, { backgroundColor: colors.surface }]}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                <FontAwesome name="ban" size={24} color={colors.danger} />
+                                <Text style={[styles.confirmTitle, { color: colors.text, marginBottom: 0 }]}>
+                                    {taskToMarkNa && items.find(i => i.id === taskToMarkNa)?.isNa ? 'Mark as Applicable?' : 'Mark as N/A?'}
+                                </Text>
+                            </View>
+                            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                                {taskToMarkNa && items.find(i => i.id === taskToMarkNa)?.isNa 
+                                    ? "Are you sure you want to mark this task as applicable again?" 
+                                    : "Are you sure you want to mark this task as Not Applicable? This will skip the task."}
+                            </Text>
+
+                            <View style={styles.confirmActions}>
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                    onPress={() => {
+                                        setNaConfirmModalVisible(false);
+                                        setTaskToMarkNa(null);
+                                    }}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.primary }]}
+                                    onPress={handleConfirmNa}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.white }]}>Yes</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                <Modal visible={deleteConfirmModalVisible} transparent animationType="fade">
+                    <View style={styles.popupOverlay}>
+                        <View style={[styles.popupModal, { backgroundColor: colors.surface }]}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                <FontAwesome name="trash-o" size={24} color={colors.danger} />
+                                <Text style={[styles.confirmTitle, { color: colors.text, marginBottom: 0 }]}>
+                                    Delete Task?
+                                </Text>
+                            </View>
+                            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                                Are you sure you want to delete this task? This action cannot be undone.
+                            </Text>
+
+                            <View style={styles.confirmActions}>
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                    onPress={() => {
+                                        setDeleteConfirmModalVisible(false);
+                                        setTaskToDelete(null);
+                                    }}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.danger }]}
+                                    onPress={handleConfirmDelete}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.white }]}>Delete</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
                 <Modal visible={completionModalVisible} transparent animationType="slide">
                     <View style={styles.modalOverlay}>
                         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setCompletionModalVisible(false)} />
@@ -1660,6 +1754,19 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'flex-end',
+    },
+    popupOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    popupModal: {
+        width: '100%',
+        borderRadius: 24,
+        padding: 24,
+        alignItems: 'center',
     },
     bottomSheetInner: {
         borderTopLeftRadius: 24,
