@@ -109,7 +109,7 @@ export const CreateTaskScreen = () => {
             return;
         }
 
-        const techs = assignmentType === 'Self' ? ['Self'] : assignees;
+        const techs = assignmentType === 'Self' ? ['Self'] : assignmentType === 'Team' ? assignees : [];
 
         const newWO = {
             id: `wo-${Date.now()}`,
@@ -377,6 +377,7 @@ export const CreateTaskScreen = () => {
                                                     options={[
                                                         { label: 'Self', value: 'Self' },
                                                         { label: 'Team', value: 'Team' },
+                                                        { label: 'Unassigned', value: 'Unassigned' },
                                                     ]}
                                                     value={assignmentType}
                                                     onSelect={(val) => setAssignmentType(val as string)}
@@ -592,10 +593,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 14,
         ...FONTS.body,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-        elevation: 4,
     },
     dropdownButton: {
         flexDirection: 'row',
@@ -645,10 +642,6 @@ const styles = StyleSheet.create({
         padding: 14,
         textAlignVertical: 'top',
         ...FONTS.body,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-        elevation: 4,
     },
     captureButton: {
         minHeight: 64,
