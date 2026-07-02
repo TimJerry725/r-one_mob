@@ -394,19 +394,42 @@ export const CreateTaskScreen = () => {
                                                     </View>
                                                 </View>
 
-                                                {/* Task */}
-                                                <PopoverDropdown
-                                                    label="Task"
-                                                    placeholder="Choose task"
-                                                    options={[
-                                                        { label: 'Pedestal Repair', value: 'Pedestal Repair' },
-                                                        { label: 'Grounding Check', value: 'Grounding Check' },
-                                                        { label: 'Annual Maintenance', value: 'Annual Maintenance' },
-                                                    ]}
-                                                    value={task}
-                                                    onSelect={(val) => setTask(val as string)}
-                                                />
+                                                {/* Tasks */}
+                                                <View style={{ gap: 8, marginTop: 4 }}>
+                                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Tasks</Text>
+                                                    
+                                                    {tasks.map((t, idx) => (
+                                                        <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 12 }}>
+                                                            <View style={{ flex: 1 }}>
+                                                                <Text style={{ color: colors.text, ...FONTS.bodyStrong, fontSize: 16 }}>{t.title}</Text>
+                                                                <Text style={{ color: colors.textSecondary, ...FONTS.caption, marginTop: 2 }}>{t.dataType}</Text>
+                                                            </View>
+                                                            <TouchableOpacity onPress={() => removeTask(idx)} style={{ padding: 4 }}>
+                                                                <Ionicons name="trash-outline" size={20} color={colors.danger} />
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    ))}
 
+                                                    <TouchableOpacity 
+                                                        activeOpacity={0.8}
+                                                        onPress={openChecklistTaskSheet}
+                                                        style={[
+                                                            styles.captureButton, 
+                                                            { 
+                                                                backgroundColor: colors.surfaceHighlight,
+                                                                borderColor: colors.border,
+                                                                borderStyle: 'dashed',
+                                                                justifyContent: 'center',
+                                                                alignItems: 'center',
+                                                                gap: 8,
+                                                                minHeight: 52
+                                                            }
+                                                        ]}
+                                                    >
+                                                        <Ionicons name="add" size={20} color={colors.primary} />
+                                                        <Text style={[styles.captureButtonText, { color: colors.primary, marginTop: 0 }]}>Add custom task</Text>
+                                                    </TouchableOpacity>
+                                                </View>
                                                 {/* Assignment Type */}
                                                 <PopoverDropdown
                                                     label="* Assignment Type"
