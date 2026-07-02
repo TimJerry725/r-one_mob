@@ -391,9 +391,20 @@ export const TaskDetailScreen = () => {
                         ) : null}
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Scheduled Dates</Text>
-                        <Text style={[FONTS.bodyStrong, { color: colors.text, marginBottom: 16, fontSize: 14 }]}>
-                            {new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} - {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </Text>
+                        <View style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[FONTS.label, { color: colors.textSecondary, fontSize: 10 }]}>START DATE</Text>
+                                <Text style={[FONTS.bodyStrong, { color: colors.text, marginTop: 2, fontSize: 12 }]}>
+                                    {new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </Text>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[FONTS.label, { color: colors.textSecondary, fontSize: 10 }]}>END DATE</Text>
+                                <Text style={[FONTS.bodyStrong, { color: colors.text, marginTop: 2, fontSize: 12 }]}>
+                                    {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </Text>
+                            </View>
+                        </View>
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
                         <View style={styles.chipRow}>

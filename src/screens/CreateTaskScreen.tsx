@@ -95,12 +95,13 @@ export const CreateTaskScreen = () => {
     const [endDate, setEndDate] = useState('05 Jul 2026');
     const [task, setTask] = useState('');
     const [assignmentType, setAssignmentType] = useState('Self');
+    const [serviceType, setServiceType] = useState<typeof SERVICE_TYPES[number]>('Service');
 
     const handledSelectorToken = useRef<number | null>(null);
     const handledTaskToken = useRef<number | null>(null);
 
     const handleCreateWorkOrder = () => {
-        if (!title.trim()) {
+        if (serviceType === 'Service' && !title.trim()) {
             Alert.alert('Required Field', 'Please enter a work title.');
             return;
         }
@@ -109,7 +110,7 @@ export const CreateTaskScreen = () => {
             return;
         }
 
-        const techs = assignmentType === 'Self' ? ['Self'] : assignmentType === 'Team' ? assignees : [];
+        const techs = assignmentType === 'Self' ? ['Self'] : assignees;
 
         const newWO = {
             id: `wo-${Date.now()}`,
@@ -118,8 +119,8 @@ export const CreateTaskScreen = () => {
             description: description.trim(),
             siteName: siteName,
             address: 'Platform Road, Shivajinagar, Pune',
-            type: 'Service' as const,
-            stage: 'Site Prep',
+            type: serviceType === 'Request Preventive' ? 'Preventive' as const : 'Service' as const,
+            stage: serviceType === 'Request Preventive' ? 'Commissioning' : 'Site Prep',
             status: 'Unassigned' as const,
             dueWindow: 'Today, 14:00 - 17:00',
             eta: 'Not started',
@@ -142,7 +143,7 @@ export const CreateTaskScreen = () => {
         WORK_ORDERS.unshift(newWO);
 
         Alert.alert(
-            'Work Created',
+            serviceType === 'Request Preventive' ? 'Request Sent' : 'Work Created',
             `Work order has been successfully created.`,
             [{ text: 'OK', onPress: () => navigation.goBack() }]
         );
@@ -268,28 +269,61 @@ export const CreateTaskScreen = () => {
                                     <View style={{ gap: 4 }}>
                                         {selectedFlow === 'checklist' && (
                                             <View style={{ gap: 4 }}>
-                                                {/* Title */}
-                                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                                                    <Text style={{ color: colors.danger }}>* </Text>Title
-                                                </Text>
-                                                <TextInput
-                                                    value={title}
-                                                    onChangeText={setTitle}
-                                                    style={[styles.input, getInputShellStyle(colors), { color: colors.text, marginBottom: 12 }]}
-                                                    placeholder="Enter work title (max 100 characters)"
-                                                    placeholderTextColor={colors.textSecondary}
-                                                />
+                                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Work type</Text>
+                                                <View style={styles.chipRow}>
+                                                    {SERVICE_TYPES.map((item) => {
+                                                        const typeColors = getServiceTypeColors(item, isDark);
+                                                        return (
+                                                        <TouchableOpacity
+                                                            key={item}
+                                                            onPress={() => setServiceType(item)}
+                                                            style={[
+                                                                styles.choiceChip,
+                                                                {
+                                                                    backgroundColor: serviceType === item ? typeColors.background : typeColors.tint,
+                                                                    borderColor: typeColors.border,
+                                                                },
+                                                            ]}
+                                                        >
+                                                            <Text
+                                                                style={[
+                                                                    styles.choiceChipText,
+                                                                    { color: serviceType === item ? typeColors.text : typeColors.tintText },
+                                                                ]}
+                                                            >
+                                                                {item}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                        );
+                                                    })}
+                                                </View>
 
-                                                {/* Description */}
-                                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Description</Text>
-                                                <TextInput
-                                                    value={description}
-                                                    onChangeText={setDescription}
-                                                    style={[styles.input, getInputShellStyle(colors), styles.textArea, { color: colors.text, marginBottom: 12 }]}
-                                                    placeholder="Enter description"
-                                                    placeholderTextColor={colors.textSecondary}
-                                                    multiline
-                                                />
+                                                {serviceType === 'Service' && (
+                                                    <>
+                                                        {/* Title */}
+                                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                                            <Text style={{ color: colors.danger }}>* </Text>Title
+                                                        </Text>
+                                                        <TextInput
+                                                            value={title}
+                                                            onChangeText={setTitle}
+                                                            style={[styles.input, getInputShellStyle(colors), { color: colors.text, marginBottom: 12 }]}
+                                                            placeholder="Enter work title (max 100 characters)"
+                                                            placeholderTextColor={colors.textSecondary}
+                                                        />
+
+                                                        {/* Description */}
+                                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Description</Text>
+                                                        <TextInput
+                                                            value={description}
+                                                            onChangeText={setDescription}
+                                                            style={[styles.input, getInputShellStyle(colors), styles.textArea, { color: colors.text, marginBottom: 12 }]}
+                                                            placeholder="Enter description"
+                                                            placeholderTextColor={colors.textSecondary}
+                                                            multiline
+                                                        />
+                                                    </>
+                                                )}
 
                                                 <PopoverDropdown
                                                     label="* Charging Station"
@@ -317,6 +351,9 @@ export const CreateTaskScreen = () => {
                                                     value={chargePoint}
                                                     onSelect={(val) => setChargePoint(val as string)}
                                                 />
+
+                                                {serviceType === 'Service' && (
+                                                    <>
 
                                                 {/* Priority */}
                                                 <PopoverDropdown
@@ -393,6 +430,9 @@ export const CreateTaskScreen = () => {
                                                         onSelect={(val) => setAssignees(val as string[])}
                                                         isMulti={true}
                                                     />
+                                                )}
+
+                                                </>
                                                 )}
 
                                                 {/* Attachments */}
@@ -475,7 +515,7 @@ export const CreateTaskScreen = () => {
                                     </View>
                                 </ScrollView>
                                 <View style={{ paddingHorizontal: 16, paddingBottom: 40, paddingTop: 0 }}>
-                                    <NeonButton title={selectedCopy?.primary ?? 'Create'} onPress={handleCreateWorkOrder} />
+                                    <NeonButton title={serviceType === 'Request Preventive' ? 'Send Request' : (selectedCopy?.primary ?? 'Create')} onPress={handleCreateWorkOrder} />
                                 </View>
                 </View>
             </KeyboardAvoidingView>
@@ -593,6 +633,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 14,
         ...FONTS.body,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
     },
     dropdownButton: {
         flexDirection: 'row',
@@ -642,6 +686,10 @@ const styles = StyleSheet.create({
         padding: 14,
         textAlignVertical: 'top',
         ...FONTS.body,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
     },
     captureButton: {
         minHeight: 64,
@@ -658,5 +706,21 @@ const styles = StyleSheet.create({
         ...FONTS.bodyStrong,
         textAlign: 'center',
         fontSize: 16,
+    },
+    uploadArea: {
+        borderWidth: 1,
+        borderRadius: 16,
+        borderStyle: 'dashed',
+        padding: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        marginTop: 6,
+        marginBottom: 12,
+    },
+    uploadText: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+        textAlign: 'center',
     },
 });
