@@ -86,6 +86,7 @@ export const CreateTaskScreen = () => {
     const [taskOptions, setTaskOptions] = useState<string[]>([]);
     const [newOption, setNewOption] = useState('');
     const [tasks, setTasks] = useState<ChecklistTaskDraft[]>([]);
+    const [isAddingTask, setIsAddingTask] = useState(false);
     const [hasAttachment, setHasAttachment] = useState(false);
 
     // New states from Create Service Work mockup
@@ -410,25 +411,85 @@ export const CreateTaskScreen = () => {
                                                         </View>
                                                     ))}
 
-                                                    <TouchableOpacity 
-                                                        activeOpacity={0.8}
-                                                        onPress={openChecklistTaskSheet}
-                                                        style={[
-                                                            styles.captureButton, 
-                                                            { 
-                                                                backgroundColor: colors.surfaceHighlight,
-                                                                borderColor: colors.border,
-                                                                borderStyle: 'dashed',
-                                                                justifyContent: 'center',
-                                                                alignItems: 'center',
-                                                                gap: 8,
-                                                                minHeight: 52
-                                                            }
-                                                        ]}
-                                                    >
-                                                        <Ionicons name="add" size={20} color={colors.primary} />
-                                                        <Text style={[styles.captureButtonText, { color: colors.primary, marginTop: 0 }]}>Add custom task</Text>
-                                                    </TouchableOpacity>
+                                                    {!isAddingTask ? (
+                                                        <TouchableOpacity 
+                                                            activeOpacity={0.8}
+                                                            onPress={() => setIsAddingTask(true)}
+                                                            style={[
+                                                                styles.captureButton, 
+                                                                { 
+                                                                    backgroundColor: colors.surfaceHighlight,
+                                                                    borderColor: colors.border,
+                                                                    borderStyle: 'dashed',
+                                                                    justifyContent: 'center',
+                                                                    alignItems: 'center',
+                                                                    gap: 8,
+                                                                    minHeight: 52
+                                                                }
+                                                            ]}
+                                                        >
+                                                            <Ionicons name="add" size={20} color={colors.primary} />
+                                                            <Text style={[styles.captureButtonText, { color: colors.primary, marginTop: 0 }]}>Add Task</Text>
+                                                        </TouchableOpacity>
+                                                    ) : (
+                                                        <View style={{ backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 16, marginTop: 4 }}>
+                                                            <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 0 }]}>Task title</Text>
+                                                            <TextInput
+                                                                value={taskTitle}
+                                                                onChangeText={setTaskTitle}
+                                                                style={[styles.input, getInputShellStyle(colors), { color: colors.text, backgroundColor: colors.background }]}
+                                                                placeholder="Enter task title"
+                                                                placeholderTextColor={colors.textSecondary}
+                                                            />
+
+                                                            <PopoverDropdown
+                                                                label="Data type"
+                                                                placeholder="Select data type"
+                                                                options={getSelectorOptions('dataType').options}
+                                                                value={dataType}
+                                                                onSelect={(val) => setDataType(val as any)}
+                                                            />
+
+                                                            {['Radio', 'Multiselect'].includes(dataType) && (
+                                                                <View style={{ gap: 8, marginTop: 4 }}>
+                                                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Options</Text>
+                                                                    {taskOptions.map((opt, idx) => (
+                                                                        <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, padding: 12, borderRadius: 12 }}>
+                                                                            <Text style={{ flex: 1, color: colors.text, ...FONTS.body }}>{opt}</Text>
+                                                                            <TouchableOpacity onPress={() => removeOption(idx)}>
+                                                                                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                                                                            </TouchableOpacity>
+                                                                        </View>
+                                                                    ))}
+                                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                                        <TextInput
+                                                                            style={[styles.input, getInputShellStyle(colors), { flex: 1, color: colors.text, backgroundColor: colors.background }]}
+                                                                            placeholder="Add an option..."
+                                                                            placeholderTextColor={colors.textSecondary}
+                                                                            value={newOption}
+                                                                            onChangeText={setNewOption}
+                                                                            onSubmitEditing={addOption}
+                                                                        />
+                                                                        <TouchableOpacity onPress={addOption} style={{ backgroundColor: colors.primary, width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                                                                            <Ionicons name="add" size={24} color={colors.white} />
+                                                                        </TouchableOpacity>
+                                                                    </View>
+                                                                </View>
+                                                            )}
+
+                                                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12, gap: 12 }}>
+                                                                <TouchableOpacity onPress={() => setIsAddingTask(false)} style={{ padding: 12 }}>
+                                                                    <Text style={{ color: colors.textSecondary, ...FONTS.bodyStrong }}>Cancel</Text>
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity 
+                                                                    onPress={() => { saveTask(); setIsAddingTask(false); }} 
+                                                                    style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.primary, borderRadius: 12 }}
+                                                                >
+                                                                    <Text style={{ color: colors.white, ...FONTS.bodyStrong }}>Save Task</Text>
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        </View>
+                                                    )}
                                                 </View>
                                                 {/* Assignment Type */}
                                                 <PopoverDropdown
