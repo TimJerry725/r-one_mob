@@ -403,7 +403,6 @@ export const CreateTaskScreen = () => {
                                                         <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 12 }}>
                                                             <View style={{ flex: 1 }}>
                                                                 <Text style={{ color: colors.text, ...FONTS.bodyStrong, fontSize: 16 }}>{t.title}</Text>
-                                                                <Text style={{ color: colors.textSecondary, ...FONTS.caption, marginTop: 2 }}>{t.dataType}</Text>
                                                             </View>
                                                             <TouchableOpacity onPress={() => removeTask(idx)} style={{ padding: 4 }}>
                                                                 <Ionicons name="trash-outline" size={20} color={colors.danger} />
@@ -441,41 +440,6 @@ export const CreateTaskScreen = () => {
                                                                 placeholder="Enter task title"
                                                                 placeholderTextColor={colors.textSecondary}
                                                             />
-
-                                                            <PopoverDropdown
-                                                                label="Data type"
-                                                                placeholder="Select data type"
-                                                                options={getSelectorOptions('dataType').options}
-                                                                value={dataType}
-                                                                onSelect={(val) => setDataType(val as any)}
-                                                            />
-
-                                                            {['Radio', 'Multiselect'].includes(dataType) && (
-                                                                <View style={{ gap: 8, marginTop: 4 }}>
-                                                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Options</Text>
-                                                                    {taskOptions.map((opt, idx) => (
-                                                                        <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, padding: 12, borderRadius: 12 }}>
-                                                                            <Text style={{ flex: 1, color: colors.text, ...FONTS.body }}>{opt}</Text>
-                                                                            <TouchableOpacity onPress={() => removeOption(idx)}>
-                                                                                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
-                                                                            </TouchableOpacity>
-                                                                        </View>
-                                                                    ))}
-                                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                                        <TextInput
-                                                                            style={[styles.input, getInputShellStyle(colors), { flex: 1, color: colors.text, backgroundColor: colors.background }]}
-                                                                            placeholder="Add an option..."
-                                                                            placeholderTextColor={colors.textSecondary}
-                                                                            value={newOption}
-                                                                            onChangeText={setNewOption}
-                                                                            onSubmitEditing={addOption}
-                                                                        />
-                                                                        <TouchableOpacity onPress={addOption} style={{ backgroundColor: colors.primary, width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                                                                            <Ionicons name="add" size={24} color={colors.white} />
-                                                                        </TouchableOpacity>
-                                                                    </View>
-                                                                </View>
-                                                            )}
 
                                                             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12, gap: 12 }}>
                                                                 <TouchableOpacity onPress={() => setIsAddingTask(false)} style={{ padding: 12 }}>
@@ -559,41 +523,6 @@ export const CreateTaskScreen = () => {
                                                     placeholder="Enter custom task/question title"
                                                     placeholderTextColor={colors.textSecondary}
                                                 />
-
-                                                <PopoverDropdown
-                                                    label="Data type"
-                                                    placeholder="Select data type"
-                                                    options={getSelectorOptions('dataType').options}
-                                                    value={dataType}
-                                                    onSelect={(val) => setDataType(val as any)}
-                                                />
-
-                                                {['Radio', 'Multiselect'].includes(dataType) && (
-                                                    <View style={{ gap: 8, marginTop: 4 }}>
-                                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Options</Text>
-                                                        {taskOptions.map((opt, idx) => (
-                                                            <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 12 }}>
-                                                                <Text style={{ flex: 1, color: colors.text, ...FONTS.body }}>{opt}</Text>
-                                                                <TouchableOpacity onPress={() => removeOption(idx)}>
-                                                                    <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
-                                                                </TouchableOpacity>
-                                                            </View>
-                                                        ))}
-                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                            <TextInput
-                                                                style={[styles.input, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
-                                                                placeholder="Add an option..."
-                                                                placeholderTextColor={colors.textSecondary}
-                                                                value={newOption}
-                                                                onChangeText={setNewOption}
-                                                                onSubmitEditing={addOption}
-                                                            />
-                                                            <TouchableOpacity onPress={addOption} style={{ backgroundColor: colors.primary, width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                                                                <Ionicons name="add" size={24} color={colors.white} />
-                                                            </TouchableOpacity>
-                                                        </View>
-                                                    </View>
-                                                )}
                                             </>
                                         )}
                                     </View>
