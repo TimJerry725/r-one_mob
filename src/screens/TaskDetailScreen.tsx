@@ -19,6 +19,8 @@ import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
 import { ACTIVITY_LOG, CHECKLIST_TEMPLATE, ChecklistTemplateItem, getWorkOrderById } from '../data/fieldDemo';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
+import { PopoverDropdown } from '../components/PopoverDropdown';
+import { getSelectorOptions } from '../data/createTaskOptions';
 import { getServiceTypeColors } from '../styles/workTypeColors';
 
 type ChecklistStateItem = {
@@ -115,6 +117,8 @@ export const TaskDetailScreen = () => {
     const isUnderReview = workOrder.status === 'Under Review';
     const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
     const [items, setItems] = useState<ChecklistStateItem[]>(() => buildChecklistState(checklistTemplate, isUnderReview));
+    const [assignees, setAssignees] = useState<string[]>(workOrder.technicians || []);
+    const [isAddingAssignee, setIsAddingAssignee] = useState(false);
     const [completionNote, setCompletionNote] = useState('');
     const [mediaModalVisible, setMediaModalVisible] = useState(false);
     const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
@@ -370,7 +374,7 @@ export const TaskDetailScreen = () => {
                 </View>
 
                 <ScrollView ref={scrollViewRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                    <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                    <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: 10 }]}>
                         <View style={styles.heroTopRow}>
                             <View style={styles.heroTitleWrap}>
                                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
@@ -421,18 +425,52 @@ export const TaskDetailScreen = () => {
                         </View>
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
+
                         <View style={styles.chipRow}>
-                            {workOrder.technicians.map((tech, idx) => {
+                            {assignees.map((tech, idx) => {
                                 const isLead = idx === 0;
                                 return (
-                                    <View key={tech} style={[styles.heroChip, { backgroundColor: isLead ? colors.primary : colors.primary + '15', borderColor: colors.primary }]}>
+                                    <View key={tech} style={[styles.heroChip, { backgroundColor: isLead ? colors.primary : colors.primary + '15', borderColor: colors.primary, flexDirection: 'row', alignItems: 'center', paddingRight: 8 }]}>
                                         <Text style={[styles.heroChipText, { color: isLead ? colors.white : colors.primary }]}>
                                             {isLead ? `Lead: ${tech}` : tech}
                                         </Text>
+                                        <TouchableOpacity 
+                                            onPress={() => setAssignees(prev => prev.filter(a => a !== tech))}
+                                            style={{ marginLeft: 6 }}
+                                            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                                        >
+                                            <Ionicons name="close-circle" size={16} color={isLead ? colors.white : colors.primary} />
+                                        </TouchableOpacity>
                                     </View>
                                 );
                             })}
+                            
+                            {!isAddingAssignee && (
+                                <TouchableOpacity 
+                                    style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderStyle: 'dashed', paddingHorizontal: 12, justifyContent: 'center' }]}
+                                    onPress={() => setIsAddingAssignee(true)}
+                                >
+                                    <Ionicons name="add" size={16} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            )}
                         </View>
+                        
+                        {isAddingAssignee && (
+                            <View style={{ marginTop: 8, marginBottom: 12, zIndex: 1000 }}>
+                                <PopoverDropdown
+                                    label="Add Assignees"
+                                    placeholder="Select assignees..."
+                                    options={getSelectorOptions('assignees').options}
+                                    value={assignees}
+                                    onSelect={(val) => setAssignees(val as string[])}
+                                    isMulti={true}
+                                />
+                                <TouchableOpacity onPress={() => setIsAddingAssignee(false)} style={{ alignItems: 'flex-end', marginTop: -8 }}>
+                                     <Text style={[FONTS.bodyStrong, { color: colors.primary }]}>Done</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                        
                         <View style={{ marginTop: 12, flexDirection: 'row', gap: 16 }}>
                             <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>Approver: Marcus Aurelius</Text>
                             <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>Assigned by: {workOrder.assignedBy || 'Andrea Meuschke'}</Text>
@@ -991,13 +1029,9 @@ export const TaskDetailScreen = () => {
                                 </>
                             ) : (
                                 <>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
                                         <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
                                         <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>{completeActionLabel}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
-                                        <Ionicons name="arrow-redo-outline" size={26} color={colors.primary} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Forward</Text>
                                     </TouchableOpacity>
                                 </>
                             )}
