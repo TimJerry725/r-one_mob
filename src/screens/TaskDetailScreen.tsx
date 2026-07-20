@@ -133,15 +133,20 @@ export const TaskDetailScreen = () => {
 
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [editedNotes, setEditedNotes] = useState(workOrder.notes || '');
-    const [editedTargetTime, setEditedTargetTime] = useState(new Date(workOrder.targetTime).toISOString().slice(0, 10));
+    const [editedStartTime, setEditedStartTime] = useState(new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toISOString().slice(0, 10));
+    const [editedEndTime, setEditedEndTime] = useState(new Date(workOrder.targetTime).toISOString().slice(0, 10));
     const [editedApprover, setEditedApprover] = useState(workOrder.approver || 'Marcus Aurelius');
 
     const handleSaveDetails = () => {
         workOrder.notes = editedNotes;
         workOrder.approver = editedApprover;
-        const time = new Date(editedTargetTime).getTime();
-        if (!isNaN(time)) {
-            workOrder.targetTime = time;
+        const startTime = new Date(editedStartTime).getTime();
+        if (!isNaN(startTime)) {
+            workOrder.targetStartTime = startTime;
+        }
+        const endTime = new Date(editedEndTime).getTime();
+        if (!isNaN(endTime)) {
+            workOrder.targetTime = endTime;
         }
         setIsEditingDetails(false);
     };
@@ -420,6 +425,15 @@ export const TaskDetailScreen = () => {
                             </View>
                         </View>
 
+                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Charge Points (CPID)</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                            {(workOrder.assetIds || [workOrder.assetId]).map((cp) => (
+                                <View key={cp} style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, flexDirection: 'row', alignItems: 'center' }]}>
+                                    <Text style={[styles.heroChipText, { color: colors.text }]}>{cp}</Text>
+                                </View>
+                            ))}
+                        </View>
+
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Station Address</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
@@ -455,16 +469,25 @@ export const TaskDetailScreen = () => {
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 }}>
                             <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
                             {isEditingDetails ? (
-                                <TextInput
-                                    style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flex: 1 }, FONTS.body]}
-                                    value={editedTargetTime}
-                                    onChangeText={setEditedTargetTime}
-                                    placeholder="YYYY-MM-DD"
-                                    placeholderTextColor={colors.textSecondary}
-                                />
+                                <View style={{ flexDirection: 'row', gap: 8, flex: 1 }}>
+                                    <TextInput
+                                        style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flex: 1 }, FONTS.body]}
+                                        value={editedStartTime}
+                                        onChangeText={setEditedStartTime}
+                                        placeholder="Start (YYYY-MM-DD)"
+                                        placeholderTextColor={colors.textSecondary}
+                                    />
+                                    <TextInput
+                                        style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flex: 1 }, FONTS.body]}
+                                        value={editedEndTime}
+                                        onChangeText={setEditedEndTime}
+                                        placeholder="End (YYYY-MM-DD)"
+                                        placeholderTextColor={colors.textSecondary}
+                                    />
+                                </View>
                             ) : (
                                 <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 13 }]}>
-                                    {new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} - {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    {new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} - {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </Text>
                             )}
                         </View>
@@ -517,13 +540,13 @@ export const TaskDetailScreen = () => {
                         <View style={{ marginTop: 12, flexDirection: 'row', gap: 16, alignItems: 'center' }}>
                             {isEditingDetails ? (
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[{ color: colors.textSecondary, marginBottom: 4 }, FONTS.caption]}>Approver</Text>
-                                    <TextInput
-                                        style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }, FONTS.body]}
+                                    <PopoverDropdown
+                                        label="Approver"
+                                        placeholder="Select approver..."
+                                        options={getSelectorOptions('assignees').options}
                                         value={editedApprover}
-                                        onChangeText={setEditedApprover}
-                                        placeholder="Approver"
-                                        placeholderTextColor={colors.textSecondary}
+                                        onSelect={(val) => setEditedApprover(val as string)}
+                                        isMulti={false}
                                     />
                                 </View>
                             ) : (

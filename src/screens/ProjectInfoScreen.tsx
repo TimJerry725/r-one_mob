@@ -75,7 +75,7 @@ export const ProjectInfoScreen = () => {
                     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         <SectionHeader 
                             title="Charger Details" 
-                            extra={<Text style={{ ...FONTS.label, color: colors.primary }}>3 assigned</Text>}
+                            extra={<Text style={{ ...FONTS.label, color: colors.primary }}>3 chargers</Text>}
                         />
                         <View style={{ padding: 16 }}>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.02)',
     },
     sectionTitle: {
-        ...FONTS.h4,
+        ...FONTS.bodyStrong,
         fontSize: 15,
     },
     cardContentGrid: {

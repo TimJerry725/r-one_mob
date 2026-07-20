@@ -108,10 +108,9 @@ export const OrderCard = ({
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
                 <Text style={{ ...FONTS.caption, color: colors.textSecondary, flex: 1 }}>
-                    CPID: <Text style={{ color: colors.text }}>{item.assetId}</Text>
                     {!hideStationChip && (
                         <>
-                            {'   '}Station: <Text style={{ color: colors.text }}>{item.siteName}</Text>
+                            Station: <Text style={{ color: colors.text }}>{item.siteName}</Text>
                         </>
                     )}
                 </Text>

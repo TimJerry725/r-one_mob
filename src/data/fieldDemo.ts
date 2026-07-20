@@ -18,12 +18,14 @@ export type WorkOrder = {
     parts: string[];
     technicians: string[];
     assetId: string;
+    assetIds?: string[];
     checklistItems?: ChecklistTemplateItem[];
     offlineReady: boolean;
     notes: string;
     latitude: number;
     longitude: number;
     priority: 'High' | 'Medium' | 'Low';
+    targetStartTime?: number;
     targetTime: number;
     assignedBy?: string;
     approver?: string;
