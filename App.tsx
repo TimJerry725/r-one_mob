@@ -31,6 +31,7 @@ import { RoleSelectionScreen } from './src/screens/RoleSelectionScreen';
 import { AdminTeamScreen } from './src/screens/AdminTeamScreen';
 import { ProjectListScreen } from './src/screens/ProjectListScreen';
 import { SingleProjectScreen } from './src/screens/SingleProjectScreen';
+import { ProjectInfoScreen } from './src/screens/ProjectInfoScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -271,6 +272,7 @@ function AppNavigator() {
         <Stack.Screen name="Notification" component={NotificationScreen} />
         <Stack.Screen name="Language" component={LanguageScreen} />
         <Stack.Screen name="SingleProject" component={SingleProjectScreen} />
+        <Stack.Screen name="ProjectInfo" component={ProjectInfoScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen
           name="CreateTask"

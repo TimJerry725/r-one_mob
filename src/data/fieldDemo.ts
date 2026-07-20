@@ -26,6 +26,7 @@ export type WorkOrder = {
     priority: 'High' | 'Medium' | 'Low';
     targetTime: number;
     assignedBy?: string;
+    approver?: string;
 };
 
 export type AssetStatus = 'Healthy' | 'Service Due' | 'Offline';

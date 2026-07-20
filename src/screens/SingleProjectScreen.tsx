@@ -136,10 +136,18 @@ export const SingleProjectScreen = () => {
                     <Text style={[styles.pageTitle, { color: colors.text }]} numberOfLines={1}>
                         {projectName || `Project ${projectId}`}
                     </Text>
-                    <TouchableOpacity onPress={() => setShowMenu(!showMenu)} style={[styles.actionDropdownButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                        <Text style={[styles.actionDropdownText, { color: colors.text }]}>Actions</Text>
-                        <Ionicons name="chevron-down" size={16} color={colors.text} />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <TouchableOpacity 
+                            onPress={() => navigation.navigate('ProjectInfo', { projectId, projectName: projectName || `Project ${projectId}` })} 
+                            style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceHighlight, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}
+                        >
+                            <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setShowMenu(!showMenu)} style={[styles.actionDropdownButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                            <Text style={[styles.actionDropdownText, { color: colors.text }]}>Actions</Text>
+                            <Ionicons name="chevron-down" size={16} color={colors.text} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {showMenu && (
@@ -301,13 +309,7 @@ export const SingleProjectScreen = () => {
                                 </View>
                             </View>
 
-                            <TouchableOpacity style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, marginTop: 16 }]}>
-                                <Ionicons name="cloud-upload-outline" size={24} color={colors.primary} />
-                                <View style={{ alignItems: 'flex-start' }}>
-                                    <Text style={[styles.captureButtonText, { color: colors.text }]}>Upload New Attachment</Text>
-                                    <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
-                                </View>
-                            </TouchableOpacity>
+
                         </>
                     ) : null}
                 </ScrollView>

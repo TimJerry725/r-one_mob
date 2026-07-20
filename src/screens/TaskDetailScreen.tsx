@@ -131,6 +131,21 @@ export const TaskDetailScreen = () => {
     const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [editedNotes, setEditedNotes] = useState(workOrder.notes || '');
+    const [editedTargetTime, setEditedTargetTime] = useState(new Date(workOrder.targetTime).toISOString().slice(0, 10));
+    const [editedApprover, setEditedApprover] = useState(workOrder.approver || 'Marcus Aurelius');
+
+    const handleSaveDetails = () => {
+        workOrder.notes = editedNotes;
+        workOrder.approver = editedApprover;
+        const time = new Date(editedTargetTime).getTime();
+        if (!isNaN(time)) {
+            workOrder.targetTime = time;
+        }
+        setIsEditingDetails(false);
+    };
+
     const startEditTask = (task: ChecklistStateItem) => {
         setEditingTask(task);
         setEditTaskLabel(task.label);
@@ -389,12 +404,20 @@ export const TaskDetailScreen = () => {
                                     </View>
                                 ) : null}
                             </View>
-                            <TouchableOpacity 
-                                onPress={handleShareWork}
-                                style={[styles.navButton, { backgroundColor: colors.primary + '15', marginTop: 4 }]}
-                            >
-                                <Ionicons name="share-social-outline" size={16} color={colors.primary} />
-                            </TouchableOpacity>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                <TouchableOpacity 
+                                    onPress={() => isEditingDetails ? handleSaveDetails() : setIsEditingDetails(true)}
+                                    style={[styles.navButton, { backgroundColor: colors.primary + '15', marginTop: 4 }]}
+                                >
+                                    <Ionicons name={isEditingDetails ? "checkmark" : "pencil"} size={16} color={colors.primary} />
+                                </TouchableOpacity>
+                                <TouchableOpacity 
+                                    onPress={handleShareWork}
+                                    style={[styles.navButton, { backgroundColor: colors.primary + '15', marginTop: 4 }]}
+                                >
+                                    <Ionicons name="share-social-outline" size={16} color={colors.primary} />
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Station Address</Text>
@@ -408,7 +431,19 @@ export const TaskDetailScreen = () => {
                             </TouchableOpacity>
                         </View>
 
-                        {workOrder.notes ? (
+                        {isEditingDetails ? (
+                            <View style={{ marginBottom: 12 }}>
+                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Description</Text>
+                                <TextInput
+                                    style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, padding: 8, minHeight: 60, textAlignVertical: 'top' }, FONTS.body]}
+                                    value={editedNotes}
+                                    onChangeText={setEditedNotes}
+                                    multiline
+                                    placeholder="Enter description"
+                                    placeholderTextColor={colors.textSecondary}
+                                />
+                            </View>
+                        ) : workOrder.notes ? (
                             <>
                                 <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Description</Text>
                                 <Text style={[{ color: colors.text, marginBottom: 12, lineHeight: 20 }, FONTS.body]}>
@@ -419,9 +454,19 @@ export const TaskDetailScreen = () => {
 
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 }}>
                             <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-                            <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 13 }]}>
-                                {new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} - {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                            </Text>
+                            {isEditingDetails ? (
+                                <TextInput
+                                    style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flex: 1 }, FONTS.body]}
+                                    value={editedTargetTime}
+                                    onChangeText={setEditedTargetTime}
+                                    placeholder="YYYY-MM-DD"
+                                    placeholderTextColor={colors.textSecondary}
+                                />
+                            ) : (
+                                <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 13 }]}>
+                                    {new Date(workOrder.targetTime - 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} - {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </Text>
+                            )}
                         </View>
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
@@ -464,16 +509,29 @@ export const TaskDetailScreen = () => {
                                     value={assignees}
                                     onSelect={(val) => setAssignees(val as string[])}
                                     isMulti={true}
+                                    onDone={() => setIsAddingAssignee(false)}
                                 />
-                                <TouchableOpacity onPress={() => setIsAddingAssignee(false)} style={{ alignItems: 'flex-end', marginTop: -8 }}>
-                                     <Text style={[FONTS.bodyStrong, { color: colors.primary }]}>Done</Text>
-                                </TouchableOpacity>
                             </View>
                         )}
                         
-                        <View style={{ marginTop: 12, flexDirection: 'row', gap: 16 }}>
-                            <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>Approver: Marcus Aurelius</Text>
-                            <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>Assigned by: {workOrder.assignedBy || 'Andrea Meuschke'}</Text>
+                        <View style={{ marginTop: 12, flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+                            {isEditingDetails ? (
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[{ color: colors.textSecondary, marginBottom: 4 }, FONTS.caption]}>Approver</Text>
+                                    <TextInput
+                                        style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }, FONTS.body]}
+                                        value={editedApprover}
+                                        onChangeText={setEditedApprover}
+                                        placeholder="Approver"
+                                        placeholderTextColor={colors.textSecondary}
+                                    />
+                                </View>
+                            ) : (
+                                <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>Approver: {workOrder.approver || 'Marcus Aurelius'}</Text>
+                            )}
+                            <View style={{ flex: 1 }}>
+                                <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>Assigned by: {workOrder.assignedBy || 'Andrea Meuschke'}</Text>
+                            </View>
                         </View>
                     </View>
 

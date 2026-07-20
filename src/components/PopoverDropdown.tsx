@@ -11,6 +11,7 @@ interface PopoverDropdownProps {
     value: string | string[];
     onSelect: (value: string | string[]) => void;
     isMulti?: boolean;
+    onDone?: () => void;
 }
 
 export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
@@ -20,6 +21,7 @@ export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
     value,
     onSelect,
     isMulti = false,
+    onDone,
 }) => {
     const { colors } = useTheme();
     const [isOpen, setIsOpen] = useState(false);
@@ -97,6 +99,26 @@ export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
                             );
                         })}
                     </ScrollView>
+                    {onDone && (
+                        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
+                            <TouchableOpacity 
+                                style={{ 
+                                    backgroundColor: colors.primary, 
+                                    minHeight: 54,
+                                    borderRadius: 12,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    paddingHorizontal: 16
+                                }} 
+                                onPress={() => {
+                                    setIsOpen(false);
+                                    onDone();
+                                }}
+                            >
+                                <Text style={{ color: colors.white || '#FFFFFF', ...FONTS.bodyStrong }}>Done</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </View>
             )}
         </View>
