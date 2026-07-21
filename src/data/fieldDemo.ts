@@ -209,6 +209,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         parts: ['CCS cable', 'Breaker kit'],
         technicians: ['Tim', 'Arjun'],
         assetId: 'CP-100239',
+        assetIds: ['CP-100239', 'CP-100240', 'CP-100241'],
         offlineReady: true,
         notes: 'Heavy public traffic. Customer requests zero downtime for adjacent chargers.',
         latitude: 18.5314,
@@ -235,6 +236,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         parts: ['Anchors'],
         technicians: ['Arjun'],
         assetId: 'CP-100239',
+        assetIds: ['CP-100239', 'CP-100240', 'CP-100241'],
         offlineReady: true,
         notes: 'Follow up on foundation work.',
         latitude: 18.5314,
@@ -261,6 +263,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         parts: [],
         technicians: ['Tim'],
         assetId: 'CP-100239',
+        assetIds: ['CP-100239', 'CP-100240', 'CP-100241'],
         offlineReady: true,
         notes: 'Check wiring before final energization.',
         latitude: 18.5314,
@@ -286,6 +289,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         parts: ['PVC Conduit', 'Warning Tape'],
         technicians: ['Arjun', 'Ravi'],
         assetId: 'CP-100239',
+        assetIds: ['CP-100239', 'CP-100240', 'CP-100241'],
         checklistItems: [
             ...CHECKLIST_TEMPLATE.slice(0, 5),
             {

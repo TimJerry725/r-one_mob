@@ -62,7 +62,7 @@ export const OrderCard = ({
             onPress={onOpen}
             style={[styles.orderCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}
         >
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8, gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, gap: 12 }}>
                 <View style={{ flex: 1, gap: 4 }}>
                     <Text style={[styles.orderTitle, { color: colors.text, marginBottom: 0 }]}>{item.title}</Text>
                     <Text style={{ ...FONTS.caption, color: colors.textSecondary }}>
@@ -81,43 +81,43 @@ export const OrderCard = ({
                         <Text style={{ color: priorityColor, fontWeight: '600' }}>{item.priority} Priority</Text>
                     </Text>
                 </View>
-                <View style={[
-                    styles.statusBadgeInline, 
-                    { 
-                        backgroundColor: item.status === 'Completed' ? colors.success + '15' : 
-                                        item.status === 'Working' ? colors.primary + '15' :
-                                        item.status === 'Under Review' ? colors.secondary + '15' :
-                                        colors.surfaceHighlight,
-                        borderColor: item.status === 'Completed' ? colors.success : 
-                                     item.status === 'Working' ? colors.primary :
-                                     item.status === 'Under Review' ? colors.secondary :
-                                     colors.border
-                    }
-                ]}>
-                    <Text style={[
-                        styles.statusBadgeTextInline, 
+                <View style={{ alignItems: 'flex-end', gap: 6, marginTop: 2 }}>
+                    <View style={[
+                        styles.statusBadgeInline, 
                         { 
-                            color: item.status === 'Completed' ? colors.success : 
-                                   item.status === 'Working' ? colors.primary :
-                                   item.status === 'Under Review' ? colors.secondary :
-                                   colors.textSecondary 
+                            backgroundColor: item.status === 'Completed' ? colors.success + '15' : 
+                                            item.status === 'Working' ? colors.primary + '15' :
+                                            item.status === 'Under Review' ? colors.secondary + '15' :
+                                            colors.surfaceHighlight,
+                            borderColor: item.status === 'Completed' ? colors.success : 
+                                         item.status === 'Working' ? colors.primary :
+                                         item.status === 'Under Review' ? colors.secondary :
+                                         colors.border
                         }
-                    ]}>{item.status}</Text>
+                    ]}>
+                        <Text style={[
+                            styles.statusBadgeTextInline, 
+                            { 
+                                color: item.status === 'Completed' ? colors.success : 
+                                       item.status === 'Working' ? colors.primary :
+                                       item.status === 'Under Review' ? colors.secondary :
+                                       colors.textSecondary 
+                            }
+                        ]}>{item.status}</Text>
+                    </View>
+                    <Text style={[{ ...FONTS.caption, fontSize: 11, color: colors.danger }]}>
+                        {new Date(item.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </Text>
                 </View>
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
-                <Text style={{ ...FONTS.caption, color: colors.textSecondary, flex: 1 }}>
-                    {!hideStationChip && (
-                        <>
-                            Station: <Text style={{ color: colors.text }}>{item.siteName}</Text>
-                        </>
-                    )}
-                </Text>
-                <Text style={[{ ...FONTS.caption, fontSize: 11, color: colors.danger, marginLeft: 8 }]}>
-                    {new Date(item.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </Text>
-            </View>
+            {!hideStationChip && (
+                <View style={{ marginBottom: 12 }}>
+                    <Text style={{ ...FONTS.caption, color: colors.textSecondary }}>
+                        Station: <Text style={{ color: colors.text }}>{item.siteName}</Text>
+                    </Text>
+                </View>
+            )}
 
             <View style={styles.metaList}>
                 <View style={styles.assigneeRow}>
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        padding: 24,
+        padding: 12,
         paddingBottom: 36,
     },
     searchBar: {

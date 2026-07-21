@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
         ...FONTS.bodyStrong,
     },
     content: {
-        padding: 24,
+        padding: 12,
         paddingBottom: 36,
     },
     listColumn: {
@@ -837,7 +837,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 12,
         elevation: 3,
-        marginBottom: 12,
     },
     stepIcon: {
         width: 36,

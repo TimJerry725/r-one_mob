@@ -494,46 +494,29 @@ export const TaskDetailScreen = () => {
 
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
 
-                        <View style={styles.chipRow}>
-                            {assignees.map((tech, idx) => {
-                                const isLead = idx === 0;
-                                return (
-                                    <View key={tech} style={[styles.heroChip, { backgroundColor: isLead ? colors.primary : colors.primary + '15', borderColor: colors.primary, flexDirection: 'row', alignItems: 'center', paddingRight: 8 }]}>
-                                        <Text style={[styles.heroChipText, { color: isLead ? colors.white : colors.primary }]}>
-                                            {isLead ? `Lead: ${tech}` : tech}
-                                        </Text>
-                                        <TouchableOpacity 
-                                            onPress={() => setAssignees(prev => prev.filter(a => a !== tech))}
-                                            style={{ marginLeft: 6 }}
-                                            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-                                        >
-                                            <Ionicons name="close-circle" size={16} color={isLead ? colors.white : colors.primary} />
-                                        </TouchableOpacity>
-                                    </View>
-                                );
-                            })}
-                            
-                            {!isAddingAssignee && (
-                                <TouchableOpacity 
-                                    style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderStyle: 'dashed', paddingHorizontal: 12, justifyContent: 'center' }]}
-                                    onPress={() => setIsAddingAssignee(true)}
-                                >
-                                    <Ionicons name="add" size={16} color={colors.textSecondary} />
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                        
-                        {isAddingAssignee && (
+                        {isEditingDetails ? (
                             <View style={{ marginTop: 8, marginBottom: 12, zIndex: 1000 }}>
                                 <PopoverDropdown
-                                    label="Add Assignees"
+                                    label="Assignees"
                                     placeholder="Select assignees..."
                                     options={getSelectorOptions('assignees').options}
                                     value={assignees}
                                     onSelect={(val) => setAssignees(val as string[])}
                                     isMulti={true}
-                                    onDone={() => setIsAddingAssignee(false)}
                                 />
+                            </View>
+                        ) : (
+                            <View style={styles.chipRow}>
+                                {assignees.map((tech, idx) => {
+                                    const isLead = idx === 0;
+                                    return (
+                                        <View key={tech} style={[styles.heroChip, { backgroundColor: isLead ? colors.primary : colors.primary + '15', borderColor: colors.primary, flexDirection: 'row', alignItems: 'center' }]}>
+                                            <Text style={[styles.heroChipText, { color: isLead ? colors.white : colors.primary }]}>
+                                                {isLead ? `Lead: ${tech}` : tech}
+                                            </Text>
+                                        </View>
+                                    );
+                                })}
                             </View>
                         )}
                         
@@ -922,8 +905,8 @@ export const TaskDetailScreen = () => {
                         <>
                             <View style={styles.listColumn}>
                                 <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
-                                    <View style={[styles.stepIcon, { backgroundColor: colors.primary + '15', width: 48, height: 48 }]}>
-                                        <Ionicons name="document-text" size={24} color={colors.primary} />
+                                    <View style={[styles.stepIcon, { backgroundColor: colors.primary + '15' }]}>
+                                        <Ionicons name="document-text" size={20} color={colors.primary} />
                                     </View>
                                     <View style={{ flex: 1, marginLeft: 12 }}>
                                         <Text style={[styles.stepTitle, { color: colors.text }]}>Site Layout Plan.pdf</Text>
@@ -932,8 +915,8 @@ export const TaskDetailScreen = () => {
                                 </View>
 
                                 <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
-                                    <View style={[styles.stepIcon, { backgroundColor: colors.secondary + '15', width: 48, height: 48 }]}>
-                                        <Ionicons name="image" size={24} color={colors.secondary} />
+                                    <View style={[styles.stepIcon, { backgroundColor: colors.secondary + '15' }]}>
+                                        <Ionicons name="image" size={20} color={colors.secondary} />
                                     </View>
                                     <View style={{ flex: 1, marginLeft: 12 }}>
                                         <Text style={[styles.stepTitle, { color: colors.text }]}>Previous Service Photo.jpg</Text>
@@ -1495,13 +1478,13 @@ const styles = StyleSheet.create({
         fontSize: 9,
     },
     content: {
-        padding: 16,
+        padding: 12,
         paddingBottom: 24,
     },
     heroCard: {
         borderRadius: 18,
         padding: 14,
-        marginBottom: 14,
+        marginBottom: 8,
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.08,
         shadowRadius: 18,
@@ -1575,7 +1558,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         padding: 4,
         gap: 4,
-        marginBottom: 16,
+        marginBottom: 10,
     },
     tabButton: {
         flex: 1,
@@ -1592,8 +1575,8 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     listColumn: {
-        gap: 12,
-        marginBottom: 14,
+        gap: 8,
+        marginBottom: 8,
     },
     filterRow: {
         flexDirection: 'row',
@@ -1722,7 +1705,7 @@ const styles = StyleSheet.create({
     },
     stepCard: {
         borderRadius: 16,
-        padding: 16,
+        padding: 12,
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.08,
         shadowRadius: 18,
