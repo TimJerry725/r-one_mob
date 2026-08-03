@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, Modal, Animated, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getStatusColor } from '../styles/statusColors';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
@@ -85,24 +86,13 @@ export const OrderCard = ({
                     <View style={[
                         styles.statusBadgeInline, 
                         { 
-                            backgroundColor: item.status === 'Completed' ? colors.success + '15' : 
-                                            item.status === 'Working' ? colors.primary + '15' :
-                                            item.status === 'Under Review' ? colors.secondary + '15' :
-                                            colors.surfaceHighlight,
-                            borderColor: item.status === 'Completed' ? colors.success : 
-                                         item.status === 'Working' ? colors.primary :
-                                         item.status === 'Under Review' ? colors.secondary :
-                                         colors.border
+                            backgroundColor: getStatusColor(item.status, colors, isDark) + '15',
+                            borderColor: getStatusColor(item.status, colors, isDark)
                         }
                     ]}>
                         <Text style={[
                             styles.statusBadgeTextInline, 
-                            { 
-                                color: item.status === 'Completed' ? colors.success : 
-                                       item.status === 'Working' ? colors.primary :
-                                       item.status === 'Under Review' ? colors.secondary :
-                                       colors.textSecondary 
-                            }
+                            { color: getStatusColor(item.status, colors, isDark) }
                         ]}>{item.status}</Text>
                     </View>
                     <Text style={[{ ...FONTS.caption, fontSize: 11, color: colors.danger }]}>

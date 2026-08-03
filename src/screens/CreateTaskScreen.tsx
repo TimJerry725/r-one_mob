@@ -82,7 +82,7 @@ export const CreateTaskScreen = () => {
     const [siteName, setSiteName] = useState<string>(prefill.siteName || '');
     const [projectId, setProjectId] = useState<string>(prefill.projectId || '');
     const [assignees, setAssignees] = useState<string[]>([]);
-    const [dataType, setDataType] = useState<typeof DATA_TYPES[number]>('Text');
+    const [dataType, setDataType] = useState<typeof DATA_TYPES[number]>('Short text');
     const [taskOptions, setTaskOptions] = useState<string[]>([]);
     const [newOption, setNewOption] = useState('');
     const [tasks, setTasks] = useState<ChecklistTaskDraft[]>([]);
@@ -193,7 +193,7 @@ export const CreateTaskScreen = () => {
         
         // Reset subform
         setTaskTitle('');
-        setDataType('Text');
+        setDataType('Short text');
         setTaskOptions([]);
     };
 
@@ -208,7 +208,7 @@ export const CreateTaskScreen = () => {
             setTaskTitle('');
             setSiteName('');
             setProjectId('');
-            setDataType('Text');
+            setDataType('Short text');
             return;
         }
 
@@ -470,14 +470,43 @@ export const CreateTaskScreen = () => {
 
                                                 {/* Assignees (Conditional) */}
                                                 {assignmentType === 'Team' && (
-                                                    <PopoverDropdown
-                                                        label="* Assignees"
-                                                        placeholder="Choose team members"
-                                                        options={getSelectorOptions('assignees').options}
-                                                        value={assignees}
-                                                        onSelect={(val) => setAssignees(val as string[])}
-                                                        isMulti={true}
-                                                    />
+                                                    <View style={{ flexDirection: 'row', gap: 12, zIndex: 1000 }}>
+                                                        <View style={{ flex: 1, zIndex: 1000 }}>
+                                                            <PopoverDropdown
+                                                                label="* Lead"
+                                                                placeholder="Select lead..."
+                                                                options={getSelectorOptions('assignees').options}
+                                                                value={assignees.length > 0 ? assignees[0] : ''}
+                                                                onSelect={(val) => {
+                                                                    const newLead = val as string;
+                                                                    if (newLead) {
+                                                                        setAssignees([newLead, ...assignees.slice(1).filter(a => a !== newLead)]);
+                                                                    } else if (assignees.length > 0) {
+                                                                        setAssignees(assignees.slice(1));
+                                                                    }
+                                                                }}
+                                                                isMulti={false}
+                                                            />
+                                                        </View>
+                                                        <View style={{ flex: 1, zIndex: 999 }}>
+                                                            <PopoverDropdown
+                                                                label="Assignees"
+                                                                placeholder="Select assignees..."
+                                                                options={getSelectorOptions('assignees').options}
+                                                                value={assignees.length > 0 ? assignees.slice(1) : []}
+                                                                onSelect={(val) => {
+                                                                    const otherAssignees = val as string[];
+                                                                    const lead = assignees.length > 0 ? assignees[0] : null;
+                                                                    if (lead) {
+                                                                        setAssignees([lead, ...otherAssignees.filter(a => a !== lead)]);
+                                                                    } else {
+                                                                        setAssignees(otherAssignees);
+                                                                    }
+                                                                }}
+                                                                isMulti={true}
+                                                            />
+                                                        </View>
+                                                    </View>
                                                 )}
 
                                                 </>
@@ -523,6 +552,41 @@ export const CreateTaskScreen = () => {
                                                     placeholder="Enter custom task/question title"
                                                     placeholderTextColor={colors.textSecondary}
                                                 />
+                                                <View style={{ zIndex: 100, marginTop: 12 }}>
+                                                    <PopoverDropdown
+                                                        label="Data type"
+                                                        placeholder="Select data type"
+                                                        options={getSelectorOptions('dataType').options}
+                                                        value={dataType}
+                                                        onSelect={(val) => setDataType(val as any)}
+                                                    />
+                                                </View>
+                                                {['Multiple Choice', 'Radio button', 'Dropdown'].includes(dataType) ? (
+                                                    <View style={[styles.optionSection, { marginTop: 12 }]}>
+                                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Options</Text>
+                                                        {taskOptions.map((option, index) => (
+                                                            <View key={`${option}-${index}`} style={[styles.optionRow, { backgroundColor: colors.surfaceHighlight }]}>
+                                                                <Text style={[styles.optionText, { color: colors.text }]}>{option}</Text>
+                                                                <TouchableOpacity onPress={() => removeOption(index)}>
+                                                                    <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        ))}
+                                                        <View style={styles.optionComposer}>
+                                                            <TextInput
+                                                                style={[styles.input, styles.optionInput, getInputShellStyle(colors), { color: colors.text }]}
+                                                                placeholder="Add an option..."
+                                                                placeholderTextColor={colors.textSecondary}
+                                                                value={newOption}
+                                                                onChangeText={setNewOption}
+                                                                onSubmitEditing={addOption}
+                                                            />
+                                                            <TouchableOpacity onPress={addOption} style={[styles.addButton, { backgroundColor: colors.primary }]}>
+                                                                <Ionicons name="add" size={24} color={colors.white} />
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    </View>
+                                                ) : null}
                                             </>
                                         )}
                                     </View>
@@ -735,5 +799,33 @@ const styles = StyleSheet.create({
         ...FONTS.bodyStrong,
         fontSize: 14,
         textAlign: 'center',
+    },
+    optionSection: {
+        gap: 8,
+    },
+    optionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 12,
+        padding: 12,
+    },
+    optionText: {
+        flex: 1,
+        ...FONTS.body,
+    },
+    optionComposer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    optionInput: {
+        flex: 1,
+    },
+    addButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

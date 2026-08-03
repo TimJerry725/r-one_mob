@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
+import { getStatusColor } from '../styles/statusColors';
 import { useTheme } from '../context/ThemeContext';
 import { ACTIVITY_LOG, CHECKLIST_TEMPLATE, ChecklistTemplateItem, getWorkOrderById } from '../data/fieldDemo';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
@@ -115,6 +116,7 @@ export const TaskDetailScreen = () => {
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const isUnderReview = workOrder.status === 'Under Review';
+    const isSimpleChecklist = ['service', 'preventive'].includes((workOrder.type || '').toLowerCase());
     const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
     const [items, setItems] = useState<ChecklistStateItem[]>(() => buildChecklistState(checklistTemplate, isUnderReview));
     const [assignees, setAssignees] = useState<string[]>(workOrder.technicians || []);
@@ -132,6 +134,7 @@ export const TaskDetailScreen = () => {
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
     const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [isEditingAssignees, setIsEditingAssignees] = useState(false);
     const [editedNotes, setEditedNotes] = useState(workOrder.notes || '');
     const [editedStartTime, setEditedStartTime] = useState(new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toISOString().slice(0, 10));
     const [editedEndTime, setEditedEndTime] = useState(new Date(workOrder.targetTime).toISOString().slice(0, 10));
@@ -401,13 +404,25 @@ export const TaskDetailScreen = () => {
                                     <Text style={[styles.jobTitle, { color: colors.text, flex: 1 }]}>{workOrder.title}</Text>
                                     <Text style={[{ color: colors.primary, marginTop: 4 }, FONTS.caption]}>{workOrder.projectId}</Text>
                                 </View>
-                                {workOrder.type === 'Installation' ? (
-                                    <View style={styles.heroTopChipRow}>
+                                <View style={styles.heroTopChipRow}>
+                                    <View style={[
+                                        styles.heroChip,
+                                        {
+                                            backgroundColor: getStatusColor(workOrder.status, colors, isDark) + '15',
+                                            borderColor: getStatusColor(workOrder.status, colors, isDark)
+                                        }
+                                    ]}>
+                                        <Text style={[
+                                            styles.heroChipText,
+                                            { color: getStatusColor(workOrder.status, colors, isDark) }
+                                        ]}>{workOrder.status}</Text>
+                                    </View>
+                                    {workOrder.type === 'Installation' && workOrder.stage ? (
                                         <View style={[styles.heroChip, { backgroundColor: (isDark ? colors.primaryLight : colors.primary) + '15', borderColor: isDark ? colors.primaryLight : colors.primary }]}>
                                             <Text style={[styles.heroChipText, { color: isDark ? colors.primaryLight : colors.primary }]}>{workOrder.stage}</Text>
                                         </View>
-                                    </View>
-                                ) : null}
+                                    ) : null}
+                                </View>
                             </View>
                             <View style={{ flexDirection: 'row', gap: 8 }}>
                                 <TouchableOpacity 
@@ -495,18 +510,47 @@ export const TaskDetailScreen = () => {
                         <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
 
                         {isEditingDetails ? (
-                            <View style={{ marginTop: 8, marginBottom: 12, zIndex: 1000 }}>
-                                <PopoverDropdown
-                                    label="Assignees"
-                                    placeholder="Select assignees..."
-                                    options={getSelectorOptions('assignees').options}
-                                    value={assignees}
-                                    onSelect={(val) => setAssignees(val as string[])}
-                                    isMulti={true}
-                                />
+                            <View style={{ zIndex: 1000 }}>
+                                <View style={{ marginTop: 8, marginBottom: 12, flexDirection: 'row', gap: 12 }}>
+                                    <View style={{ flex: 1, zIndex: 1000 }}>
+                                        <PopoverDropdown
+                                            label="Lead"
+                                            placeholder="Select lead..."
+                                            options={getSelectorOptions('assignees').options}
+                                            value={assignees.length > 0 ? assignees[0] : ''}
+                                            onSelect={(val) => {
+                                                const newLead = val as string;
+                                                if (newLead) {
+                                                    setAssignees([newLead, ...assignees.slice(1).filter(a => a !== newLead)]);
+                                                } else if (assignees.length > 0) {
+                                                    setAssignees(assignees.slice(1));
+                                                }
+                                            }}
+                                            isMulti={false}
+                                        />
+                                    </View>
+                                    <View style={{ flex: 1, zIndex: 999 }}>
+                                        <PopoverDropdown
+                                            label="Assignees"
+                                            placeholder="Select assignees..."
+                                            options={getSelectorOptions('assignees').options}
+                                            value={assignees.length > 0 ? assignees.slice(1) : []}
+                                            onSelect={(val) => {
+                                                const otherAssignees = val as string[];
+                                                const lead = assignees.length > 0 ? assignees[0] : null;
+                                                if (lead) {
+                                                    setAssignees([lead, ...otherAssignees.filter(a => a !== lead)]);
+                                                } else {
+                                                    setAssignees(otherAssignees);
+                                                }
+                                            }}
+                                            isMulti={true}
+                                        />
+                                    </View>
+                                </View>
                             </View>
                         ) : (
-                            <View style={styles.chipRow}>
+                            <View style={[styles.chipRow, { alignItems: 'center' }]}>
                                 {assignees.map((tech, idx) => {
                                     const isLead = idx === 0;
                                     return (
@@ -576,15 +620,27 @@ export const TaskDetailScreen = () => {
                                     <View style={styles.listColumn}>
                                         {items.map((item) => {
                                             return (
-                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, opacity: item.isNa ? 0.5 : 1, zIndex: openMenuId === item.id ? 100 : 1 }]}>
+                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: openMenuId === item.id ? 100 : 1 }]}>
                                             <View style={[styles.stepHeader, { zIndex: openMenuId === item.id ? 100 : 1 }]}>
-                                                    <View style={[styles.stepIcon, { backgroundColor: isComplete(item) ? colors.success : colors.surfaceHighlight }]}>
-                                                        <Ionicons
-                                                            name={isComplete(item) ? 'checkmark' : 'ellipse-outline'}
-                                                            size={18}
-                                                            color={isComplete(item) ? colors.white : colors.textSecondary}
-                                                        />
-                                                    </View>
+                                                    <TouchableOpacity
+                                                        activeOpacity={isSimpleChecklist ? 0.7 : 1}
+                                                        onPress={() => {
+                                                            if (isSimpleChecklist && !isUnderReview) {
+                                                                const updateItem = (id: string, value: any) => {
+                                                                    setItems(currentItems => currentItems.map(i => i.id === id ? { ...i, value } : i));
+                                                                };
+                                                                updateItem(item.id, isComplete(item) ? '' : 'done');
+                                                            }
+                                                        }}
+                                                    >
+                                                        <View style={[styles.stepIcon, { backgroundColor: isComplete(item) ? colors.success : colors.surfaceHighlight }]}>
+                                                            <Ionicons
+                                                                name={isComplete(item) ? 'checkmark' : 'ellipse-outline'}
+                                                                size={18}
+                                                                color={isComplete(item) ? colors.white : colors.textSecondary}
+                                                            />
+                                                        </View>
+                                                    </TouchableOpacity>
                                                     {editingTask?.id === item.id ? (
                                                         <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 12 }}>
                                                             <TextInput
@@ -606,9 +662,11 @@ export const TaskDetailScreen = () => {
                                                                 {item.label ? (
                                                                     <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
                                                                 ) : null}
-                                                                <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
-                                                                    {item.isNa ? 'Not Applicable' : item.required ? 'Required before completion' : 'Optional'}
-                                                                </Text>
+                                                                {!item.required && (
+                                                                    <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
+                                                                        Optional
+                                                                    </Text>
+                                                                )}
                                                             </View>
                                                             {!isUnderReview && (
                                                                 <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 10 : 1, marginLeft: 8 }}>
@@ -636,10 +694,6 @@ export const TaskDetailScreen = () => {
                                                                                 <FontAwesome name="pencil" size={16} color={colors.primary} />
                                                                                 <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
                                                                             </TouchableOpacity>
-                                                                            <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); markTaskNa(item.id); }}>
-                                                                                <FontAwesome name={item.isNa ? "check" : "ban"} size={16} color={item.isNa ? colors.success : colors.textSecondary} />
-                                                                                <Text style={[FONTS.body, { color: colors.text }]}>{item.isNa ? 'Applicable' : 'N/A'}</Text>
-                                                                            </TouchableOpacity>
                                                                             <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
                                                                                 <FontAwesome name="trash-o" size={16} color={colors.danger} />
                                                                                 <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
@@ -652,7 +706,7 @@ export const TaskDetailScreen = () => {
                                                     )}
                                                 </View>
 
-                                                {!item.isNa && (
+                                                {!isSimpleChecklist && (
                                                     <>
                                                         {item.type === 'photo' || item.type === 'media' ? (
                                                             <TouchableOpacity
@@ -670,6 +724,7 @@ export const TaskDetailScreen = () => {
                                                             </TouchableOpacity>
                                                         ) : item.type === 'remarks_response' ? (
                                                             <View style={{ gap: 12 }}>
+                                                                <Text style={[FONTS.bodyStrong, { color: colors.text, marginBottom: 4 }]}>Remarks & Responses</Text>
                                                                 {((item.value as string[][]) || []).map((pair, index) => (
                                                                     <View key={index} style={{ gap: 8, padding: 12, backgroundColor: colors.surfaceHighlight, borderRadius: 8 }}>
                                                                         <TextInput

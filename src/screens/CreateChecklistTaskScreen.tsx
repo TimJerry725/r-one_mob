@@ -31,7 +31,7 @@ export const CreateChecklistTaskScreen = () => {
     const insets = useSafeAreaInsets();
 
     const [taskTitle, setTaskTitle] = useState('');
-    const [dataType, setDataType] = useState<typeof DATA_TYPES[number]>('Text');
+    const [dataType, setDataType] = useState<typeof DATA_TYPES[number]>('Short text');
     const [taskOptions, setTaskOptions] = useState<string[]>([]);
     const [newOption, setNewOption] = useState('');
 
@@ -60,7 +60,7 @@ export const CreateChecklistTaskScreen = () => {
         const task: ChecklistTaskDraft = {
             title: taskTitle.trim(),
             dataType,
-            options: ['Radio', 'Multiselect'].includes(dataType) ? [...taskOptions] : [],
+            options: ['Multiple Choice', 'Radio button', 'Dropdown'].includes(dataType) ? [...taskOptions] : [],
         };
 
         const taskDraftResult: TaskDraftResult = {
@@ -129,7 +129,7 @@ export const CreateChecklistTaskScreen = () => {
                             />
                         </View>
 
-                        {['Radio', 'Multiselect'].includes(dataType) ? (
+                        {['Multiple Choice', 'Radio button', 'Dropdown'].includes(dataType) ? (
                             <View style={styles.optionSection}>
                                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Options</Text>
                                 {taskOptions.map((option, index) => (

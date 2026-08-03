@@ -63,63 +63,70 @@ export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
             </TouchableOpacity>
 
             {isOpen && (
-                <View style={[
-                    styles.dropdownMenu, 
-                    { 
-                        backgroundColor: colors.surfaceHighlight, 
-                        borderColor: colors.primary, 
-                        shadowColor: colors.primary 
-                    }
-                ]}>
-                    <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 200 }} showsVerticalScrollIndicator={false}>
-                        {options.map((option, idx, arr) => {
-                            const isSelected = isMulti && Array.isArray(value)
-                                ? value.includes(option.value)
-                                : value === option.value;
-                            
-                            return (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.dropdownItem,
-                                        isSelected && { backgroundColor: 'rgba(255,255,255,0.03)' }
-                                    ]}
+                <>
+                    <TouchableOpacity
+                        style={styles.overlay}
+                        activeOpacity={1}
+                        onPress={() => setIsOpen(false)}
+                    />
+                    <View style={[
+                        styles.dropdownMenu, 
+                        { 
+                            backgroundColor: colors.surfaceHighlight, 
+                            borderColor: colors.primary, 
+                            shadowColor: colors.primary 
+                        }
+                    ]}>
+                        <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 200 }} showsVerticalScrollIndicator={false}>
+                            {options.map((option, idx, arr) => {
+                                const isSelected = isMulti && Array.isArray(value)
+                                    ? value.includes(option.value)
+                                    : value === option.value;
+                                
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                            styles.dropdownItem,
+                                            isSelected && { backgroundColor: 'rgba(255,255,255,0.03)' }
+                                        ]}
+                                        onPress={() => {
+                                            if (isMulti && Array.isArray(value)) {
+                                                onSelect(isSelected ? value.filter(v => v !== option.value) : [...value, option.value]);
+                                            } else {
+                                                onSelect(option.value);
+                                                setIsOpen(false);
+                                            }
+                                        }}
+                                    >
+                                        <Text style={{ color: colors.text, ...FONTS.body }}>{option.label}</Text>
+                                        {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                        {onDone && (
+                            <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
+                                <TouchableOpacity 
+                                    style={{ 
+                                        backgroundColor: colors.primary, 
+                                        minHeight: 40,
+                                        borderRadius: 8,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        paddingHorizontal: 16
+                                    }} 
                                     onPress={() => {
-                                        if (isMulti && Array.isArray(value)) {
-                                            onSelect(isSelected ? value.filter(v => v !== option.value) : [...value, option.value]);
-                                        } else {
-                                            onSelect(option.value);
-                                            setIsOpen(false);
-                                        }
+                                        setIsOpen(false);
+                                        onDone();
                                     }}
                                 >
-                                    <Text style={{ color: colors.text, ...FONTS.body }}>{option.label}</Text>
-                                    {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                                    <Text style={{ color: colors.white || '#FFFFFF', ...FONTS.bodyStrong, fontSize: 14 }}>Done</Text>
                                 </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-                    {onDone && (
-                        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
-                            <TouchableOpacity 
-                                style={{ 
-                                    backgroundColor: colors.primary, 
-                                    minHeight: 54,
-                                    borderRadius: 12,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    paddingHorizontal: 16
-                                }} 
-                                onPress={() => {
-                                    setIsOpen(false);
-                                    onDone();
-                                }}
-                            >
-                                <Text style={{ color: colors.white || '#FFFFFF', ...FONTS.bodyStrong }}>Done</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                </View>
+                            </View>
+                        )}
+                    </View>
+                </>
             )}
         </View>
     );
@@ -135,14 +142,23 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        minHeight: 52,
-        borderRadius: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 14,
+        minHeight: 40,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.08,
         shadowRadius: 16,
         elevation: 4,
+    },
+    overlay: {
+        position: 'absolute',
+        top: -3000,
+        bottom: -3000,
+        left: -3000,
+        right: -3000,
+        zIndex: 999,
+        backgroundColor: 'transparent',
     },
     dropdownMenu: {
         position: 'absolute',
@@ -161,8 +177,8 @@ const styles = StyleSheet.create({
     dropdownItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
-        paddingHorizontal: 16,
+        padding: 8,
+        paddingHorizontal: 12,
         justifyContent: 'space-between',
     }
 });

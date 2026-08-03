@@ -22,6 +22,7 @@ import {
     requestPM,
 } from '../data/fieldDemo';
 import { FONTS } from '../styles/futurist';
+import { getStatusColor } from '../styles/statusColors';
 
 const CCS2_SVG = `<svg width="28" height="40" viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M14.0004 25.6269C21.7323 25.6269 28.0002 18.8483 28.0002 10.4864C28.0002 6.73964 26.1584 3.31079 23.9809 0.667169C23.6257 0.235924 23.0904 0 22.5317 0H5.46902C4.91032 0 4.37502 0.235924 4.01981 0.667169C1.84232 3.31079 0.000488281 6.73964 0.000488281 10.4864C0.000488281 18.8483 6.26845 25.6269 14.0004 25.6269Z" fill="none"/>
@@ -49,15 +50,7 @@ const priorityTone = (priority: AssetAlertPriority, colors: ReturnType<typeof us
     return colors.warning;
 };
 
-const statusTone = (status: AssetAlertStatus, colors: ReturnType<typeof useTheme>['colors']) => {
-    if (status === 'Assigned') {
-        return colors.secondary;
-    }
-    if (status === 'Closed') {
-        return colors.success;
-    }
-    return colors.warning;
-};
+
 
 export const AssetDetailScreen = () => {
     const navigation = useNavigation<any>();
@@ -235,7 +228,7 @@ export const AssetDetailScreen = () => {
                                 ) : (
                                     detail.alerts.map((item, idx) => {
                                         const priorityColor = priorityTone(item.priority, colors);
-                                        const statusColor = statusTone(item.status, colors);
+                                        const statusColor = getStatusColor(item.status, colors, isDark);
 
                                         return (
                                             <View
@@ -300,7 +293,7 @@ export const AssetDetailScreen = () => {
                                     <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No open work orders.</Text>
                                 ) : (
                                     openWorkOrders.map((item, index) => {
-                                        const workStatusColor = statusTone(item.status, colors);
+                                        const workStatusColor = getStatusColor(item.status, colors, isDark);
                                         const cardContent = (
                                             <View style={[styles.historyRow, index !== openWorkOrders.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
                                                 <View style={styles.historyLeft}>
@@ -337,7 +330,7 @@ export const AssetDetailScreen = () => {
                                     <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No completed work orders.</Text>
                                 ) : (
                                     completedWorkOrdersPaginated.map((item, index) => {
-                                        const workStatusColor = statusTone(item.status, colors);
+                                        const workStatusColor = getStatusColor(item.status, colors, isDark);
                                         const cardContent = (
                                             <View style={[styles.historyRow, index !== completedWorkOrdersPaginated.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
                                                 <View style={styles.historyLeft}>

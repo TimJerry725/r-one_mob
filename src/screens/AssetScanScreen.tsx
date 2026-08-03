@@ -7,6 +7,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTheme } from '../context/ThemeContext';
 import { ASSETS } from '../data/fieldDemo';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
+import { getStatusColor } from '../styles/statusColors';
 
 const getAssetMatch = (value: string) =>
     ASSETS.find((item) => {
@@ -19,7 +20,7 @@ const getAssetMatch = (value: string) =>
 
 export const AssetScanScreen = () => {
     const navigation = useNavigation<any>();
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const [cpid, setCpid] = useState('');
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
@@ -159,8 +160,8 @@ export const AssetScanScreen = () => {
                                         {matchedAsset.cpid} • {matchedAsset.location}
                                     </Text>
                                 </View>
-                                <View style={[styles.statusBadge, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
-                                    <Text style={[styles.statusBadgeText, { color: colors.success }]}>{matchedAsset.status}</Text>
+                                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(matchedAsset.status, colors, isDark) + '20', borderColor: getStatusColor(matchedAsset.status, colors, isDark) }]}>
+                                    <Text style={[styles.statusBadgeText, { color: getStatusColor(matchedAsset.status, colors, isDark) }]}>{matchedAsset.status}</Text>
                                 </View>
                             </View>
 

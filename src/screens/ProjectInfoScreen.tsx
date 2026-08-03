@@ -4,12 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+import { getStatusColor } from '../styles/statusColors';
 import { FONTS } from '../styles/futurist';
 
 export const ProjectInfoScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
 
     const projectName = route.params?.projectName || 'Project Details';
 
@@ -88,8 +89,8 @@ export const ProjectInfoScreen = () => {
                                         <Text style={[FONTS.bodyStrong, { color: colors.text }]}>{charger.make} {charger.model}</Text>
                                         <Text style={[FONTS.caption, { color: colors.textSecondary }]}>{charger.type} • {charger.power} • {charger.conn} Connectors</Text>
                                         <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4 }]}>SN: {charger.sn} | CPID: {charger.cpid}</Text>
-                                        <View style={{ position: 'absolute', top: 12, right: 12, backgroundColor: charger.status === 'APPR' ? colors.success + '20' : colors.textSecondary + '20', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                                            <Text style={[FONTS.label, { fontSize: 10, color: charger.status === 'APPR' ? colors.success : colors.textSecondary }]}>{charger.status}</Text>
+                                        <View style={{ position: 'absolute', top: 12, right: 12, backgroundColor: getStatusColor(charger.status, colors, isDark) + '20', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                            <Text style={[FONTS.label, { fontSize: 10, color: getStatusColor(charger.status, colors, isDark) }]}>{charger.status}</Text>
                                         </View>
                                     </View>
                                 ))}

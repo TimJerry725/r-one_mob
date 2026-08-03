@@ -1,5 +1,5 @@
 export const SERVICE_TYPES = ['Service', 'Request Preventive'] as const;
-export const DATA_TYPES = ['Text', 'Number', 'Date', 'Radio', 'Multiselect', 'Media', 'Toggle', 'Not applicable'] as const;
+export const DATA_TYPES = ['Short text', 'Long text', 'Number', 'Date', 'Media', 'Multiple Choice', 'Radio button', 'Dropdown', 'None', '3 phase voltage'] as const;
 export const STAGE_NAMES = ['Site Prep', 'Fault Check', 'Inspection', 'Commissioning', 'Closeout'] as const;
 export const CHECKLIST_NAMES = ['Pedestal Repair', 'Grounding Check', 'Annual Maintenance'] as const;
 
