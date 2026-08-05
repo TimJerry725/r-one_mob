@@ -126,6 +126,7 @@ export const CreateChecklistTaskScreen = () => {
                                 options={getSelectorOptions('dataType').options}
                                 value={dataType}
                                 onSelect={(val) => setDataType(val as any)}
+                                placement="top"
                             />
                         </View>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
@@ -12,6 +12,7 @@ interface PopoverDropdownProps {
     onSelect: (value: string | string[]) => void;
     isMulti?: boolean;
     onDone?: () => void;
+    placement?: 'bottom' | 'top';
 }
 
 export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
@@ -22,9 +23,23 @@ export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
     onSelect,
     isMulti = false,
     onDone,
+    placement = 'bottom',
 }) => {
     const { colors } = useTheme();
     const [isOpen, setIsOpen] = useState(false);
+    const buttonRef = React.useRef<any>(null);
+    const [dropdownLayout, setDropdownLayout] = useState<{x: number, y: number, width: number, height: number} | null>(null);
+
+    const toggleOpen = () => {
+        if (!isOpen) {
+            buttonRef.current?.measureInWindow((x: number, y: number, width: number, height: number) => {
+                setDropdownLayout({ x, y, width, height });
+                setIsOpen(true);
+            });
+        } else {
+            setIsOpen(false);
+        }
+    };
 
     const getDisplayText = () => {
         if (isMulti && Array.isArray(value)) {
@@ -53,8 +68,9 @@ export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
                 )}
             </Text>
             <TouchableOpacity 
+                ref={buttonRef}
                 style={[styles.dropdownButton, getInputShellStyle(colors), { marginBottom: 12 }]} 
-                onPress={() => setIsOpen(!isOpen)}
+                onPress={toggleOpen}
             >
                 <Text style={{ color: hasValue ? colors.text : colors.textSecondary, ...FONTS.body }}>
                     {getDisplayText()}
@@ -62,22 +78,29 @@ export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
                 <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
 
-            {isOpen && (
-                <>
+            {isOpen && dropdownLayout && (
+                <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
                     <TouchableOpacity
-                        style={styles.overlay}
+                        style={[styles.overlay, { backgroundColor: 'transparent', position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }]}
                         activeOpacity={1}
                         onPress={() => setIsOpen(false)}
                     />
                     <View style={[
                         styles.dropdownMenu, 
                         { 
+                            position: 'absolute',
+                            left: dropdownLayout.x,
+                            width: dropdownLayout.width,
+                            ...(placement === 'top' 
+                                ? { bottom: Dimensions.get('window').height - dropdownLayout.y + 4 } 
+                                : { top: dropdownLayout.y + dropdownLayout.height + 4 }
+                            ),
                             backgroundColor: colors.surfaceHighlight, 
-                            borderColor: colors.primary, 
-                            shadowColor: colors.primary 
+                            borderColor: colors.border, 
+                            shadowColor: colors.shadow 
                         }
                     ]}>
-                        <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 200 }} showsVerticalScrollIndicator={false}>
+                        <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 250 }} showsVerticalScrollIndicator={false}>
                             {options.map((option, idx, arr) => {
                                 const isSelected = isMulti && Array.isArray(value)
                                     ? value.includes(option.value)
@@ -126,7 +149,7 @@ export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
                             </View>
                         )}
                     </View>
-                </>
+                </Modal>
             )}
         </View>
     );
@@ -158,14 +181,9 @@ const styles = StyleSheet.create({
         left: -3000,
         right: -3000,
         zIndex: 999,
-        backgroundColor: 'transparent',
     },
     dropdownMenu: {
-        position: 'absolute',
-        top: 74,
-        left: 0,
-        right: 0,
-        borderRadius: 16,
+        borderRadius: 12,
         borderWidth: 1,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,

@@ -559,6 +559,7 @@ export const CreateTaskScreen = () => {
                                                         options={getSelectorOptions('dataType').options}
                                                         value={dataType}
                                                         onSelect={(val) => setDataType(val as any)}
+                                                        placement="top"
                                                     />
                                                 </View>
                                                 {['Multiple Choice', 'Radio button', 'Dropdown'].includes(dataType) ? (
