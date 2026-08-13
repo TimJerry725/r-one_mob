@@ -60,7 +60,7 @@ export const CreateChecklistTaskScreen = () => {
         const task: ChecklistTaskDraft = {
             title: taskTitle.trim(),
             dataType,
-            options: ['Multiple Choice', 'Radio button', 'Dropdown'].includes(dataType) ? [...taskOptions] : [],
+            options: ['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(dataType) ? [...taskOptions] : [],
         };
 
         const taskDraftResult: TaskDraftResult = {
@@ -130,7 +130,7 @@ export const CreateChecklistTaskScreen = () => {
                             />
                         </View>
 
-                        {['Multiple Choice', 'Radio button', 'Dropdown'].includes(dataType) ? (
+                        {['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(dataType) ? (
                             <View style={styles.optionSection}>
                                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Options</Text>
                                 {taskOptions.map((option, index) => (

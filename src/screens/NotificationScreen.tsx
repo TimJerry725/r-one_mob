@@ -69,8 +69,14 @@ export const NotificationScreen = () => {
         return item.type === selectedFilter;
     });
 
-    const markAllAsRead = () => {
-        setNotifications(prev => prev.map(item => ({ ...item, isRead: true })));
+    const allRead = notifications.length > 0 && notifications.every(n => n.isRead);
+
+    const handleHeaderToggle = () => {
+        if (allRead) {
+            setNotifications(prev => prev.map(item => ({ ...item, isRead: false })));
+        } else {
+            setNotifications(prev => prev.map(item => ({ ...item, isRead: true })));
+        }
     };
 
     const toggleStar = (id: string) => {
@@ -107,8 +113,10 @@ export const NotificationScreen = () => {
                     </View>
 
                     <View style={styles.headerRight}>
-                        <TouchableOpacity onPress={markAllAsRead}>
-                            <Text style={[styles.markAllText, { color: colors.secondary }]}>Mark all as read</Text>
+                        <TouchableOpacity onPress={handleHeaderToggle}>
+                            <Text style={[styles.markAllText, { color: colors.secondary }]}>
+                                {allRead ? 'Unread all' : 'Mark all as read'}
+                            </Text>
                         </TouchableOpacity>
                         <View style={[styles.badge, { backgroundColor: colors.primary }]}>
                             <Text style={styles.badgeText}>{notifications.filter(n => !n.isRead).length}</Text>

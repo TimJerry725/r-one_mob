@@ -11,6 +11,7 @@ import {
     Modal,
     Share,
     Alert,
+    Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
@@ -21,20 +22,89 @@ import { useTheme } from '../context/ThemeContext';
 import { ACTIVITY_LOG, CHECKLIST_TEMPLATE, ChecklistTemplateItem, getWorkOrderById } from '../data/fieldDemo';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { PopoverDropdown } from '../components/PopoverDropdown';
-import { getSelectorOptions } from '../data/createTaskOptions';
+import { DATA_TYPES, getSelectorOptions } from '../data/createTaskOptions';
 import { getServiceTypeColors } from '../styles/workTypeColors';
 
 type ChecklistStateItem = {
     id: string;
     label: string;
-    type: 'toggle' | 'text' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'media' | 'remarks_response';
+    type: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email';
+    dataType?: string;
     required: boolean;
     options?: string[];
-    value: string | number | string[] | string[][];
+    value: any;
     isNa?: boolean;
 };
 
-const getCompletedChecklistValue = (item: ChecklistTemplateItem): string | number | string[] | string[][] => {
+const getDataTypeColor = (dataType?: string, type?: string): string => {
+    const key = (dataType || type || '').toLowerCase();
+    if (key.includes('short text') || key === 'text') return '#1890ff';
+    if (key.includes('long text') || key === 'textarea') return '#13c2c2';
+    if (key.includes('number')) return '#fa8c16';
+    if (key.includes('date')) return '#eb2f96';
+    if (key.includes('media') || key.includes('photo') || key.includes('image')) return '#52c41a';
+    if (key.includes('multiple choice') || key.includes('multiselect') || key.includes('radio') || key.includes('checkbox') || key.includes('dropdown')) return '#722ed1';
+    if (key.includes('voltage') || key.includes('3 phase')) return '#2f54eb';
+    if (key.includes('email')) return '#00b96b';
+    return '#8c8c8c';
+};
+
+const getDataTypeLabel = (item: ChecklistStateItem): string => {
+    if (item.dataType) return item.dataType;
+    switch (item.type) {
+        case 'text': return 'Short text';
+        case 'textarea': return 'Long text';
+        case 'number': return 'Number';
+        case 'date': return 'Date';
+        case 'photo':
+        case 'media': return 'Media';
+        case 'radio': return 'Radio button';
+        case 'multiselect': return 'Multiple Choice';
+        case 'checkbox': return 'Checkbox';
+        case 'dropdown': return 'Dropdown';
+        case 'three_phase_voltage': return '3 phase voltage';
+        case 'email': return 'Email';
+        case 'not_applicable': return 'N/A';
+        case 'toggle': return 'None';
+        default: return 'Short text';
+    }
+};
+
+const mapDataTypeToType = (dataType: string): ChecklistStateItem['type'] => {
+    switch (dataType) {
+        case 'Short text': return 'text';
+        case 'Long text': return 'textarea';
+        case 'Number': return 'number';
+        case 'Date': return 'date';
+        case 'Media': return 'media';
+        case 'Multiple Choice': return 'multiselect';
+        case 'Radio button': return 'radio';
+        case 'Checkbox': return 'checkbox';
+        case 'Dropdown': return 'dropdown';
+        case 'None': return 'toggle';
+        case '3 phase voltage': return 'three_phase_voltage';
+        case 'Email': return 'email';
+        default: return 'text';
+    }
+};
+
+const getCompletedChecklistValue = (item: ChecklistTemplateItem): any => {
+    const t = (item.dataType || item.type || '').toLowerCase();
+    if (t.includes('voltage')) {
+        return { 'L-N': '230', 'L-E': '230', 'L-L': '400', 'N-E': '2' };
+    }
+    if (t.includes('email')) {
+        return 'tech.support@r-one.com';
+    }
+    if (t.includes('textarea') || t.includes('long text')) {
+        return 'Detailed inspection completed without any warning signs observed.';
+    }
+    if (t.includes('checkbox') || t.includes('multiple choice') || t.includes('multiselect')) {
+        return item.options?.slice(0, 2) ?? ['Checked'];
+    }
+    if (t.includes('dropdown') || t.includes('select')) {
+        return item.options?.[0] ?? 'Pass';
+    }
     switch (item.type) {
         case 'date':
             return new Date().toISOString().slice(0, 10);
@@ -51,8 +121,6 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): string | numbe
             return '415';
         case 'not_applicable':
             return 'N/A';
-        case 'multiselect':
-            return item.options?.slice(0, 2) ?? ['Completed'];
         case 'remarks_response':
             return [['Checked on site.', 'No issues found.']];
         default:
@@ -61,44 +129,73 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): string | numbe
 };
 
 const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete: boolean): ChecklistStateItem[] =>
-    template.map((item) => ({
-        ...item,
-        value: prefillComplete
-            ? getCompletedChecklistValue(item)
-            : item.type === 'photo' || item.type === 'media'
-                ? 0
-                : item.type === 'remarks_response' ? [['', '']] : '',
-    }));
+    template.map((item) => {
+        const itemType = (item.type || '').toLowerCase();
+        const dataType = (item.dataType || '').toLowerCase();
+        let initialVal: any = '';
+
+        if (prefillComplete) {
+            initialVal = getCompletedChecklistValue(item);
+        } else if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
+            initialVal = 0;
+        } else if (itemType === 'remarks_response') {
+            initialVal = [['', '']];
+        } else if (itemType === 'three_phase_voltage' || dataType === '3 phase voltage') {
+            initialVal = { 'L-N': '', 'L-E': '', 'L-L': '', 'N-E': '' };
+        } else if (itemType === 'multiselect' || itemType === 'checkbox' || dataType === 'multiple choice' || dataType === 'checkbox') {
+            initialVal = [];
+        }
+
+        return {
+            ...item,
+            dataType: item.dataType || getDataTypeLabel(item as any),
+            value: initialVal,
+        };
+    });
 
 const isComplete = (item: ChecklistStateItem) => {
     if (item.isNa) return true;
-    if (item.type === 'remarks_response') {
+    const itemType = (item.type || '').toLowerCase();
+    const dataType = (item.dataType || '').toLowerCase();
+
+    if (itemType === 'remarks_response') {
         const val = item.value as string[][];
         if (!val || val.length === 0) return false;
         return val.every(pair => pair && pair[0]?.trim().length > 0 && pair[1]?.trim().length > 0);
     }
-    if (item.type === 'not_applicable') return String(item.value).length > 0;
-    if (item.type === 'photo' || item.type === 'media') {
+    if (itemType === 'three_phase_voltage' || dataType === '3 phase voltage') {
+        const val = item.value as Record<string, string>;
+        if (!val || typeof val !== 'object') return false;
+        return Boolean(val['L-N'] || val['L-E'] || val['L-L'] || val['N-E']);
+    }
+    if (itemType === 'not_applicable') return String(item.value).length > 0;
+    if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
         return Number(item.value) > 0;
     }
-    if (item.type === 'multiselect') {
-        return String(Array.isArray(item.value) ? item.value.join(', ') : item.value).trim().length > 0;
+    if (itemType === 'multiselect' || itemType === 'checkbox' || dataType === 'multiple choice' || dataType === 'checkbox') {
+        if (Array.isArray(item.value)) return item.value.length > 0;
+        return String(item.value).trim().length > 0;
     }
-    return String(item.value).trim().length > 0;
+    return String(item.value ?? '').trim().length > 0;
 };
 
 const getChecklistPlaceholder = (item: ChecklistStateItem) => {
     switch (item.type) {
         case 'date':
-            return 'Enter date';
+            return 'Enter date (e.g. YYYY-MM-DD)';
         case 'number':
-            return 'Enter value';
+            return 'Enter numerical value';
         case 'toggle':
-            return 'Enter status';
+            return 'Enter status or check box';
         case 'radio':
-            return 'Enter response';
+            return 'Select option';
         case 'multiselect':
-            return 'Enter selections';
+        case 'checkbox':
+            return 'Select applicable options';
+        case 'email':
+            return 'Enter email address';
+        case 'textarea':
+            return 'Enter detailed notes / remarks';
         case 'not_applicable':
             return 'Enter N/A if not applicable';
         default:
@@ -108,6 +205,117 @@ const getChecklistPlaceholder = (item: ChecklistStateItem) => {
 
 type DetailTab = 'Tasks' | 'Activities' | 'Attachments';
 type ActivityFilter = 'All' | 'Comment' | 'Activity';
+
+const MultiResponseEntryItem: React.FC<{
+    item: ChecklistStateItem;
+    colors: any;
+    updateItem: (id: string, value: any) => void;
+    setItems: React.Dispatch<React.SetStateAction<ChecklistStateItem[]>>;
+    isUnderReview?: boolean;
+}> = ({ item, colors, updateItem, setItems, isUnderReview }) => {
+    const isNum = item.type === 'number' || item.dataType === 'Number';
+    const isDate = item.type === 'date' || item.dataType === 'Date';
+
+    const responses: string[] = Array.isArray(item.value)
+        ? (item.value as string[])
+        : (typeof item.value === 'object' && item.value !== null && !Array.isArray(item.value)
+            ? Object.values(item.value).map(String)
+            : [String(item.value ?? '')]);
+
+    const remarks: string[] = (item.options && item.options.length > 0) ? item.options : [''];
+    const maxEntries = Math.max(responses.length, remarks.length, 1);
+
+    const updateResponseAt = (idx: number, newVal: string) => {
+        const nextRes = [...responses];
+        while (nextRes.length < maxEntries) nextRes.push('');
+        nextRes[idx] = newVal;
+        updateItem(item.id, nextRes.length === 1 ? nextRes[0] : nextRes);
+    };
+
+    const updateRemarkAt = (idx: number, newRemark: string) => {
+        const nextRem = [...remarks];
+        while (nextRem.length < maxEntries) nextRem.push('');
+        nextRem[idx] = newRemark;
+        setItems(curr => curr.map(i => i.id === item.id ? { ...i, options: nextRem } : i));
+    };
+
+    const addAnotherSlot = () => {
+        if (maxEntries >= 4) return;
+        const nextRes = [...responses];
+        while (nextRes.length < maxEntries) nextRes.push('');
+        nextRes.push('');
+
+        const nextRem = [...remarks];
+        while (nextRem.length < maxEntries) nextRem.push('');
+        nextRem.push('');
+
+        setItems(curr => curr.map(i => i.id === item.id ? {
+            ...i,
+            value: nextRes,
+            options: nextRem
+        } : i));
+    };
+
+    const removeSlot = (idx: number) => {
+        const nextRes = responses.filter((_, i) => i !== idx);
+        const nextRem = remarks.filter((_, i) => i !== idx);
+        setItems(curr => curr.map(i => i.id === item.id ? {
+            ...i,
+            value: nextRes.length === 1 ? nextRes[0] : nextRes,
+            options: nextRem.length > 0 ? nextRem : ['']
+        } : i));
+    };
+
+    return (
+        <View style={{ gap: 8, marginTop: 4 }}>
+            {Array.from({ length: maxEntries }).map((_, idx) => {
+                const resVal = responses[idx] || '';
+                const remVal = remarks[idx] || '';
+
+                return (
+                    <View key={`entry-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <TextInput
+                            keyboardType={isNum ? 'numeric' : 'default'}
+                            placeholder={isDate ? 'YYYY-MM-DD' : 'Response'}
+                            placeholderTextColor={colors.textSecondary}
+                            style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
+                            value={resVal}
+                            onChangeText={(val) => updateResponseAt(idx, val)}
+                        />
+                        <TextInput
+                            placeholder={`Remarks ${idx + 1}`}
+                            placeholderTextColor={colors.textSecondary}
+                            style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
+                            value={remVal}
+                            onChangeText={(val) => updateRemarkAt(idx, val)}
+                        />
+                        {maxEntries > 1 && !isUnderReview && (
+                            <TouchableOpacity onPress={() => removeSlot(idx)} style={{ padding: 4 }}>
+                                <FontAwesome name="trash-o" size={18} color={colors.danger} />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                );
+            })}
+
+            {maxEntries < 4 && !isUnderReview && (
+                <TouchableOpacity
+                    onPress={addAnotherSlot}
+                    style={{
+                        backgroundColor: 'rgba(226, 49, 81, 0.08)',
+                        paddingVertical: 10,
+                        borderRadius: 8,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginTop: 4,
+                    }}
+                >
+                    <Text style={[FONTS.bodyStrong, { color: colors.primary, fontSize: 13 }]}>+ Add Another</Text>
+                </TouchableOpacity>
+            )}
+        </View>
+    );
+};
 
 export const TaskDetailScreen = () => {
     const navigation = useNavigation<any>();
@@ -127,6 +335,12 @@ export const TaskDetailScreen = () => {
     const [actionModalVisible, setActionModalVisible] = useState(false);
     const [editingTask, setEditingTask] = useState<ChecklistStateItem | null>(null);
     const [editTaskLabel, setEditTaskLabel] = useState('');
+    const [editTaskModalVisible, setEditTaskModalVisible] = useState(false);
+    const [editDataType, setEditDataType] = useState<typeof DATA_TYPES[number]>('Short text');
+    const [editTaskOptions, setEditTaskOptions] = useState<string[]>([]);
+    const [editTaskRequired, setEditTaskRequired] = useState(true);
+    const [newEditOption, setNewEditOption] = useState('');
+
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [naConfirmModalVisible, setNaConfirmModalVisible] = useState(false);
     const [taskToMarkNa, setTaskToMarkNa] = useState<string | null>(null);
@@ -157,13 +371,27 @@ export const TaskDetailScreen = () => {
     const startEditTask = (task: ChecklistStateItem) => {
         setEditingTask(task);
         setEditTaskLabel(task.label);
+        setEditDataType((task.dataType as any) || (getDataTypeLabel(task) as any) || 'Short text');
+        setEditTaskOptions(task.options ? [...task.options] : []);
+        setEditTaskRequired(task.required ?? true);
+        setEditTaskModalVisible(true);
     };
 
     const saveEditTask = () => {
         if (editingTask && editTaskLabel.trim()) {
-            setItems(items.map(item => item.id === editingTask.id ? { ...item, label: editTaskLabel.trim() } : item));
+            const newType = mapDataTypeToType(editDataType);
+            const isChoiceType = ['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(editDataType);
+            setItems(items.map(item => item.id === editingTask.id ? {
+                ...item,
+                label: editTaskLabel.trim(),
+                dataType: editDataType,
+                type: newType,
+                options: isChoiceType ? [...editTaskOptions] : undefined,
+                required: editTaskRequired,
+            } : item));
         }
         setEditingTask(null);
+        setEditTaskModalVisible(false);
     };
 
     const deleteTask = (id: string) => {
@@ -641,32 +869,11 @@ export const TaskDetailScreen = () => {
                                                             />
                                                         </View>
                                                     </TouchableOpacity>
-                                                    {editingTask?.id === item.id ? (
-                                                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 12 }}>
-                                                            <TextInput
-                                                                style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text, paddingHorizontal: 12, minHeight: 40 }]}
-                                                                value={editTaskLabel}
-                                                                onChangeText={setEditTaskLabel}
-                                                                autoFocus
-                                                            />
-                                                            <TouchableOpacity onPress={saveEditTask}>
-                                                                <FontAwesome name="check-circle" size={24} color={colors.primary} />
-                                                            </TouchableOpacity>
-                                                            <TouchableOpacity onPress={() => setEditingTask(null)}>
-                                                                <FontAwesome name="times-circle" size={24} color={colors.textSecondary} />
-                                                            </TouchableOpacity>
-                                                        </View>
-                                                    ) : (
-                                                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginLeft: 12 }}>
+                                                     <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginLeft: 12 }}>
                                                             <View style={{ flex: 1 }}>
                                                                 {item.label ? (
                                                                     <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
                                                                 ) : null}
-                                                                {!item.required && (
-                                                                    <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>
-                                                                        Optional
-                                                                    </Text>
-                                                                )}
                                                             </View>
                                                             {!isUnderReview && (
                                                                 <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 10 : 1, marginLeft: 8 }}>
@@ -685,7 +892,7 @@ export const TaskDetailScreen = () => {
                                                                             width: 150,
                                                                             shadowColor: '#000',
                                                                             shadowOffset: { width: 0, height: 2 },
-                                                                            shadowOpacity: 0.15,
+                                                                             shadowOpacity: 0.15,
                                                                             shadowRadius: 4,
                                                                             elevation: 4,
                                                                             zIndex: 100
@@ -703,12 +910,11 @@ export const TaskDetailScreen = () => {
                                                                 </View>
                                                             )}
                                                         </View>
-                                                    )}
                                                 </View>
 
                                                 {!isSimpleChecklist && (
                                                     <>
-                                                        {item.type === 'photo' || item.type === 'media' ? (
+                                                        {item.type === 'photo' || item.type === 'media' || item.dataType === 'Media' ? (
                                                             <TouchableOpacity
                                                                 onPress={() => {
                                                                     setActiveMediaId(item.id);
@@ -778,31 +984,129 @@ export const TaskDetailScreen = () => {
                                                                     </TouchableOpacity>
                                                                 )}
                                                             </View>
-                                                        ) : item.type === 'text' ? (
+                                                        ) : item.type === 'three_phase_voltage' || item.dataType === '3 phase voltage' ? (
+                                                            <View style={{ gap: 8, marginTop: 4 }}>
+                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>3 Phase Voltage Inputs</Text>
+                                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                                                    {['L-N', 'L-E', 'L-L', 'N-E'].map((fieldLabel) => {
+                                                                        const currentObj = (typeof item.value === 'object' && item.value !== null && !Array.isArray(item.value)) ? (item.value as Record<string, string>) : {};
+                                                                        return (
+                                                                            <View key={fieldLabel} style={{ width: '48%', gap: 4 }}>
+                                                                                <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>{fieldLabel}</Text>
+                                                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                                                    <TextInput
+                                                                                        keyboardType="numeric"
+                                                                                        placeholder="Value"
+                                                                                        placeholderTextColor={colors.textSecondary}
+                                                                                        style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text, paddingHorizontal: 8, height: 38, fontSize: 12 }]}
+                                                                                        value={currentObj[fieldLabel] || ''}
+                                                                                        onChangeText={(val) => {
+                                                                                            const nextObj = { ...currentObj, [fieldLabel]: val };
+                                                                                            updateItem(item.id, nextObj);
+                                                                                        }}
+                                                                                    />
+                                                                                    <View style={{ backgroundColor: colors.surfaceHighlight, paddingHorizontal: 8, height: 38, justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                                                                                        <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>V</Text>
+                                                                                    </View>
+                                                                                </View>
+                                                                            </View>
+                                                                        );
+                                                                    })}
+                                                                </View>
+                                                            </View>
+                                                        ) : item.type === 'textarea' || item.dataType === 'Long text' ? (
                                                             <TextInput
                                                                 multiline
+                                                                numberOfLines={3}
                                                                 placeholder={getChecklistPlaceholder(item)}
                                                                 placeholderTextColor={colors.textSecondary}
-                                                                style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text }]}
-                                                                value={String(item.value)}
+                                                                style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text, minHeight: 70 }]}
+                                                                value={String(item.value ?? '')}
                                                                 onChangeText={(value) => updateItem(item.id, value)}
                                                             />
-                                                        ) : (
+                                                        ) : item.type === 'email' || item.dataType === 'Email' ? (
                                                             <TextInput
-                                                                keyboardType={item.type === 'number' ? 'numeric' : 'default'}
+                                                                keyboardType="email-address"
+                                                                autoCapitalize="none"
+                                                                placeholder="Enter email address (e.g. name@domain.com)"
+                                                                placeholderTextColor={colors.textSecondary}
+                                                                style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                                                value={String(item.value ?? '')}
+                                                                onChangeText={(value) => updateItem(item.id, value)}
+                                                            />
+                                                        ) : item.type === 'radio' || item.dataType === 'Radio button' ? (
+                                                            <View style={{ gap: 6, marginTop: 4 }}>
+                                                                {(item.options || ['Pass', 'Fail']).map((opt) => {
+                                                                    const selected = String(item.value) === opt;
+                                                                    return (
+                                                                        <TouchableOpacity
+                                                                            key={opt}
+                                                                            onPress={() => updateItem(item.id, opt)}
+                                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                        >
+                                                                            <Ionicons
+                                                                                name={selected ? 'radio-button-on' : 'radio-button-off'}
+                                                                                size={20}
+                                                                                color={selected ? colors.primary : colors.textSecondary}
+                                                                            />
+                                                                            <Text style={[FONTS.body, { color: colors.text }]}>{opt}</Text>
+                                                                        </TouchableOpacity>
+                                                                    );
+                                                                })}
+                                                            </View>
+                                                        ) : item.type === 'dropdown' || item.dataType === 'Dropdown' ? (
+                                                            <View style={{ zIndex: 10, marginTop: 4 }}>
+                                                                <PopoverDropdown
+                                                                    label="Select Option"
+                                                                    placeholder="Choose option"
+                                                                    options={(item.options || ['Option 1', 'Option 2']).map((opt) => ({ key: opt, label: opt, value: opt }))}
+                                                                    value={String(item.value ?? '')}
+                                                                    onSelect={(val) => updateItem(item.id, val)}
+                                                                    placement="bottom"
+                                                                />
+                                                            </View>
+                                                        ) : item.type === 'multiselect' || item.type === 'checkbox' || item.dataType === 'Multiple Choice' || item.dataType === 'Checkbox' ? (
+                                                            <View style={{ gap: 6, marginTop: 4 }}>
+                                                                {(item.options || ['Option 1', 'Option 2']).map((opt) => {
+                                                                    const currentArray = Array.isArray(item.value) ? (item.value as string[]) : (item.value ? [String(item.value)] : []);
+                                                                    const selected = currentArray.includes(opt);
+                                                                    return (
+                                                                        <TouchableOpacity
+                                                                            key={opt}
+                                                                            onPress={() => {
+                                                                                const nextArray = selected ? currentArray.filter(i => i !== opt) : [...currentArray, opt];
+                                                                                updateItem(item.id, nextArray);
+                                                                            }}
+                                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                        >
+                                                                            <Ionicons
+                                                                                name={selected ? 'checkbox' : 'square-outline'}
+                                                                                size={20}
+                                                                                color={selected ? colors.primary : colors.textSecondary}
+                                                                            />
+                                                                            <Text style={[FONTS.body, { color: colors.text }]}>{opt}</Text>
+                                                                        </TouchableOpacity>
+                                                                    );
+                                                                })}
+                                                            </View>
+                                                        ) : (item.type === 'text' || item.type === 'number' || item.type === 'date' || item.dataType === 'Short text' || item.dataType === 'Number' || item.dataType === 'Date') ? (
+                                                             <MultiResponseEntryItem
+                                                                 item={item}
+                                                                 colors={colors}
+                                                                 updateItem={updateItem}
+                                                                 setItems={setItems}
+                                                                 isUnderReview={isUnderReview}
+                                                             />
+                                                         ) : (
+                                                            <TextInput
+                                                                keyboardType="default"
                                                                 placeholder={getChecklistPlaceholder(item)}
                                                                 placeholderTextColor={colors.textSecondary}
                                                                 style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
-                                                                value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value)}
+                                                                value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value ?? '')}
                                                                 onChangeText={(value) => updateItem(item.id, value)}
                                                             />
                                                         )}
-
-                                                        {item.options?.length ? (
-                                                            <Text style={[styles.stepHint, { color: colors.textSecondary }]}>
-                                                                {item.options.join(', ')}
-                                                            </Text>
-                                                        ) : null}
                                                     </>
                                                 )}
                                                 </View>
@@ -1467,6 +1771,122 @@ export const TaskDetailScreen = () => {
                             </View>
                         </View>
                     </View>
+                </Modal>
+
+                <Modal
+                    visible={editTaskModalVisible}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setEditTaskModalVisible(false)}
+                >
+                    <TouchableOpacity
+                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                        activeOpacity={1}
+                        onPress={() => setEditTaskModalVisible(false)}
+                    >
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                            style={{ width: '100%' }}
+                        >
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                style={{
+                                    backgroundColor: colors.surface,
+                                    borderTopLeftRadius: 24,
+                                    borderTopRightRadius: 24,
+                                    padding: 20,
+                                    maxHeight: 620,
+                                    gap: 16,
+                                }}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Text style={[FONTS.h3, { color: colors.text }]}>Edit Task</Text>
+                                    <TouchableOpacity onPress={() => setEditTaskModalVisible(false)} style={{ padding: 4 }}>
+                                        <Ionicons name="close" size={24} color={colors.text} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <ScrollView contentContainerStyle={{ gap: 14, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
+                                    <View>
+                                        <Text style={[FONTS.label, { color: colors.textSecondary, marginBottom: 6 }]}>Task Title / Question</Text>
+                                        <TextInput
+                                            style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                            value={editTaskLabel}
+                                            onChangeText={setEditTaskLabel}
+                                            placeholder="Enter task description"
+                                            placeholderTextColor={colors.textSecondary}
+                                        />
+                                    </View>
+
+                                    <View style={{ zIndex: 100 }}>
+                                        <PopoverDropdown
+                                            label="Data Type"
+                                            placeholder="Select data type"
+                                            options={getSelectorOptions('dataType').options}
+                                            value={editDataType}
+                                            onSelect={(val) => setEditDataType(val as any)}
+                                            placement="top"
+                                        />
+                                    </View>
+
+                                    {['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(editDataType) && (
+                                        <View style={{ gap: 8 }}>
+                                            <Text style={[FONTS.label, { color: colors.textSecondary }]}>Options</Text>
+                                            {editTaskOptions.map((option, idx) => (
+                                                <View key={`${option}-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 10 }}>
+                                                    <Text style={[FONTS.body, { color: colors.text }]}>{option}</Text>
+                                                    <TouchableOpacity onPress={() => setEditTaskOptions(editTaskOptions.filter((_, i) => i !== idx))}>
+                                                        <Ionicons name="close-circle" size={20} color={colors.danger} />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))}
+                                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                <TextInput
+                                                    style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
+                                                    placeholder="Add option..."
+                                                    placeholderTextColor={colors.textSecondary}
+                                                    value={newEditOption}
+                                                    onChangeText={setNewEditOption}
+                                                    onSubmitEditing={() => {
+                                                        if (newEditOption.trim() && !editTaskOptions.includes(newEditOption.trim())) {
+                                                            setEditTaskOptions([...editTaskOptions, newEditOption.trim()]);
+                                                            setNewEditOption('');
+                                                        }
+                                                    }}
+                                                />
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        if (newEditOption.trim() && !editTaskOptions.includes(newEditOption.trim())) {
+                                                            setEditTaskOptions([...editTaskOptions, newEditOption.trim()]);
+                                                            setNewEditOption('');
+                                                        }
+                                                    }}
+                                                    style={{ backgroundColor: colors.primary, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    <Ionicons name="add" size={24} color="#FFF" />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    )}
+                                </ScrollView>
+
+                                <View style={{ flexDirection: 'row', gap: 12, paddingTop: 8 }}>
+                                    <TouchableOpacity
+                                        onPress={() => setEditTaskModalVisible(false)}
+                                        style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}
+                                    >
+                                        <Text style={[FONTS.bodyStrong, { color: colors.text }]}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={saveEditTask}
+                                        style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
+                                    >
+                                        <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Save Changes</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </TouchableOpacity>
+                        </KeyboardAvoidingView>
+                    </TouchableOpacity>
                 </Modal>
             </SafeAreaView>
         </View>

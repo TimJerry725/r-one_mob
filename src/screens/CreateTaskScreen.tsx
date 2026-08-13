@@ -186,7 +186,7 @@ export const CreateTaskScreen = () => {
         const newTask = {
             title: taskTitle,
             dataType,
-            options: ['Radio', 'Multiselect'].includes(dataType) ? [...taskOptions] : [],
+            options: ['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox', 'Radio', 'Multiselect'].includes(dataType) ? [...taskOptions] : [],
         };
         
         setTasks([...tasks, newTask]);
@@ -562,7 +562,7 @@ export const CreateTaskScreen = () => {
                                                         placement="top"
                                                     />
                                                 </View>
-                                                {['Multiple Choice', 'Radio button', 'Dropdown'].includes(dataType) ? (
+                                                {['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(dataType) ? (
                                                     <View style={[styles.optionSection, { marginTop: 12 }]}>
                                                         <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Options</Text>
                                                         {taskOptions.map((option, index) => (

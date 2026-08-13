@@ -91,7 +91,8 @@ export type AssetVisionDetail = {
 export type ChecklistTemplateItem = {
     id: string;
     label: string;
-    type: 'toggle' | 'text' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'media' | 'remarks_response';
+    type: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email';
+    dataType?: string;
     required: boolean;
     options?: string[];
 };
@@ -186,7 +187,37 @@ export const CHECKLIST_TEMPLATE: ChecklistTemplateItem[] = [
         id: 'step-13',
         label: 'Attach site survey files',
         type: 'media',
+        dataType: 'Media',
         required: true,
+    },
+    {
+        id: 'step-14',
+        label: 'Three-phase input voltage measurements',
+        type: 'three_phase_voltage',
+        dataType: '3 phase voltage',
+        required: true,
+    },
+    {
+        id: 'step-15',
+        label: 'Site supervisor contact email',
+        type: 'email',
+        dataType: 'Email',
+        required: false,
+    },
+    {
+        id: 'step-16',
+        label: 'Detailed maintenance remarks & logs',
+        type: 'textarea',
+        dataType: 'Long text',
+        required: false,
+    },
+    {
+        id: 'step-17',
+        label: 'Safety equipment checks completed',
+        type: 'checkbox',
+        dataType: 'Checkbox',
+        required: true,
+        options: ['Earthing line ok', 'Insulation gloves used', 'Danger sign placed', 'Fire extinguisher present'],
     },
 ];
 
