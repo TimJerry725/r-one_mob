@@ -1,4 +1,4 @@
-export type WorkOrderStatus = 'Unassigned' | 'Assigned' | 'Working' | 'Under Review' | 'Completed';
+export type WorkOrderStatus = 'Unassigned' | 'Assigned' | 'Working' | 'Under Review' | 'Completed' | 'Requested';
 
 export type WorkOrder = {
     id: string;
@@ -29,6 +29,7 @@ export type WorkOrder = {
     targetTime: number;
     assignedBy?: string;
     approver?: string;
+    isRequested?: boolean;
 };
 
 export type AssetStatus = 'Healthy' | 'Service Due' | 'Offline';
@@ -490,28 +491,81 @@ export let WORK_ORDERS: WorkOrder[] = [
     {
         id: 'wo-106',
         projectId: 'PJ006',
-        title: 'Expansion Bay Checklist',
+        title: 'Expansion Bay Preventive Checklist',
         siteName: 'Harbor Transit Hub',
         address: 'Dock Access Road, Kochi',
         type: 'Preventive',
-        stage: 'Draft',
-        status: 'Unassigned',
+        stage: 'Inspection',
+        status: 'Requested',
+        isRequested: true,
         dueWindow: 'Tomorrow, 14:00 - 16:00',
-        eta: 'Checklist not configured yet',
+        eta: 'Request Pending',
         distance: '4.7 km',
         checklistCompleted: 0,
-        checklistTotal: 0,
+        checklistTotal: 5,
         tools: ['Inspection torch'],
         parts: [],
         technicians: ['Tim'],
         assetId: 'CP-400210',
         checklistItems: [],
         offlineReady: true,
-        notes: 'Checklist shell created before the field steps were added.',
+        notes: 'Preventive request sent to Central Team.',
         latitude: 9.9312,
         longitude: 76.2673,
-        priority: 'Low',
+        priority: 'Medium',
         targetTime: Date.now() + 48 * 60 * 60 * 1000,
+    },
+    {
+        id: 'wo-107',
+        projectId: 'PJ001',
+        title: 'Quarterly Inverter & Cable Inspection',
+        siteName: 'Pune Central Station',
+        address: 'Platform Road, Shivajinagar, Pune',
+        type: 'Preventive',
+        stage: 'Scheduled',
+        status: 'Unassigned',
+        isRequested: false,
+        dueWindow: '24 Aug 2026',
+        eta: 'Pending Request',
+        distance: '0.8 km',
+        checklistCompleted: 0,
+        checklistTotal: 6,
+        tools: ['Thermal camera', 'Multimeter'],
+        parts: ['DC Fuses'],
+        technicians: ['Unassigned'],
+        assetId: 'CPID-KN-01',
+        offlineReady: true,
+        notes: 'Preventive maintenance work ready to send request.',
+        latitude: 18.5314,
+        longitude: 73.8446,
+        priority: 'High',
+        targetTime: Date.now() + 10 * 24 * 60 * 60 * 1000,
+    },
+    {
+        id: 'wo-108',
+        projectId: 'PJ002',
+        title: 'HV Transformer Thermal Imaging & Calibration',
+        siteName: 'Mumbai Highway Point',
+        address: 'NH48 Service Lane, Panvel',
+        type: 'Preventive',
+        stage: 'Calibration',
+        status: 'Assigned',
+        isRequested: false,
+        dueWindow: '28 Aug 2026',
+        eta: 'Scheduled',
+        distance: '1.5 km',
+        checklistCompleted: 0,
+        checklistTotal: 4,
+        tools: ['Calibrator', 'Safety gloves'],
+        parts: [],
+        technicians: ['Arjun'],
+        assetId: 'CPID-KN-01',
+        offlineReady: true,
+        notes: 'Semi-annual HV transformer check.',
+        latitude: 19.0760,
+        longitude: 72.8777,
+        priority: 'Medium',
+        targetTime: Date.now() + 14 * 24 * 60 * 60 * 1000,
     },
 ];
 

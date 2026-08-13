@@ -35,6 +35,23 @@ import {
 } from '../data/createTaskOptions';
 import { WORK_ORDERS } from '../data/fieldDemo';
 
+const MOCK_PM_WORKS_LIST = [
+    {
+        id: 'PM-9012',
+        cpid: 'CPID-KN-01',
+        title: 'Quarterly Inverter & Cable Inspection',
+        dueDate: '24 Aug 2026',
+        frequency: 'Every 90 Days',
+    },
+    {
+        id: 'PM-9015',
+        cpid: 'CPID-KN-01',
+        title: 'HV Transformer Thermal Imaging & Calibration',
+        dueDate: '28 Aug 2026',
+        frequency: 'Every 180 Days',
+    },
+];
+
 const CREATE_OPTIONS = [
     {
         id: 'checklist',
@@ -91,12 +108,29 @@ export const CreateTaskScreen = () => {
 
     // New states from Create Service Work mockup
     const [priority, setPriority] = useState('Medium');
-    const [chargePoint, setChargePoint] = useState('CP-01');
+    const [chargePoint, setChargePoint] = useState<string>(prefill.assetId || '');
     const [startDate, setStartDate] = useState('30 Jun 2026');
     const [endDate, setEndDate] = useState('05 Jul 2026');
     const [task, setTask] = useState('');
     const [assignmentType, setAssignmentType] = useState('Self');
     const [serviceType, setServiceType] = useState<typeof SERVICE_TYPES[number]>('Service');
+    const [selectedPmWorkIds, setSelectedPmWorkIds] = useState<string[]>(['PM-9012', 'PM-9015']);
+
+    const isAllPmSelected = selectedPmWorkIds.length === MOCK_PM_WORKS_LIST.length && MOCK_PM_WORKS_LIST.length > 0;
+
+    const toggleSelectAllPmWorks = () => {
+        if (isAllPmSelected) {
+            setSelectedPmWorkIds([]);
+        } else {
+            setSelectedPmWorkIds(MOCK_PM_WORKS_LIST.map((item) => item.id));
+        }
+    };
+
+    const togglePmWorkSelection = (id: string) => {
+        setSelectedPmWorkIds((prev) =>
+            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+        );
+    };
 
     const handledSelectorToken = useRef<number | null>(null);
     const handledTaskToken = useRef<number | null>(null);
@@ -345,13 +379,108 @@ export const CreateTaskScreen = () => {
                                                     label="* Charge Point (CPID)"
                                                     placeholder="Choose CPID"
                                                     options={[
-                                                        { label: 'CP-01 (MUM-FAST-1)', value: 'CP-01' },
-                                                        { label: 'CP-02 (MUM-FAST-2)', value: 'CP-02' },
-                                                        { label: 'CP-03 (DEL-FAST-1)', value: 'CP-03' },
+                                                        { label: 'CPID-KN-01 (Fast Charger 1)', value: 'CPID-KN-01' },
+                                                        { label: 'CPID-KN-02 (Fast Charger 2)', value: 'CPID-KN-02' },
+                                                        { label: 'CPID-KN-03 (Standard Charger)', value: 'CPID-KN-03' },
                                                     ]}
                                                     value={chargePoint}
                                                     onSelect={(val) => setChargePoint(val as string)}
                                                 />
+
+                                                {/* PM Works Available (Request Preventive tab - Shown only when charger is selected) */}
+                                                {serviceType === 'Request Preventive' && Boolean(chargePoint) && (
+                                                    <View style={{ marginTop: 14, marginBottom: 12, gap: 10 }}>
+                                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <Text style={[styles.inputLabel, { color: colors.text, marginTop: 0, fontSize: 14, fontWeight: '700' }]}>
+                                                                PM Works Available ({MOCK_PM_WORKS_LIST.length})
+                                                            </Text>
+                                                            <TouchableOpacity
+                                                                activeOpacity={0.7}
+                                                                onPress={toggleSelectAllPmWorks}
+                                                                style={[
+                                                                    styles.pmActionPill,
+                                                                    {
+                                                                        backgroundColor: colors.surfaceHighlight,
+                                                                        borderColor: colors.border,
+                                                                    },
+                                                                ]}
+                                                            >
+                                                                <Ionicons
+                                                                    name={isAllPmSelected ? "checkbox" : "square-outline"}
+                                                                    size={16}
+                                                                    color={isAllPmSelected ? colors.primary : colors.textSecondary}
+                                                                />
+                                                                <Text style={[styles.pmActionText, { color: colors.text }]}>
+                                                                    {isAllPmSelected ? 'Deselect All' : 'Select All'}
+                                                                </Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+
+                                                        {MOCK_PM_WORKS_LIST.map((item) => {
+                                                            const isSelected = selectedPmWorkIds.includes(item.id);
+                                                            return (
+                                                                <TouchableOpacity
+                                                                    key={item.id}
+                                                                    activeOpacity={0.85}
+                                                                    onPress={() => togglePmWorkSelection(item.id)}
+                                                                    style={[
+                                                                        styles.pmWorkCard,
+                                                                        {
+                                                                            backgroundColor: isSelected
+                                                                                ? (isDark ? 'rgba(226, 49, 81, 0.08)' : 'rgba(226, 49, 81, 0.04)')
+                                                                                : colors.surface,
+                                                                            borderColor: isSelected ? colors.primary : colors.border,
+                                                                            borderWidth: isSelected ? 1.5 : 1,
+                                                                        },
+                                                                    ]}
+                                                                >
+                                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                                                        <Ionicons
+                                                                            name={isSelected ? "checkbox" : "square-outline"}
+                                                                            size={20}
+                                                                            color={isSelected ? colors.primary : colors.textSecondary}
+                                                                        />
+                                                                        <View
+                                                                            style={[
+                                                                                styles.cpidBadge,
+                                                                                {
+                                                                                    backgroundColor: isDark ? 'rgba(244, 247, 251, 0.1)' : 'rgba(20, 33, 43, 0.06)',
+                                                                                },
+                                                                            ]}
+                                                                        >
+                                                                            <Text style={[styles.cpidBadgeText, { color: colors.primary }]}>
+                                                                                [{item.cpid}]
+                                                                            </Text>
+                                                                        </View>
+                                                                        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>•</Text>
+                                                                        <Text style={[styles.pmIdText, { color: colors.text }]}>
+                                                                            {item.id}
+                                                                        </Text>
+                                                                    </View>
+
+                                                                    <Text style={[styles.pmTitleText, { color: colors.text }]}>
+                                                                        {item.title}
+                                                                    </Text>
+
+                                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingLeft: 28, marginTop: 6 }}>
+                                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                                            <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
+                                                                            <Text style={[styles.pmMetaText, { color: colors.textSecondary }]}>
+                                                                                Due: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.dueDate}</Text>
+                                                                            </Text>
+                                                                        </View>
+                                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                                            <Ionicons name="repeat-outline" size={13} color={colors.textSecondary} />
+                                                                            <Text style={[styles.pmMetaText, { color: colors.textSecondary }]}>
+                                                                                <Text style={{ color: colors.text, fontWeight: '600' }}>{item.frequency}</Text>
+                                                                            </Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                            );
+                                                        })}
+                                                    </View>
+                                                )}
 
                                                 {serviceType === 'Service' && (
                                                     <>
@@ -828,5 +957,50 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    pmActionPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    pmActionText: {
+        ...FONTS.label,
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    pmWorkCard: {
+        borderRadius: 14,
+        padding: 12,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    cpidBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    cpidBadgeText: {
+        ...FONTS.label,
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    pmIdText: {
+        ...FONTS.bodyStrong,
+        fontSize: 13,
+    },
+    pmTitleText: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+        paddingLeft: 28,
+    },
+    pmMetaText: {
+        ...FONTS.body,
+        fontSize: 12,
     },
 });

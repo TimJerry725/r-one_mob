@@ -45,6 +45,23 @@ export const ProfileScreen = () => {
                         </View>
                     </View>
 
+                    {/* Section: Management */}
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Management</Text>
+                    <View style={styles.groupContainer}>
+                        <TouchableOpacity
+                            style={[styles.settingsRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                            onPress={() => navigation.navigate('AdminTeam')}
+                        >
+                            <View style={styles.rowLabelContainer}>
+                                <View style={[styles.iconWrapper, { backgroundColor: colors.primary + '12' }]}>
+                                    <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
+                                </View>
+                                <Text style={[styles.rowLabel, { color: colors.text }]}>Central Team Dashboard</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                    </View>
+
                     {/* Section: Preferences */}
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Preferences</Text>
                     <View style={styles.groupContainer}>

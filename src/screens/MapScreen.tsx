@@ -115,6 +115,7 @@ export const MapScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrderId, setSelectedOrderId] = useState(WORK_ORDERS[0].id);
     const [mapMode, setMapMode] = useState<'work' | 'live' | 'both'>('work');
+    const [dutyStatus, setDutyStatus] = useState<'working' | 'away'>('working');
 
     const filteredOrders = WORK_ORDERS.filter((item) => {
         const haystack = `${item.title} ${item.siteName} ${item.address}`.toLowerCase();
@@ -359,6 +360,93 @@ export const MapScreen = () => {
 
             <SafeAreaView style={styles.overlay} edges={['top', 'left', 'right']} pointerEvents="box-none">
                 <View style={styles.topStack}>
+                    {/* Header Control Row: Duty Status Capsule Toggle + Profile */}
+                    <View style={styles.headerControlRow}>
+                        <View
+                            style={[
+                                styles.statusCapsuleContainer,
+                                {
+                                    backgroundColor: isDark ? '#0B131A' : '#DDE5EC',
+                                    borderColor: isDark ? '#1C2B36' : '#C1CBD5',
+                                },
+                            ]}
+                        >
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                onPress={() => setDutyStatus('working')}
+                                style={[
+                                    styles.statusCapsuleSegment,
+                                    dutyStatus === 'working' && {
+                                        backgroundColor: isDark ? '#0D4B33' : '#147952',
+                                        borderColor: isDark ? '#1C7550' : '#0F5E3F',
+                                    },
+                                ]}
+                            >
+                                <View
+                                    style={[
+                                        styles.statusDotIndicator,
+                                        { backgroundColor: dutyStatus === 'working' ? '#43D39E' : colors.textSecondary },
+                                    ]}
+                                />
+                                <Text
+                                    style={[
+                                        styles.statusCapsuleText,
+                                        {
+                                            color: dutyStatus === 'working' ? '#FFFFFF' : (isDark ? '#8A9DAE' : '#5E7285'),
+                                            fontWeight: dutyStatus === 'working' ? '700' : '500',
+                                        },
+                                    ]}
+                                >
+                                    Working
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                onPress={() => setDutyStatus('away')}
+                                style={[
+                                    styles.statusCapsuleSegment,
+                                    dutyStatus === 'away' && {
+                                        backgroundColor: isDark ? '#4A340D' : '#8A5900',
+                                        borderColor: isDark ? '#7A5718' : '#6E4700',
+                                    },
+                                ]}
+                            >
+                                <Ionicons
+                                    name="pause-circle"
+                                    size={14}
+                                    color={dutyStatus === 'away' ? '#FFD166' : colors.textSecondary}
+                                />
+                                <Text
+                                    style={[
+                                        styles.statusCapsuleText,
+                                        {
+                                            color: dutyStatus === 'away' ? '#FFFFFF' : (isDark ? '#8A9DAE' : '#5E7285'),
+                                            fontWeight: dutyStatus === 'away' ? '700' : '500',
+                                        },
+                                    ]}
+                                >
+                                    Away
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => navigation.navigate('Profile')}
+                            style={[
+                                styles.profileIconButton,
+                                {
+                                    backgroundColor: isDark ? 'rgba(19, 32, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)',
+                                    borderColor: isDark ? 'rgba(244, 247, 251, 0.28)' : 'rgba(20, 33, 43, 0.18)',
+                                },
+                            ]}
+                        >
+                            <Ionicons name="person-circle" size={26} color={colors.primary} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Search Bar */}
                     <View
                         style={[
                             styles.searchBar,
@@ -378,9 +466,6 @@ export const MapScreen = () => {
                             placeholderTextColor={colors.textSecondary}
                             style={[styles.searchInput, { color: colors.text }]}
                         />
-                        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                            <Ionicons name="person-circle" size={28} color={colors.primary} />
-                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -738,6 +823,56 @@ const styles = StyleSheet.create({
     },
     topStack: {
         gap: 8,
+    },
+    headerControlRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        gap: 10,
+    },
+    statusCapsuleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 4,
+        borderRadius: 24,
+        borderWidth: 1,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 6,
+        gap: 4,
+    },
+    statusCapsuleSegment: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'transparent',
+        gap: 6,
+    },
+    statusDotIndicator: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
+    statusCapsuleText: {
+        ...FONTS.label,
+        fontSize: 12,
+    },
+    profileIconButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 6,
     },
     searchBar: {
         minHeight: 50,

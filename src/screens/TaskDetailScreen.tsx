@@ -34,6 +34,8 @@ type ChecklistStateItem = {
     options?: string[];
     value: any;
     isNa?: boolean;
+    isNotApplicable?: boolean;
+    originalType?: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email';
 };
 
 const getDataTypeColor = (dataType?: string, type?: string): string => {
@@ -325,8 +327,36 @@ export const TaskDetailScreen = () => {
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const isUnderReview = workOrder.status === 'Under Review';
     const isSimpleChecklist = ['service', 'preventive'].includes((workOrder.type || '').toLowerCase());
+    const isInstallation = (workOrder.type || '').toLowerCase().includes('installation') ||
+                           (workOrder.title || '').toLowerCase().includes('installation') ||
+                           !isSimpleChecklist;
     const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
     const [items, setItems] = useState<ChecklistStateItem[]>(() => buildChecklistState(checklistTemplate, isUnderReview));
+
+    const toggleTaskApplicable = (itemId: string) => {
+        setItems(currentItems => currentItems.map(item => {
+            if (item.id !== itemId) return item;
+            const isNA = item.type === 'not_applicable' || item.isNotApplicable;
+            if (isNA) {
+                const restoredType = ((item.originalType && item.originalType !== 'not_applicable') ? item.originalType : 'text') as ChecklistStateItem['type'];
+                return {
+                    ...item,
+                    isNotApplicable: false,
+                    isNa: false,
+                    type: restoredType,
+                    dataType: getDataTypeLabel({ ...item, type: restoredType }),
+                };
+            } else {
+                return {
+                    ...item,
+                    isNotApplicable: true,
+                    isNa: true,
+                    originalType: item.type,
+                    type: 'not_applicable',
+                };
+            }
+        }));
+    };
     const [assignees, setAssignees] = useState<string[]>(workOrder.technicians || []);
     const [isAddingAssignee, setIsAddingAssignee] = useState(false);
     const [completionNote, setCompletionNote] = useState('');
@@ -847,13 +877,14 @@ export const TaskDetailScreen = () => {
                                 <>
                                     <View style={styles.listColumn}>
                                         {items.map((item) => {
+                                            const isNA = item.type === 'not_applicable' || item.isNotApplicable;
                                             return (
-                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: openMenuId === item.id ? 100 : 1 }]}>
+                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: openMenuId === item.id ? 100 : 1, opacity: isNA ? 0.6 : 1 }]}>
                                             <View style={[styles.stepHeader, { zIndex: openMenuId === item.id ? 100 : 1 }]}>
                                                     <TouchableOpacity
-                                                        activeOpacity={isSimpleChecklist ? 0.7 : 1}
+                                                        activeOpacity={(isSimpleChecklist && !isNA) ? 0.7 : 1}
                                                         onPress={() => {
-                                                            if (isSimpleChecklist && !isUnderReview) {
+                                                            if (isSimpleChecklist && !isUnderReview && !isNA) {
                                                                 const updateItem = (id: string, value: any) => {
                                                                     setItems(currentItems => currentItems.map(i => i.id === id ? { ...i, value } : i));
                                                                 };
@@ -861,19 +892,24 @@ export const TaskDetailScreen = () => {
                                                             }
                                                         }}
                                                     >
-                                                        <View style={[styles.stepIcon, { backgroundColor: isComplete(item) ? colors.success : colors.surfaceHighlight }]}>
+                                                        <View style={[styles.stepIcon, { backgroundColor: isNA ? colors.border + '40' : (isComplete(item) ? colors.success : colors.surfaceHighlight) }]}>
                                                             <Ionicons
-                                                                name={isComplete(item) ? 'checkmark' : 'ellipse-outline'}
+                                                                name={isNA ? 'ban-outline' : (isComplete(item) ? 'checkmark' : 'ellipse-outline')}
                                                                 size={18}
-                                                                color={isComplete(item) ? colors.white : colors.textSecondary}
+                                                                color={isNA ? colors.textSecondary : (isComplete(item) ? colors.white : colors.textSecondary)}
                                                             />
                                                         </View>
                                                     </TouchableOpacity>
                                                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginLeft: 12 }}>
                                                             <View style={{ flex: 1 }}>
                                                                 {item.label ? (
-                                                                    <Text style={[styles.stepTitle, { color: colors.text }]}>{item.label}</Text>
+                                                                    <Text style={[styles.stepTitle, { color: isNA ? colors.textSecondary : colors.text, textDecorationLine: isNA ? 'line-through' : 'none' }]}>{item.label}</Text>
                                                                 ) : null}
+                                                                {isNA && (
+                                                                     <View style={{ alignSelf: 'flex-start', backgroundColor: colors.border + '33', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 4 }}>
+                                                                         <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>N/A - Not Applicable</Text>
+                                                                     </View>
+                                                                 )}
                                                             </View>
                                                             {!isUnderReview && (
                                                                 <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 10 : 1, marginLeft: 8 }}>
@@ -897,223 +933,216 @@ export const TaskDetailScreen = () => {
                                                                             elevation: 4,
                                                                             zIndex: 100
                                                                         }}>
-                                                                            <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
-                                                                                <FontAwesome name="pencil" size={16} color={colors.primary} />
-                                                                                <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
-                                                                            </TouchableOpacity>
-                                                                            <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
-                                                                                <FontAwesome name="trash-o" size={16} color={colors.danger} />
-                                                                                <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
-                                                                            </TouchableOpacity>
+                                                                             <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
+                                                                                 <FontAwesome name="pencil" size={16} color={colors.primary} />
+                                                                                 <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                             </TouchableOpacity>
+
+                                                                             {isInstallation && (
+                                                                                 <TouchableOpacity
+                                                                                     style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                                                                                     onPress={() => {
+                                                                                         setOpenMenuId(null);
+                                                                                         toggleTaskApplicable(item.id);
+                                                                                     }}
+                                                                                 >
+                                                                                     <FontAwesome
+                                                                                         name={item.type === 'not_applicable' || item.isNotApplicable ? "check-circle-o" : "ban"}
+                                                                                         size={16}
+                                                                                         color={item.type === 'not_applicable' || item.isNotApplicable ? colors.primary : colors.textSecondary}
+                                                                                     />
+                                                                                     <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]} numberOfLines={1}>
+                                                                                         {item.type === 'not_applicable' || item.isNotApplicable ? "Applicable" : "Not Applicable"}
+                                                                                     </Text>
+                                                                                 </TouchableOpacity>
+                                                                             )}
+
+                                                                             <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
+                                                                                 <FontAwesome name="trash-o" size={16} color={colors.danger} />
+                                                                                 <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
+                                                                             </TouchableOpacity>
                                                                         </View>
                                                                     )}
                                                                 </View>
                                                             )}
                                                         </View>
-                                                </View>
+                                                    </View>
 
-                                                {!isSimpleChecklist && (
-                                                    <>
-                                                        {item.type === 'photo' || item.type === 'media' || item.dataType === 'Media' ? (
-                                                            <TouchableOpacity
-                                                                onPress={() => {
-                                                                    setActiveMediaId(item.id);
-                                                                    setMediaModalVisible(true);
-                                                                }}
-                                                                style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
-                                                            >
-                                                                <FontAwesome name="paperclip" size={18} color={colors.primary} />
-                                                                <View style={{ alignItems: 'flex-start' }}>
-                                                                    <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
-                                                                    <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
-                                                                </View>
-                                                            </TouchableOpacity>
-                                                        ) : item.type === 'remarks_response' ? (
-                                                            <View style={{ gap: 12 }}>
-                                                                <Text style={[FONTS.bodyStrong, { color: colors.text, marginBottom: 4 }]}>Remarks & Responses</Text>
-                                                                {((item.value as string[][]) || []).map((pair, index) => (
-                                                                    <View key={index} style={{ gap: 8, padding: 12, backgroundColor: colors.surfaceHighlight, borderRadius: 8 }}>
-                                                                        <TextInput
-                                                                            placeholder="Remark"
-                                                                            placeholderTextColor={colors.textSecondary}
-                                                                            style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, minHeight: 40, paddingHorizontal: 12 }]}
-                                                                            value={pair[0] || ''}
-                                                                            onChangeText={(val) => {
-                                                                                const current = [...((item.value as string[][]) || [['', '']])];
-                                                                                current[index] = [val, current[index]?.[1] || ''];
-                                                                                updateItem(item.id, current);
-                                                                            }}
-                                                                        />
-                                                                        <TextInput
-                                                                            multiline
-                                                                            placeholder="Response"
-                                                                            placeholderTextColor={colors.textSecondary}
-                                                                            style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text, minHeight: 60 }]}
-                                                                            value={pair[1] || ''}
-                                                                            onChangeText={(val) => {
-                                                                                const current = [...((item.value as string[][]) || [['', '']])];
-                                                                                current[index] = [current[index]?.[0] || '', val];
-                                                                                updateItem(item.id, current);
-                                                                            }}
-                                                                        />
-                                                                        {((item.value as string[][]) || []).length > 1 && !isUnderReview && (
-                                                                            <TouchableOpacity 
-                                                                                style={{ alignSelf: 'flex-end', marginTop: 4 }}
-                                                                                onPress={() => {
-                                                                                    const current = [...((item.value as string[][]) || [['', '']])];
-                                                                                    current.splice(index, 1);
-                                                                                    updateItem(item.id, current);
-                                                                                }}
-                                                                            >
-                                                                                <Text style={{ color: colors.danger, fontSize: 12 }}>Remove</Text>
-                                                                            </TouchableOpacity>
-                                                                        )}
-                                                                    </View>
-                                                                ))}
-                                                                {!isUnderReview && (
-                                                                    <TouchableOpacity 
-                                                                        style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, padding: 8 }}
+                                                    {!isSimpleChecklist && (
+                                                        isNA ? (
+                                                            <View style={{ marginTop: 8, padding: 10, backgroundColor: colors.surfaceHighlight, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                                                                <Text style={[FONTS.caption, { color: colors.textSecondary, fontStyle: 'italic' }]}>
+                                                                    This step is marked as Not Applicable. Tap action menu (...) to re-enable.
+                                                                </Text>
+                                                            </View>
+                                                        ) : (
+                                                            <>
+                                                                {item.type === 'photo' || item.type === 'media' || item.dataType === 'Media' ? (
+                                                                    <TouchableOpacity
                                                                         onPress={() => {
-                                                                            const current = [...((item.value as string[][]) || [['', '']])];
-                                                                            current.push(['', '']);
-                                                                            updateItem(item.id, current);
+                                                                            setActiveMediaId(item.id);
+                                                                            setMediaModalVisible(true);
                                                                         }}
+                                                                        style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                                                                     >
-                                                                        <FontAwesome name="plus" size={14} color={colors.primary} />
-                                                                        <Text style={{ color: colors.primary, fontWeight: '500' }}>Add another remark</Text>
+                                                                        <FontAwesome name="paperclip" size={18} color={colors.primary} />
+                                                                        <View style={{ alignItems: 'flex-start' }}>
+                                                                            <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
+                                                                            <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
+                                                                        </View>
                                                                     </TouchableOpacity>
-                                                                )}
-                                                            </View>
-                                                        ) : item.type === 'three_phase_voltage' || item.dataType === '3 phase voltage' ? (
-                                                            <View style={{ gap: 8, marginTop: 4 }}>
-                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>3 Phase Voltage Inputs</Text>
-                                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                                                                    {['L-N', 'L-E', 'L-L', 'N-E'].map((fieldLabel) => {
-                                                                        const currentObj = (typeof item.value === 'object' && item.value !== null && !Array.isArray(item.value)) ? (item.value as Record<string, string>) : {};
-                                                                        return (
-                                                                            <View key={fieldLabel} style={{ width: '48%', gap: 4 }}>
-                                                                                <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>{fieldLabel}</Text>
-                                                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                                                                    <TextInput
-                                                                                        keyboardType="numeric"
-                                                                                        placeholder="Value"
-                                                                                        placeholderTextColor={colors.textSecondary}
-                                                                                        style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text, paddingHorizontal: 8, height: 38, fontSize: 12 }]}
-                                                                                        value={currentObj[fieldLabel] || ''}
-                                                                                        onChangeText={(val) => {
-                                                                                            const nextObj = { ...currentObj, [fieldLabel]: val };
-                                                                                            updateItem(item.id, nextObj);
-                                                                                        }}
-                                                                                    />
-                                                                                    <View style={{ backgroundColor: colors.surfaceHighlight, paddingHorizontal: 8, height: 38, justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
-                                                                                        <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>V</Text>
-                                                                                    </View>
-                                                                                </View>
+                                                                ) : item.type === 'three_phase_voltage' || item.dataType === '3 phase voltage' ? (
+                                                                    <View style={{ gap: 10, marginTop: 4 }}>
+                                                                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                                                                            <View style={{ flex: 1, gap: 4 }}>
+                                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>L-N (Line to Neutral)</Text>
+                                                                                <TextInput
+                                                                                    keyboardType="numeric"
+                                                                                    placeholder="e.g. 230V"
+                                                                                    placeholderTextColor={colors.textSecondary}
+                                                                                    style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                                                                    value={(typeof item.value === 'object' && item.value !== null ? item.value['L-N'] : '') || ''}
+                                                                                    onChangeText={(val) => {
+                                                                                        const curr = typeof item.value === 'object' && item.value !== null ? item.value : {};
+                                                                                        updateItem(item.id, { ...curr, 'L-N': val });
+                                                                                    }}
+                                                                                />
                                                                             </View>
-                                                                        );
-                                                                    })}
-                                                                </View>
-                                                            </View>
-                                                        ) : item.type === 'textarea' || item.dataType === 'Long text' ? (
-                                                            <TextInput
-                                                                multiline
-                                                                numberOfLines={3}
-                                                                placeholder={getChecklistPlaceholder(item)}
-                                                                placeholderTextColor={colors.textSecondary}
-                                                                style={[styles.notesInput, getInputShellStyle(colors), { color: colors.text, minHeight: 70 }]}
-                                                                value={String(item.value ?? '')}
-                                                                onChangeText={(value) => updateItem(item.id, value)}
-                                                            />
-                                                        ) : item.type === 'email' || item.dataType === 'Email' ? (
-                                                            <TextInput
-                                                                keyboardType="email-address"
-                                                                autoCapitalize="none"
-                                                                placeholder="Enter email address (e.g. name@domain.com)"
-                                                                placeholderTextColor={colors.textSecondary}
-                                                                style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
-                                                                value={String(item.value ?? '')}
-                                                                onChangeText={(value) => updateItem(item.id, value)}
-                                                            />
-                                                        ) : item.type === 'radio' || item.dataType === 'Radio button' ? (
-                                                            <View style={{ gap: 6, marginTop: 4 }}>
-                                                                {(item.options || ['Pass', 'Fail']).map((opt) => {
-                                                                    const selected = String(item.value) === opt;
-                                                                    return (
-                                                                        <TouchableOpacity
-                                                                            key={opt}
-                                                                            onPress={() => updateItem(item.id, opt)}
-                                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
-                                                                        >
-                                                                            <Ionicons
-                                                                                name={selected ? 'radio-button-on' : 'radio-button-off'}
-                                                                                size={20}
-                                                                                color={selected ? colors.primary : colors.textSecondary}
-                                                                            />
-                                                                            <Text style={[FONTS.body, { color: colors.text }]}>{opt}</Text>
-                                                                        </TouchableOpacity>
-                                                                    );
-                                                                })}
-                                                            </View>
-                                                        ) : item.type === 'dropdown' || item.dataType === 'Dropdown' ? (
-                                                            <View style={{ zIndex: 10, marginTop: 4 }}>
-                                                                <PopoverDropdown
-                                                                    label="Select Option"
-                                                                    placeholder="Choose option"
-                                                                    options={(item.options || ['Option 1', 'Option 2']).map((opt) => ({ key: opt, label: opt, value: opt }))}
-                                                                    value={String(item.value ?? '')}
-                                                                    onSelect={(val) => updateItem(item.id, val)}
-                                                                    placement="bottom"
-                                                                />
-                                                            </View>
-                                                        ) : item.type === 'multiselect' || item.type === 'checkbox' || item.dataType === 'Multiple Choice' || item.dataType === 'Checkbox' ? (
-                                                            <View style={{ gap: 6, marginTop: 4 }}>
-                                                                {(item.options || ['Option 1', 'Option 2']).map((opt) => {
-                                                                    const currentArray = Array.isArray(item.value) ? (item.value as string[]) : (item.value ? [String(item.value)] : []);
-                                                                    const selected = currentArray.includes(opt);
-                                                                    return (
-                                                                        <TouchableOpacity
-                                                                            key={opt}
-                                                                            onPress={() => {
-                                                                                const nextArray = selected ? currentArray.filter(i => i !== opt) : [...currentArray, opt];
-                                                                                updateItem(item.id, nextArray);
-                                                                            }}
-                                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
-                                                                        >
-                                                                            <Ionicons
-                                                                                name={selected ? 'checkbox' : 'square-outline'}
-                                                                                size={20}
-                                                                                color={selected ? colors.primary : colors.textSecondary}
-                                                                            />
-                                                                            <Text style={[FONTS.body, { color: colors.text }]}>{opt}</Text>
-                                                                        </TouchableOpacity>
-                                                                    );
-                                                                })}
-                                                            </View>
-                                                        ) : (item.type === 'text' || item.type === 'number' || item.type === 'date' || item.dataType === 'Short text' || item.dataType === 'Number' || item.dataType === 'Date') ? (
-                                                             <MultiResponseEntryItem
-                                                                 item={item}
-                                                                 colors={colors}
-                                                                 updateItem={updateItem}
-                                                                 setItems={setItems}
-                                                                 isUnderReview={isUnderReview}
-                                                             />
-                                                         ) : (
-                                                            <TextInput
-                                                                keyboardType="default"
-                                                                placeholder={getChecklistPlaceholder(item)}
-                                                                placeholderTextColor={colors.textSecondary}
-                                                                style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
-                                                                value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value ?? '')}
-                                                                onChangeText={(value) => updateItem(item.id, value)}
-                                                            />
-                                                        )}
-                                                    </>
-                                                )}
+                                                                            <View style={{ flex: 1, gap: 4 }}>
+                                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>L-E (Line to Earth)</Text>
+                                                                                <TextInput
+                                                                                    keyboardType="numeric"
+                                                                                    placeholder="e.g. 230V"
+                                                                                    placeholderTextColor={colors.textSecondary}
+                                                                                    style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                                                                    value={(typeof item.value === 'object' && item.value !== null ? item.value['L-E'] : '') || ''}
+                                                                                    onChangeText={(val) => {
+                                                                                        const curr = typeof item.value === 'object' && item.value !== null ? item.value : {};
+                                                                                        updateItem(item.id, { ...curr, 'L-E': val });
+                                                                                    }}
+                                                                                />
+                                                                            </View>
+                                                                        </View>
+                                                                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                                                                            <View style={{ flex: 1, gap: 4 }}>
+                                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>L-L (Line to Line)</Text>
+                                                                                <TextInput
+                                                                                    keyboardType="numeric"
+                                                                                    placeholder="e.g. 400V"
+                                                                                    placeholderTextColor={colors.textSecondary}
+                                                                                    style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                                                                    value={(typeof item.value === 'object' && item.value !== null ? item.value['L-L'] : '') || ''}
+                                                                                    onChangeText={(val) => {
+                                                                                        const curr = typeof item.value === 'object' && item.value !== null ? item.value : {};
+                                                                                        updateItem(item.id, { ...curr, 'L-L': val });
+                                                                                    }}
+                                                                                />
+                                                                            </View>
+                                                                            <View style={{ flex: 1, gap: 4 }}>
+                                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>N-E (Neutral to Earth)</Text>
+                                                                                <TextInput
+                                                                                    keyboardType="numeric"
+                                                                                    placeholder="e.g. 2V"
+                                                                                    placeholderTextColor={colors.textSecondary}
+                                                                                    style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                                                                    value={(typeof item.value === 'object' && item.value !== null ? item.value['N-E'] : '') || ''}
+                                                                                    onChangeText={(val) => {
+                                                                                        const curr = typeof item.value === 'object' && item.value !== null ? item.value : {};
+                                                                                        updateItem(item.id, { ...curr, 'N-E': val });
+                                                                                    }}
+                                                                                />
+                                                                            </View>
+                                                                        </View>
+                                                                    </View>
+                                                                ) : item.type === 'email' || item.dataType === 'Email' ? (
+                                                                    <TextInput
+                                                                        keyboardType="email-address"
+                                                                        autoCapitalize="none"
+                                                                        placeholder="name@domain.com"
+                                                                        placeholderTextColor={colors.textSecondary}
+                                                                        style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                                                        value={String(item.value ?? '')}
+                                                                        onChangeText={(value) => updateItem(item.id, value)}
+                                                                    />
+                                                                ) : item.type === 'textarea' || item.dataType === 'Long text' ? (
+                                                                    <TextInput
+                                                                        multiline
+                                                                        numberOfLines={3}
+                                                                        placeholder="Enter detailed description / remarks..."
+                                                                        placeholderTextColor={colors.textSecondary}
+                                                                        style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, minHeight: 70, textAlignVertical: 'top' }]}
+                                                                        value={String(item.value ?? '')}
+                                                                        onChangeText={(value) => updateItem(item.id, value)}
+                                                                    />
+                                                                ) : item.type === 'radio' || item.dataType === 'Radio button' || item.type === 'dropdown' || item.dataType === 'Dropdown' ? (
+                                                                    <View style={{ gap: 6, marginTop: 4 }}>
+                                                                        {(item.options || ['Option 1', 'Option 2']).map((opt) => {
+                                                                            const selected = item.value === opt;
+                                                                            return (
+                                                                                <TouchableOpacity
+                                                                                    key={opt}
+                                                                                    onPress={() => updateItem(item.id, opt)}
+                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                                >
+                                                                                    <Ionicons
+                                                                                        name={selected ? 'radio-button-on' : 'radio-button-off'}
+                                                                                        size={20}
+                                                                                        color={selected ? colors.primary : colors.textSecondary}
+                                                                                    />
+                                                                                    <Text style={[FONTS.body, { color: colors.text }]}>{opt}</Text>
+                                                                                </TouchableOpacity>
+                                                                            );
+                                                                        })}
+                                                                    </View>
+                                                                ) : item.type === 'multiselect' || item.type === 'checkbox' || item.dataType === 'Multiple Choice' || item.dataType === 'Checkbox' ? (
+                                                                    <View style={{ gap: 6, marginTop: 4 }}>
+                                                                        {(item.options || ['Option 1', 'Option 2']).map((opt) => {
+                                                                            const currentArray = Array.isArray(item.value) ? (item.value as string[]) : (item.value ? [String(item.value)] : []);
+                                                                            const selected = currentArray.includes(opt);
+                                                                            return (
+                                                                                <TouchableOpacity
+                                                                                    key={opt}
+                                                                                    onPress={() => {
+                                                                                        const nextArray = selected ? currentArray.filter(i => i !== opt) : [...currentArray, opt];
+                                                                                        updateItem(item.id, nextArray);
+                                                                                    }}
+                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                                >
+                                                                                    <Ionicons
+                                                                                        name={selected ? 'checkbox' : 'square-outline'}
+                                                                                        size={20}
+                                                                                        color={selected ? colors.primary : colors.textSecondary}
+                                                                                    />
+                                                                                    <Text style={[FONTS.body, { color: colors.text }]}>{opt}</Text>
+                                                                                </TouchableOpacity>
+                                                                            );
+                                                                        })}
+                                                                    </View>
+                                                                ) : (item.type === 'text' || item.type === 'number' || item.type === 'date' || item.dataType === 'Short text' || item.dataType === 'Number' || item.dataType === 'Date') ? (
+                                                                     <MultiResponseEntryItem
+                                                                         item={item}
+                                                                         colors={colors}
+                                                                         updateItem={updateItem}
+                                                                         setItems={setItems}
+                                                                         isUnderReview={isUnderReview}
+                                                                     />
+                                                                ) : (
+                                                                    <TextInput
+                                                                        keyboardType="default"
+                                                                        placeholder={getChecklistPlaceholder(item)}
+                                                                        placeholderTextColor={colors.textSecondary}
+                                                                        style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                                                        value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value ?? '')}
+                                                                        onChangeText={(value) => updateItem(item.id, value)}
+                                                                    />
+                                                                )}
+                                                            </>
+                                                        )
+                                                    )}
                                                 </View>
                                             );
                                         })}
                                     </View>
-
                                     {isUnderReview && (
                                         <View style={{ marginTop: 24, paddingVertical: 16, borderTopWidth: 1, borderTopColor: colors.border, gap: 12 }}>
                                             <Text style={[{ color: colors.textSecondary }, FONTS.label]}>Submission Details</Text>

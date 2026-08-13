@@ -15,6 +15,9 @@ export const getStatusColor = (status: string, colors: any, isDark: boolean): st
     if (['assigned', 'on route', 'at site'].includes(s)) {
         return colors.secondary;
     }
+    if (['requested', 'send requested', 'request pending'].includes(s)) {
+        return isDark ? '#FFB74D' : '#E65100';
+    }
     if (['unassigned', 'open', 'under review', 'faulted'].includes(s)) {
         return colors.warning;
     }

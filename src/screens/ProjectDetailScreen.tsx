@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, Modal, Animated, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, Modal, Animated, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getStatusColor } from '../styles/statusColors';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,17 +42,31 @@ export const OrderCard = ({
     hideTypeChip?: boolean;
     hideStationChip?: boolean;
 }) => {
-    const actionConfig =
-        (item.status === 'Unassigned' || item.status === 'Assigned')
-            ? {
-                secondaryLabel: 'Forward',
-                primaryLabel: 'Accept Work',
-            }
+    const [cardRequested, setCardRequested] = useState(item.status === 'Requested' || item.isRequested);
+
+    const handleSendRequestClick = (e: any) => {
+        e.stopPropagation();
+        item.status = 'Requested';
+        item.isRequested = true;
+        setCardRequested(true);
+        Alert.alert(
+            'Request Sent',
+            `Preventive maintenance request for "${item.title}" at ${item.siteName} has been sent to Central Team.`,
+            [{ text: 'OK' }]
+        );
+    };
+
+    const isPreventive = item.type === 'Preventive';
+    const isCurrentlyRequested = cardRequested || item.status === 'Requested' || item.isRequested;
+
+    const actionConfig = isPreventive
+        ? (isCurrentlyRequested
+            ? { secondaryLabel: 'Details', primaryLabel: 'Requested', isRequestedState: true }
+            : { secondaryLabel: 'Details', primaryLabel: 'Send Request', isSendRequest: true })
+        : (item.status === 'Unassigned' || item.status === 'Assigned')
+            ? { secondaryLabel: 'Forward', primaryLabel: 'Accept Work' }
             : item.status === 'Under Review'
-                ? {
-                    secondaryLabel: 'Reject',
-                    primaryLabel: 'Review Work',
-                }
+                ? { secondaryLabel: 'Reject', primaryLabel: 'Review Work' }
                 : null;
     const typeColors = getServiceTypeColors(item.type, isDark);
     const priorityColor = item.priority === 'High' ? colors.danger : item.priority === 'Medium' ? colors.secondary : colors.textSecondary;
@@ -86,14 +100,14 @@ export const OrderCard = ({
                     <View style={[
                         styles.statusBadgeInline, 
                         { 
-                            backgroundColor: getStatusColor(item.status, colors, isDark) + '15',
-                            borderColor: getStatusColor(item.status, colors, isDark)
+                            backgroundColor: getStatusColor(isCurrentlyRequested ? 'Requested' : item.status, colors, isDark) + '15',
+                            borderColor: getStatusColor(isCurrentlyRequested ? 'Requested' : item.status, colors, isDark)
                         }
                     ]}>
                         <Text style={[
                             styles.statusBadgeTextInline, 
-                            { color: getStatusColor(item.status, colors, isDark) }
-                        ]}>{item.status}</Text>
+                            { color: getStatusColor(isCurrentlyRequested ? 'Requested' : item.status, colors, isDark) }
+                        ]}>{isCurrentlyRequested ? 'Requested' : item.status}</Text>
                     </View>
                     <Text style={[{ ...FONTS.caption, fontSize: 11, color: colors.danger }]}>
                         {new Date(item.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -151,16 +165,32 @@ export const OrderCard = ({
             {actionConfig ? (
                 <View style={styles.actionRow}>
                     <TouchableOpacity
+                        onPress={onOpen}
                         style={[styles.actionButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                     >
                         <Text style={[styles.actionButtonText, { color: colors.text }]}>{actionConfig.secondaryLabel}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={onOpen}
-                        style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
-                    >
-                        <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
-                    </TouchableOpacity>
+                    {actionConfig.isSendRequest ? (
+                        <TouchableOpacity
+                            onPress={handleSendRequestClick}
+                            style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        >
+                            <Ionicons name="paper-plane" size={14} color={colors.white} />
+                            <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
+                        </TouchableOpacity>
+                    ) : actionConfig.isRequestedState ? (
+                        <View style={[styles.actionButton, { backgroundColor: isDark ? 'rgba(255, 183, 77, 0.18)' : 'rgba(230, 81, 0, 0.12)', borderColor: isDark ? '#FFB74D' : '#E65100' }]}>
+                            <Ionicons name="checkmark-circle" size={14} color={isDark ? '#FFB74D' : '#E65100'} />
+                            <Text style={[styles.primaryActionText, { color: isDark ? '#FFB74D' : '#E65100' }]}>{actionConfig.primaryLabel}</Text>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={onOpen}
+                            style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        >
+                            <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             ) : null}
         </TouchableOpacity>
@@ -923,9 +953,11 @@ const styles = StyleSheet.create({
         minHeight: 46,
         borderRadius: 12,
         borderWidth: 1,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 10,
+        gap: 6,
     },
     actionButtonText: {
         ...FONTS.bodyStrong,
