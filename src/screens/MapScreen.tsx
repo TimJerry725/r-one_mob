@@ -421,7 +421,7 @@ export const MapScreen = () => {
                                 ]}
                             >
                                 <Ionicons
-                                    name={mapMode === 'both' ? "map" : "map-outline"}
+                                    name={mapMode === 'both' ? "layers" : "layers-outline"}
                                     size={22}
                                     color={mapMode === 'both' ? colors.white : colors.textSecondary}
                                 />
