@@ -132,33 +132,30 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): any => {
 
 const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete: boolean): ChecklistStateItem[] =>
     template.map((item) => {
-        const itemDataType = item.dataType || getDataTypeLabel(item as any);
-        const mappedType = item.dataType ? mapDataTypeToType(item.dataType) : item.type;
-        const itemType = (mappedType || item.type || '').toLowerCase();
-        const dataTypeLower = (itemDataType || '').toLowerCase();
+        const rawType = item.type || (item.dataType ? mapDataTypeToType(item.dataType) : 'text');
+        const itemType = (rawType || '').toLowerCase();
+        const dataType = (item.dataType || '').toLowerCase();
         let initialVal: any = '';
 
         if (prefillComplete) {
-            initialVal = getCompletedChecklistValue({ ...item, type: mappedType, dataType: itemDataType });
-        } else if (itemType === 'photo' || itemType === 'media' || dataTypeLower === 'media') {
+            initialVal = getCompletedChecklistValue(item);
+        } else if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
             initialVal = 0;
         } else if (itemType === 'remarks_response') {
             initialVal = [['', '']];
-        } else if (itemType === 'three_phase_voltage' || dataTypeLower === '3 phase voltage') {
+        } else if (itemType === 'three_phase_voltage' || dataType === '3 phase voltage') {
             initialVal = { 'L-N': '', 'L-E': '', 'L-L': '', 'N-E': '' };
-        } else if (itemType === 'multiselect' || itemType === 'checkbox' || dataTypeLower === 'multiple choice' || dataTypeLower === 'checkbox' || dataTypeLower === 'none' || itemType === 'none') {
+        } else if (itemType === 'multiselect' || itemType === 'checkbox' || dataType === 'multiple choice' || dataType === 'checkbox' || dataType === 'none' || itemType === 'none' || itemType === 'toggle') {
             initialVal = [];
         }
 
-        const finalOptions = (dataTypeLower === 'none' || itemType === 'none') && (!item.options || item.options.length === 0)
-            ? ['Yes', 'No']
-            : item.options;
+        const isNoneType = dataType === 'none' || itemType === 'none' || itemType === 'toggle' || (item.dataType && item.dataType === 'None');
 
         return {
             ...item,
-            type: mappedType,
-            dataType: itemDataType,
-            options: finalOptions,
+            type: rawType,
+            dataType: item.dataType || getDataTypeLabel({ ...item, type: rawType, value: initialVal }),
+            options: isNoneType && (!item.options || item.options.length === 0) ? ['Yes', 'No'] : item.options,
             value: initialVal,
         };
     });
@@ -912,15 +909,6 @@ export const TaskDetailScreen = () => {
                                                             <View style={{ flex: 1 }}>
                                                                 {item.label ? (
                                                                     <Text style={[styles.stepTitle, { color: isNA ? colors.textSecondary : colors.text, textDecorationLine: isNA ? 'line-through' : 'none' }]}>{item.label}</Text>
-                                                                ) : null}
-                                                                {item.dataType ? (
-                                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                                                                        <View style={{ backgroundColor: getDataTypeColor(item.dataType, item.type) + '1A', borderColor: getDataTypeColor(item.dataType, item.type), borderWidth: 1, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
-                                                                            <Text style={{ color: getDataTypeColor(item.dataType, item.type), fontSize: 11, fontWeight: '700' }}>
-                                                                                Data Type: {item.dataType}
-                                                                            </Text>
-                                                                        </View>
-                                                                    </View>
                                                                 ) : null}
                                                                 {isNA && (
                                                                      <View style={{ alignSelf: 'flex-start', backgroundColor: colors.border + '33', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 4 }}>
