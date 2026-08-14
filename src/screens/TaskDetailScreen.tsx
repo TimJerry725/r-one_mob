@@ -331,10 +331,8 @@ export const TaskDetailScreen = () => {
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const isUnderReview = workOrder.status === 'Under Review';
-    const isSimpleChecklist = ['service', 'preventive'].includes((workOrder.type || '').toLowerCase());
-    const isInstallation = (workOrder.type || '').toLowerCase().includes('installation') ||
-                           (workOrder.title || '').toLowerCase().includes('installation') ||
-                           !isSimpleChecklist;
+    const isSimpleChecklist = false;
+    const isInstallation = true;
     const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
     const [items, setItems] = useState<ChecklistStateItem[]>(() => buildChecklistState(checklistTemplate, isUnderReview));
 
