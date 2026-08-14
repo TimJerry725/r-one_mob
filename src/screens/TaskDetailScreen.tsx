@@ -331,8 +331,8 @@ export const TaskDetailScreen = () => {
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const isUnderReview = workOrder.status === 'Under Review';
-    const isSimpleChecklist = false;
-    const isInstallation = true;
+    const isPreventiveOrService = ['preventive', 'service'].includes((workOrder.type || '').toLowerCase());
+    const isAllowNotApplicable = !isPreventiveOrService;
     const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
     const [items, setItems] = useState<ChecklistStateItem[]>(() => buildChecklistState(checklistTemplate, isUnderReview));
 
@@ -885,9 +885,9 @@ export const TaskDetailScreen = () => {
                                                 <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: openMenuId === item.id ? 100 : 1, opacity: isNA ? 0.6 : 1 }]}>
                                             <View style={[styles.stepHeader, { zIndex: openMenuId === item.id ? 100 : 1 }]}>
                                                     <TouchableOpacity
-                                                        activeOpacity={(isSimpleChecklist && !isNA) ? 0.7 : 1}
+                                                        activeOpacity={!isNA ? 0.7 : 1}
                                                         onPress={() => {
-                                                            if (isSimpleChecklist && !isUnderReview && !isNA) {
+                                                            if (!isUnderReview && !isNA) {
                                                                 const updateItem = (id: string, value: any) => {
                                                                     setItems(currentItems => currentItems.map(i => i.id === id ? { ...i, value } : i));
                                                                 };
@@ -941,7 +941,7 @@ export const TaskDetailScreen = () => {
                                                                                  <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
                                                                              </TouchableOpacity>
 
-                                                                             {isInstallation && (
+                                                                             {isAllowNotApplicable && (
                                                                                  <TouchableOpacity
                                                                                      style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}
                                                                                      onPress={() => {
@@ -971,7 +971,7 @@ export const TaskDetailScreen = () => {
                                                         </View>
                                                     </View>
 
-                                                    {!isSimpleChecklist && (
+                                                    {true && (
                                                         isNA ? (
                                                             <View style={{ marginTop: 8, padding: 10, backgroundColor: colors.surfaceHighlight, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
                                                                 <Text style={[FONTS.caption, { color: colors.textSecondary, fontStyle: 'italic' }]}>
