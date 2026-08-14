@@ -321,7 +321,7 @@ export let WORK_ORDERS: WorkOrder[] = [
     {
         id: 'wo-pm-infra-01',
         projectId: 'PJ-PM01',
-        title: 'Preventive Maintenance for EV Infra – Station Level – Frequency 1 Month',
+        title: 'Preventive Maintenance for EV Infra',
         siteName: 'Pune Central Station',
         address: 'Platform Road, Shivajinagar, Pune',
         type: 'Preventive',
@@ -339,7 +339,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         assetIds: ['CPID-KN-01', 'CPID-KN-02'],
         checklistItems: PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST,
         offlineReady: true,
-        notes: 'Preventive Maintenance for EV Infra – Station Level – Frequency 1 Month. Complete all 92 station checks.',
+        notes: 'Preventive Maintenance for EV Infra. Complete all 92 station checks.',
         latitude: 18.5314,
         longitude: 73.8446,
         priority: 'High',
@@ -350,7 +350,7 @@ export let WORK_ORDERS: WorkOrder[] = [
     {
         id: 'wo-pm-infra-02',
         projectId: 'PJ-PM02',
-        title: 'EV Infra Station Level PM - Frequency 1 Month',
+        title: 'Preventive Maintenance for EV Infra',
         siteName: 'Skyline Mall Parking Hub',
         address: 'MG Road Basement B2, Bengaluru',
         type: 'Preventive',
