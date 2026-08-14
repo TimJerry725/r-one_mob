@@ -101,8 +101,8 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): any => {
     if (t.includes('textarea') || t.includes('long text')) {
         return 'Detailed inspection completed without any warning signs observed.';
     }
-    if (t.includes('checkbox') || t.includes('multiple choice') || t.includes('multiselect')) {
-        return item.options?.slice(0, 2) ?? ['Checked'];
+    if (t.includes('checkbox') || t.includes('multiple choice') || t.includes('multiselect') || t.includes('none')) {
+        return item.options?.slice(0, 1) ?? ['Yes'];
     }
     if (t.includes('dropdown') || t.includes('select')) {
         return item.options?.[0] ?? 'Pass';
@@ -144,7 +144,7 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
             initialVal = [['', '']];
         } else if (itemType === 'three_phase_voltage' || dataType === '3 phase voltage') {
             initialVal = { 'L-N': '', 'L-E': '', 'L-L': '', 'N-E': '' };
-        } else if (itemType === 'multiselect' || itemType === 'checkbox' || dataType === 'multiple choice' || dataType === 'checkbox') {
+        } else if (itemType === 'multiselect' || itemType === 'checkbox' || dataType === 'multiple choice' || dataType === 'checkbox' || dataType === 'none' || itemType === 'none') {
             initialVal = [];
         }
 
@@ -174,7 +174,7 @@ const isComplete = (item: ChecklistStateItem) => {
     if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
         return Number(item.value) > 0;
     }
-    if (itemType === 'multiselect' || itemType === 'checkbox' || dataType === 'multiple choice' || dataType === 'checkbox') {
+    if (itemType === 'multiselect' || itemType === 'checkbox' || dataType === 'multiple choice' || dataType === 'checkbox' || dataType === 'none' || itemType === 'none') {
         if (Array.isArray(item.value)) return item.value.length > 0;
         return String(item.value).trim().length > 0;
     }
@@ -1094,30 +1094,33 @@ export const TaskDetailScreen = () => {
                                                                             );
                                                                         })}
                                                                     </View>
-                                                                ) : item.type === 'multiselect' || item.type === 'checkbox' || item.dataType === 'Multiple Choice' || item.dataType === 'Checkbox' ? (
-                                                                    <View style={{ gap: 6, marginTop: 4 }}>
-                                                                        {(item.options || ['Option 1', 'Option 2']).map((opt) => {
-                                                                            const currentArray = Array.isArray(item.value) ? (item.value as string[]) : (item.value ? [String(item.value)] : []);
-                                                                            const selected = currentArray.includes(opt);
-                                                                            return (
-                                                                                <TouchableOpacity
-                                                                                    key={opt}
-                                                                                    onPress={() => {
-                                                                                        const nextArray = selected ? currentArray.filter(i => i !== opt) : [...currentArray, opt];
-                                                                                        updateItem(item.id, nextArray);
-                                                                                    }}
-                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
-                                                                                >
-                                                                                    <Ionicons
-                                                                                        name={selected ? 'checkbox' : 'square-outline'}
-                                                                                        size={20}
-                                                                                        color={selected ? colors.primary : colors.textSecondary}
-                                                                                    />
-                                                                                    <Text style={[FONTS.body, { color: colors.text }]}>{opt}</Text>
-                                                                                </TouchableOpacity>
-                                                                            );
-                                                                        })}
-                                                                    </View>
+                                                                ) : item.type === 'multiselect' || item.type === 'checkbox' || item.dataType === 'Multiple Choice' || item.dataType === 'Checkbox' || item.dataType === 'None' || (item.type as string) === 'None' || (item.dataType && item.dataType.toLowerCase() === 'none') ? (
+                                                                     <View style={{ gap: 6, marginTop: 4 }}>
+                                                                         {(item.options && item.options.length > 0 ? item.options : ['Yes', 'No']).map((opt) => {
+                                                                             const currentArray = Array.isArray(item.value) ? (item.value as string[]) : (item.value ? [String(item.value)] : []);
+                                                                             const selected = currentArray.includes(opt);
+                                                                             return (
+                                                                                 <TouchableOpacity
+                                                                                     key={opt}
+                                                                                     onPress={() => {
+                                                                                         const isNoneType = item.dataType === 'None' || (item.type as string) === 'None' || (item.dataType && item.dataType.toLowerCase() === 'none');
+                                                                                         const nextArray = isNoneType
+                                                                                             ? (selected ? [] : [opt])
+                                                                                             : (selected ? currentArray.filter(i => i !== opt) : [...currentArray, opt]);
+                                                                                         updateItem(item.id, nextArray);
+                                                                                     }}
+                                                                                     style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                                 >
+                                                                                     <Ionicons
+                                                                                         name={selected ? 'checkbox' : 'square-outline'}
+                                                                                         size={20}
+                                                                                         color={selected ? colors.primary : colors.textSecondary}
+                                                                                     />
+                                                                                     <Text style={[FONTS.body, { color: colors.text, fontWeight: selected ? '600' : '400' }]}>{opt}</Text>
+                                                                                 </TouchableOpacity>
+                                                                             );
+                                                                         })}
+                                                                     </View>
                                                                 ) : (item.type === 'text' || item.type === 'number' || item.type === 'date' || item.dataType === 'Short text' || item.dataType === 'Number' || item.dataType === 'Date') ? (
                                                                      <MultiResponseEntryItem
                                                                          item={item}
