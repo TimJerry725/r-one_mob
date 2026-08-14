@@ -345,7 +345,7 @@ export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
 export let WORK_ORDERS: WorkOrder[] = [
     {
         id: 'wo-pm-infra-01',
-        projectId: 'PJ-PM01',
+        projectId: 'PJ001',
         title: 'Preventive Maintenance for EV Infra',
         siteName: 'Pune Central Station',
         address: 'Platform Road, Shivajinagar, Pune',
@@ -374,7 +374,7 @@ export let WORK_ORDERS: WorkOrder[] = [
     },
     {
         id: 'wo-pm-ht-yard-01',
-        projectId: 'PJ-PM-HT01',
+        projectId: 'PJ001',
         title: 'Preventive Maintenance for HT Yard',
         siteName: 'Skyline Mall Parking Hub',
         address: 'MG Road Basement B2, Bengaluru',
