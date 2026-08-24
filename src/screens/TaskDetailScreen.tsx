@@ -28,14 +28,16 @@ import { getServiceTypeColors } from '../styles/workTypeColors';
 type ChecklistStateItem = {
     id: string;
     label: string;
-    type: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email';
+    type: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email' | 'section_header';
     dataType?: string;
     required: boolean;
     options?: string[];
     value: any;
     isNa?: boolean;
     isNotApplicable?: boolean;
-    originalType?: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email';
+    originalType?: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email' | 'section_header';
+    showWhenFieldId?: string;
+    showWhenEquals?: string;
 };
 
 const getDataTypeColor = (dataType?: string, type?: string): string => {
@@ -156,7 +158,9 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
             type: rawType,
             dataType: item.dataType || getDataTypeLabel({ ...item, type: rawType, value: initialVal }),
             options: isNoneType && (!item.options || item.options.length === 0) ? ['Yes', 'No'] : item.options,
-            value: initialVal,
+            value: rawType === 'section_header' ? '' : initialVal,
+            showWhenFieldId: item.showWhenFieldId,
+            showWhenEquals: item.showWhenEquals,
         };
     });
 
@@ -880,6 +884,24 @@ export const TaskDetailScreen = () => {
                                 <>
                                     <View style={styles.listColumn}>
                                         {items.map((item) => {
+                                            // Section header — render as a divider row
+                                            if (item.type === 'section_header') {
+                                                return (
+                                                    <View key={item.id} style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                                                        <Text style={[styles.sectionHeaderText, { color: colors.primary }]}>{item.label}</Text>
+                                                    </View>
+                                                );
+                                            }
+
+                                            // Conditional visibility: hide if parent visual-check !== 'Yes'
+                                            if (item.showWhenFieldId && item.showWhenEquals) {
+                                                const parentItem = items.find(i => i.id === item.showWhenFieldId);
+                                                const parentValue = Array.isArray(parentItem?.value)
+                                                    ? parentItem?.value[0]
+                                                    : parentItem?.value;
+                                                if (parentValue !== item.showWhenEquals) return null;
+                                            }
+
                                             const isNA = item.type === 'not_applicable' || item.isNotApplicable;
                                             return (
                                                 <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: openMenuId === item.id ? 100 : 1, opacity: isNA ? 0.6 : 1 }]}>
@@ -2521,5 +2543,17 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 12,
         elevation: 3,
+    },
+    sectionHeader: {
+        paddingVertical: 10,
+        paddingHorizontal: 4,
+        marginTop: 8,
+        marginBottom: 2,
+        borderBottomWidth: 1,
+    },
+    sectionHeaderText: {
+        ...FONTS.bodyStrong,
+        fontSize: 13,
+        letterSpacing: 0.2,
     },
 });
