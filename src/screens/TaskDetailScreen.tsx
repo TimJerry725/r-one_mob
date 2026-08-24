@@ -38,6 +38,8 @@ type ChecklistStateItem = {
     originalType?: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email' | 'section_header';
     showWhenFieldId?: string;
     showWhenEquals?: string;
+    defaultValue?: string;
+    isReadOnly?: boolean;
 };
 
 const getDataTypeColor = (dataType?: string, type?: string): string => {
@@ -141,6 +143,8 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
 
         if (prefillComplete) {
             initialVal = getCompletedChecklistValue(item);
+        } else if (item.defaultValue) {
+            initialVal = item.defaultValue;
         } else if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
             initialVal = 0;
         } else if (itemType === 'remarks_response') {
@@ -161,10 +165,14 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
             value: rawType === 'section_header' ? '' : initialVal,
             showWhenFieldId: item.showWhenFieldId,
             showWhenEquals: item.showWhenEquals,
+            defaultValue: item.defaultValue,
+            isReadOnly: item.isReadOnly,
         };
     });
 
 const isComplete = (item: ChecklistStateItem) => {
+    if (item.type === 'section_header') return true;
+    if (item.isReadOnly) return true;
     if (item.isNa) return true;
     const itemType = (item.type || '').toLowerCase();
     const dataType = (item.dataType || '').toLowerCase();
@@ -909,7 +917,7 @@ export const TaskDetailScreen = () => {
                                                     <TouchableOpacity
                                                         activeOpacity={!isNA ? 0.7 : 1}
                                                         onPress={() => {
-                                                            if (!isUnderReview && !isNA) {
+                                                            if (!isUnderReview && !isNA && !item.isReadOnly) {
                                                                 const updateItem = (id: string, value: any) => {
                                                                     setItems(currentItems => currentItems.map(i => i.id === id ? { ...i, value } : i));
                                                                 };
@@ -1093,14 +1101,17 @@ export const TaskDetailScreen = () => {
                                                                     <TextInput
                                                                         multiline
                                                                         numberOfLines={3}
-                                                                        placeholder="Enter detailed description / remarks..."
+                                                                        editable={!item.isReadOnly && !isUnderReview}
+                                                                        placeholder={item.isReadOnly ? '' : 'Enter detailed description / remarks...'}
                                                                         placeholderTextColor={colors.textSecondary}
-                                                                        style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, minHeight: 70, textAlignVertical: 'top' }]}
-                                                                        value={String(item.value ?? '')}
-                                                                        onChangeText={(value) => updateItem(item.id, value)}
+                                                                        style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, minHeight: 70, textAlignVertical: 'top', opacity: item.isReadOnly ? 0.9 : 1 }]}
+                                                                        value={String(item.value ?? item.defaultValue ?? '')}
+                                                                        onChangeText={(value) => {
+                                                                            if (!item.isReadOnly) updateItem(item.id, value);
+                                                                        }}
                                                                     />
                                                                 ) : item.type === 'radio' || item.dataType === 'Radio button' || item.type === 'dropdown' || item.dataType === 'Dropdown' ? (
-                                                                    <View style={{ gap: 6, marginTop: 4 }}>
+                                                                    <View style={{ gap: 12, marginTop: 4, flexDirection: (item.options || []).length <= 2 ? 'row' : 'column', flexWrap: 'wrap' }}>
                                                                         {(item.options || ['Option 1', 'Option 2']).map((opt) => {
                                                                             const selected = item.value === opt;
                                                                             return (

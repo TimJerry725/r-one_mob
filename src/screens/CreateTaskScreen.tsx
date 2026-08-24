@@ -33,7 +33,7 @@ import {
     STAGE_NAMES,
     TaskDraftResult,
 } from '../data/createTaskOptions';
-import { WORK_ORDERS, PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST } from '../data/fieldDemo';
+import { WORK_ORDERS, PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST, PREVENTIVE_EV_INFRA_QUESTION_COUNT } from '../data/fieldDemo';
 
 const MOCK_PM_WORKS_LIST = [
     {
@@ -161,7 +161,7 @@ export const CreateTaskScreen = () => {
             eta: 'Not started',
             distance: '1.2 km',
             checklistCompleted: 0,
-            checklistTotal: serviceType === 'Request Preventive' ? PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST.length : 5,
+            checklistTotal: serviceType === 'Request Preventive' ? PREVENTIVE_EV_INFRA_QUESTION_COUNT : 5,
             checklistItems: serviceType === 'Request Preventive' ? PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST : undefined,
             tools: [],
             parts: [],
