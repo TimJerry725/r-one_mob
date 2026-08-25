@@ -399,7 +399,6 @@ export const TaskDetailScreen = () => {
         });
         return counts;
     }, [items]);
-    const allSectionsExpanded = sectionIds.length > 0 && sectionIds.every((id) => expandedSectionIds.has(id));
     const toggleSectionExpanded = (sectionId: string) => {
         setExpandedSectionIds((prev) => {
             const next = new Set(prev);
@@ -407,9 +406,6 @@ export const TaskDetailScreen = () => {
             else next.add(sectionId);
             return next;
         });
-    };
-    const toggleAllSections = () => {
-        setExpandedSectionIds(allSectionsExpanded ? new Set() : new Set(sectionIds));
     };
 
     const toggleTaskApplicable = (itemId: string) => {
@@ -987,15 +983,6 @@ export const TaskDetailScreen = () => {
                             ) : (
                                 <>
                                     <View style={styles.listColumn}>
-                                        {isFillOnlyChecklist && sectionIds.length > 1 && (
-                                            <View style={styles.expandBar}>
-                                                <TouchableOpacity onPress={toggleAllSections} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                                                    <Text style={[FONTS.bodyStrong, { color: colors.primary, fontSize: 13 }]}>
-                                                        {allSectionsExpanded ? 'Collapse All' : 'Expand All'}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            </View>
-                                        )}
                                         {(() => {
                                             let currentSectionId: string | null = null;
                                             return items.map((item) => {
@@ -1013,20 +1000,20 @@ export const TaskDetailScreen = () => {
                                                         }}
                                                         style={[styles.sectionHeader, { borderBottomColor: colors.border }]}
                                                     >
-                                                        <View style={{ flex: 1, paddingRight: 8 }}>
-                                                            <Text style={[styles.sectionHeaderText, { color: colors.primary }]}>{item.label}</Text>
-                                                            {isFillOnlyChecklist && (
-                                                                <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                                                        <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
+                                                            {item.label}
+                                                        </Text>
+                                                        {isFillOnlyChecklist && (
+                                                            <View style={styles.sectionHeaderMeta}>
+                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
                                                                     ({taskCount} {taskCount === 1 ? 'task' : 'tasks'})
                                                                 </Text>
-                                                            )}
-                                                        </View>
-                                                        {isFillOnlyChecklist && (
-                                                            <Ionicons
-                                                                name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                                                                size={18}
-                                                                color={colors.textSecondary}
-                                                            />
+                                                                <Ionicons
+                                                                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                                                    size={18}
+                                                                    color={colors.textSecondary}
+                                                                />
+                                                            </View>
                                                         )}
                                                     </TouchableOpacity>
                                                 );
@@ -1046,7 +1033,7 @@ export const TaskDetailScreen = () => {
                                             }
 
                                             const isNA = item.type === 'not_applicable' || item.isNotApplicable;
-                                            const hideStepIcon = isFillOnlyChecklist && (Boolean(item.isReadOnly) || item.type === 'none');
+                                            const hideStepIcon = isFillOnlyChecklist;
                                             return (
                                                 <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: openMenuId === item.id ? 100 : 1, opacity: isNA ? 0.6 : 1 }]}>
                                             <View style={[styles.stepHeader, { zIndex: openMenuId === item.id ? 100 : 1 }]}>
@@ -2757,12 +2744,11 @@ const styles = StyleSheet.create({
         fontSize: 13,
         letterSpacing: 0.2,
     },
-    expandBar: {
+    sectionHeaderMeta: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
-        paddingHorizontal: 4,
-        paddingVertical: 4,
-        marginBottom: 4,
+        alignItems: 'center',
+        gap: 6,
+        flexShrink: 0,
     },
     instructionText: {
         ...FONTS.body,
