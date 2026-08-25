@@ -92,7 +92,7 @@ export type AssetVisionDetail = {
 export type ChecklistTemplateItem = {
     id: string;
     label: string;
-    type: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email' | 'section_header';
+    type: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email' | 'section_header' | 'none';
     dataType?: string;
     required: boolean;
     options?: string[];
@@ -227,128 +227,122 @@ export const CHECKLIST_TEMPLATE: ChecklistTemplateItem[] = [
     },
 ];
 
-const vcRadio = (id: string, label: string): ChecklistTemplateItem => ({ id, label, type: 'radio', required: true, options: ['Yes', 'No'] });
-const remarksRow = (id: string, vcId: string, content: string): ChecklistTemplateItem => ({
+const instructionLabel = (content: string) => {
+    const trimmed = content.trim();
+    return /^instruction:/i.test(trimmed) ? trimmed : `Instruction: ${trimmed}`;
+};
+
+const instructionRow = (id: string, content: string): ChecklistTemplateItem => ({
     id,
-    label: 'Remarks',
-    type: 'textarea',
+    label: instructionLabel(content),
+    type: 'none',
+    dataType: 'None',
     required: false,
-    showWhenFieldId: vcId,
-    showWhenEquals: 'Yes',
-    defaultValue: content,
     isReadOnly: true,
 });
+
+const yesNoRadio = (id: string, label: string, showWhenFieldId?: string): ChecklistTemplateItem => ({
+    id,
+    label,
+    type: 'radio',
+    required: true,
+    options: ['Yes', 'No'],
+    ...(showWhenFieldId ? { showWhenFieldId, showWhenEquals: 'Yes' } : {}),
+});
+
+const evidenceRow = (id: string, label: string, showWhenFieldId: string): ChecklistTemplateItem => ({
+    id,
+    label,
+    type: 'media',
+    dataType: 'Media',
+    required: true,
+    showWhenFieldId,
+    showWhenEquals: 'Yes',
+});
+
 const section = (id: string, label: string): ChecklistTemplateItem => ({ id, label, type: 'section_header', required: false });
 
+const pmChecklist = (
+    sno: string,
+    title: string,
+    instruction: string,
+    observation: string,
+    action?: string,
+    evidence?: string
+): ChecklistTemplateItem[] => {
+    const instructionId = `evpm-t${sno}-instruction`;
+    const observationId = `evpm-t${sno}-obs`;
+    const actionId = `evpm-t${sno}-action`;
+    const evidenceId = `evpm-t${sno}-evidence`;
+    const rows: ChecklistTemplateItem[] = [
+        section(`evpm-sec-${sno}`, title),
+        instructionRow(instructionId, instruction),
+    ];
+    const hasAction = Boolean(action);
+    const hasEvidence = Boolean(evidence);
+    if (hasAction) {
+        rows.push(yesNoRadio(observationId, observation));
+        rows.push(yesNoRadio(actionId, action as string, observationId));
+        if (hasEvidence) rows.push(evidenceRow(evidenceId, evidence as string, actionId));
+    } else {
+        rows.push(yesNoRadio(observationId, observation));
+        if (hasEvidence) rows.push(evidenceRow(evidenceId, evidence as string, observationId));
+    }
+    return rows;
+};
+
 export const PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST: ChecklistTemplateItem[] = [
-    // ── Section 1 ──────────────────────────────────────────────────
-    section('evpm-sec-1', "Electrical: LT/Main DB Panel (Public Charging)"),
-    vcRadio("evpm-t1-vc", "Check cables in the cable alley for cuts or discoloration."),
-    remarksRow("evpm-t1-rem", "evpm-t1-vc", "If cuts or discoloration is found, replace it."),
-    vcRadio("evpm-t2-vc", "Ensure all dummy holes in the cable alley are properly sealed."),
-    remarksRow("evpm-t2-rem", "evpm-t2-vc", "seal if open"),
-    vcRadio("evpm-t3-vc", "Verify surge protection device functionality and look for warning indicators."),
-    remarksRow("evpm-t3-rem", "evpm-t3-vc", "check with warning indicators"),
-    vcRadio("evpm-t4-vc", "Confirm the absence of loose or temporary connections."),
-    remarksRow("evpm-t4-rem", "evpm-t4-vc", "check for burns"),
-    vcRadio("evpm-t5-vc", "Ensure phase indication lamps are operational."),
-    vcRadio("evpm-t6-vc", "Verify the multi-functional meter displays accurate readings."),
-    remarksRow("evpm-t6-rem", "evpm-t6-vc", "verify with multimeter"),
-    vcRadio("evpm-t7-vc", "Confirm correct installation of insulating shrouds."),
-    remarksRow("evpm-t7-rem", "evpm-t7-vc", "install if missing"),
-    vcRadio("evpm-t8-vc", "Check for signs of rodent presence near the panel."),
-    vcRadio("evpm-t9-vc", "Ensure the internal area is free of dust and debris."),
-    remarksRow("evpm-t9-rem", "evpm-t9-vc", "To be cleaned using blower when required"),
-    vcRadio("evpm-t10-vc", "Inspect surroundings for signs of water accumulation."),
-    remarksRow("evpm-t10-rem", "evpm-t10-vc", "check for water marks, click picture; issue to be resolved from source"),
-    vcRadio("evpm-t11-vc", "Verify IS15652 compliance and ensure the insulation mat is undamaged."),
-    remarksRow("evpm-t11-rem", "evpm-t11-vc", "Replace if damaged or stolen"),
-    vcRadio("evpm-t13-vc", "Ensure cable glands are securely fitted, correctly sized, and free of gaps."),
-    remarksRow("evpm-t13-rem", "evpm-t13-vc", "tighten if loose; replace if damaged"),
-    vcRadio("evpm-t14-vc", "Confirm the single line diagram (SLD) is displayed inside the panel door. (Single line diagram)"),
-    remarksRow("evpm-t14-rem", "evpm-t14-vc", "if no, paste the diagram"),
-    vcRadio("evpm-t15-vc", "Inspect terminal blocks and cable terminations for overheating or damage."),
-    vcRadio("evpm-t16-vc", "Ensure the power distribution board (PDB) is clean internally and externally. (Power distribution board)"),
-    remarksRow("evpm-t16-rem", "evpm-t16-vc", "Clean using blower"),
-    vcRadio("evpm-t17-vc", "Measure neutral-to-earth voltage and verify earth integrity."),
-    remarksRow("evpm-t17-rem", "evpm-t17-vc", "Check using voltmeter or multimeter, write reading"),
-    vcRadio("evpm-t18-vc", "Record power factor, current, voltage, KW, KWH, and demand from the MFM (Multifunction meter)"),
-    remarksRow("evpm-t18-rem", "evpm-t18-vc", "Record reading"),
-    vcRadio("evpm-t19-vc", "No MCCB is in bypassed condition"),
-    remarksRow("evpm-t19-rem", "evpm-t19-vc", "Check with switching off MCCB"),
-    vcRadio("evpm-t20-vc", "ELR is functioning proper way ( Yes/No)"),
-    remarksRow("evpm-t20-rem", "evpm-t20-vc", "Check with test button"),
-    vcRadio("evpm-t21-vc", "Door is in closed condition and locked"),
-    remarksRow("evpm-t21-rem", "evpm-t21-vc", "no gaps, damage to be checked; report if found."),
-    // ── Section 2 ──────────────────────────────────────────────────
-    section('evpm-sec-2', "Electrical: Illumination Lights in Charger Locations"),
-    vcRadio("evpm-t22-vc", "All Lights are glowing (no insects trapped inside)"),
-    remarksRow("evpm-t22-rem", "evpm-t22-vc", "Check by turning lights on; clean and remove insects"),
-    vcRadio("evpm-t23-vc", "Light fixtures are firmly fixed & not hanging"),
-    remarksRow("evpm-t23-rem", "evpm-t23-vc", "No light should be hanging or have loose fixture"),
-    // ── Section 3 ──────────────────────────────────────────────────
-    section('evpm-sec-3', "Electrical: Earth Pits & Earth Grid"),
-    vcRadio("evpm-t24-vc", "Earth pits are marked & are visible"),
-    remarksRow("evpm-t24-rem", "evpm-t24-vc", "Clean the pit cover if marking is not visible; mark using paint/marker if required"),
-    // ── Section 4 ──────────────────────────────────────────────────
-    section('evpm-sec-4', "Electrical: CCTV Camera"),
-    vcRadio("evpm-t25-vc", "All CCTV cameras are functional as per the monitor and record non working cameras"),
-    remarksRow("evpm-t25-rem", "evpm-t25-vc", "Check for any obstruction of view, dirt on lens etc (check for on light if available)"),
-    // ── Section 5 ──────────────────────────────────────────────────
-    section('evpm-sec-5', "Charger Cabinet: EV Chargers (AC & DC) (Only Look, Listen & Feel Checks)-  Record charger id wherever required"),
-    vcRadio("evpm-t26-vc", "Abnormal noise during operation noticed."),
-    vcRadio("evpm-t27-vc", "All lights in the charger vicinity are glowing"),
-    remarksRow("evpm-t27-rem", "evpm-t27-vc", "clean if required"),
-    vcRadio("evpm-t28-vc", "Damage observed on Supporting accessories (Guns, connector etc)"),
-    remarksRow("evpm-t28-rem", "evpm-t28-vc", "if yes; inform Ops team"),
-    vcRadio("evpm-t29-vc", "Doors are locked & working and no damage observed"),
-    remarksRow("evpm-t29-rem", "evpm-t29-vc", "Also check error log for door open. Door locked sensor should not be bypassed"),
-    vcRadio("evpm-t30-vc", "Foundation bolts are tight"),
-    remarksRow("evpm-t30-rem", "evpm-t30-vc", "All bolts as per charger diagram should be tight; tighten if loose"),
-    vcRadio("evpm-t31-vc", "Emergency Push Button is working"),
-    remarksRow("evpm-t31-rem", "evpm-t31-vc", "Check and then release the button"),
-    // ── Section 6 ──────────────────────────────────────────────────
-    section('evpm-sec-6', "Housekeeping at  Charger Surrounding, Parking"),
-    vcRadio("evpm-t32-vc", "All area is free of scrap/Flammable/unwanted materials"),
-    vcRadio("evpm-t33-vc", "Signs of Paan Stains/ Cigarette / trash"),
-    vcRadio("evpm-t34-vc", "Water leakage and Stagnation observed in any area"),
-    vcRadio("evpm-t35-vc", "Entire area is neat & clean"),
-    remarksRow("evpm-t35-rem", "evpm-t35-vc", "Charger, wet cleaning of parking bay, canopy, pedestal, gun, cable, pdb, lights"),
-    vcRadio("evpm-t36-vc", "Bird nest visible anywhere in the premises and traces of bird stay"),
-    remarksRow("evpm-t36-rem", "evpm-t36-vc", "Remove if found"),
-    // ── Section 7 ──────────────────────────────────────────────────
-    section('evpm-sec-7', "Health Safety & Environment-General Issues - Safety Equipments/ Environments"),
-    vcRadio("evpm-t37-vc", "All fire extinguishers are at the designated place as per SOP"),
-    remarksRow("evpm-t37-rem", "evpm-t37-vc", "Clean the pipe"),
-    vcRadio("evpm-t38-vc", "Fire extinguisher are in charged condition and ready for use with Validity /Test certificates"),
-    remarksRow("evpm-t38-rem", "evpm-t38-vc", "check validy date is visible; re-write if fading"),
-    // ── Section 8 ──────────────────────────────────────────────────
-    section('evpm-sec-8', "Civil Structures & Facilities - Charger Location"),
-    vcRadio("evpm-t39-vc", "Parking Slot free from pothole and damage"),
-    remarksRow("evpm-t39-rem", "evpm-t39-vc", "if found, inform and take picture"),
-    vcRadio("evpm-t40-vc", "Canopy Provided is firmly fixed on the column, no loose bolts"),
-    remarksRow("evpm-t40-rem", "evpm-t40-vc", "Gentle push on the Canopy structure"),
-    vcRadio("evpm-t41-vc", "Bollard foundation is in good condition and is firmly fixed"),
-    remarksRow("evpm-t41-rem", "evpm-t41-vc", "check bolting and tighten if loose"),
-    vcRadio("evpm-t42-vc", "Charger is firmly bolted and does not wobble"),
-    remarksRow("evpm-t42-rem", "evpm-t42-vc", "Gentle push on the charger"),
-    vcRadio("evpm-t43-vc", "Wheel Stopper is firmly fixed and not damaged"),
-    remarksRow("evpm-t43-rem", "evpm-t43-vc", "check bolting and tighten if loose"),
-    // ── Section 9 ──────────────────────────────────────────────────
-    section('evpm-sec-9', "Mechanical (Structures/Facilities) - Charger Location & Panel Area"),
-    vcRadio("evpm-t44-vc", "Canopy Structure is rust free"),
-    remarksRow("evpm-t44-rem", "evpm-t44-vc", "Check all bolts and infra"),
-    vcRadio("evpm-t45-vc", "PDB Structure is rust free"),
-    remarksRow("evpm-t45-rem", "evpm-t45-vc", "Check PDB and stand"),
-    // ── Section 10 ──────────────────────────────────────────────────
-    section('evpm-sec-10', "Signage"),
-    vcRadio("evpm-t46-vc", "Signages are intact,not damaged & fixed properly"),
-    vcRadio("evpm-t47-vc", "No Fading of colour on Signages observed"),
-    vcRadio("evpm-t48-vc", "Charger Usage , DOs & DONTs, Customer Care number is available"),
+    ...pmChecklist("1", "Cable Inspection", "Inspect the cables in the cable alley for cuts or discoloration.", "Was the visual check completed?", "Were cuts or discoloration found?", "Upload 3 photos of the cables after replacement."),
+    ...pmChecklist("2", "Dummy Hole Sealing", "Ensure that all dummy holes in the cable alley are properly sealed.", "Was the visual check completed?", "Were any dummy holes found open?", "Upload 3 photos of the dummy holes after sealing."),
+    ...pmChecklist("3", "SPD Functionality Verification", "Verify the surge protection device functionality and check for warning indicators.", "Was the visual check completed?", "Were any warning indicators observed?", "Upload 3 photos of the SPD and its warning indicator status."),
+    ...pmChecklist("4", "Connection Inspection", "Confirm that there are no loose or temporary connections.", "Was the visual check completed?", "Were any burns found?"),
+    ...pmChecklist("5", "Phase Lamp Verification", "Ensure that the phase indication lamps are operational.", "Was the visual check completed?"),
+    ...pmChecklist("6", "MFM Reading Verification", "Verify that the multi-functional meter displays accurate readings.", "Was the visual check completed?", "Were the readings verified with a multimeter?"),
+    ...pmChecklist("7", "Insulating Shroud Inspection", "Confirm that the insulating shrouds are correctly installed.", "Was the visual check completed?", "Were any insulating shrouds found missing?"),
+    ...pmChecklist("8", "Rodent Inspection", "Check for signs of rodent presence near the panel.", "Was the visual check completed?"),
+    ...pmChecklist("9", "Panel Cleaning", "Ensure that the internal area is free of dust and debris.", "Was the visual check completed?", "Was cleaning required using a blower?", "Upload 3 photos of the panel after cleaning."),
+    ...pmChecklist("10", "Water Accumulation Inspection", "Inspect the surroundings for signs of water accumulation.", "Was the visual check completed?", "Were any water marks found?", "Upload 3 photos of the water accumulation or water marks found."),
+    ...pmChecklist("11", "Insulation Mat Inspection", "Verify IS15652 compliance and ensure that the insulation mat is undamaged.", "Was the visual check completed?", "Was the insulation mat found damaged or missing?", "Upload 3 photos of the insulation mat after replacement."),
+    ...pmChecklist("13", "Cable Gland Inspection", "Ensure that the cable glands are securely fitted, correctly sized, and free of gaps.", "Was the visual check completed?", "Were any cable glands found loose or damaged?"),
+    ...pmChecklist("14", "SLD Display Verification", "Confirm that the single line diagram (SLD) is displayed inside the panel door.", "Was the visual check completed?", "Was the single line diagram missing?"),
+    ...pmChecklist("15", "Cable Termination Inspection", "Inspect the terminal blocks and cable terminations for overheating or damage.", "Was the visual check completed?"),
+    ...pmChecklist("16", "PDB Cleaning", "Ensure that the power distribution board (PDB) is clean internally and externally.", "Was the visual check completed?", "Was cleaning required using a blower?", "Upload 3 photos of the PDB after cleaning."),
+    ...pmChecklist("17", "Neutral-Earth Voltage Measurement", "Measure the neutral-to-earth voltage and verify earth integrity.", "Was the visual check completed?", "Was the neutral-to-earth voltage checked using a voltmeter or multimeter, and was the reading recorded?"),
+    ...pmChecklist("18", "MFM Parameter Recording", "Record the power factor, current, voltage, KW, KWH, and demand from the MFM.", "Was the visual check completed?", "Was the MFM reading recorded?"),
+    ...pmChecklist("19", "MCCB Bypass Verification", "Ensure that no MCCB is in a bypassed condition.", "Was the visual check completed?", "Was the MCCB checked by switching it off?"),
+    ...pmChecklist("20", "ELR Function Test", "Verify that the ELR is functioning properly.", "Was the visual check completed?", "Was the ELR checked using the test button?"),
+    ...pmChecklist("21", "Panel Door Inspection", "Ensure that the door is closed and locked.", "Was the visual check completed?", "Were any gaps or damage found?"),
+    ...pmChecklist("22", "Light Function Verification", "Verify that all lights are glowing and that no insects are trapped inside.", "Was the visual check completed?", "Were the lights checked by turning them on, and were any insects found?", "Upload 3 photos of the lights after cleaning and removal of insects."),
+    ...pmChecklist("23", "Light Fixture Inspection", "Ensure that the light fixtures are firmly fixed and not hanging.", "Was the visual check completed?", "Was any light fixture found loose or hanging?", "Upload 3 photos of the light fixtures after fixing."),
+    ...pmChecklist("24", "Earth Pit Marking Inspection", "Ensure that the earth pits are marked and visible.", "Was the visual check completed?", "Was the earth-pit marking not visible?", "Upload 3 photos of the earth pit markings after cleaning or marking."),
+    ...pmChecklist("25", "CCTV Inspection", "Verify that all CCTV cameras are functional as per the monitor and record any non-working cameras.", "Was the visual check completed?", "Was any obstruction, dirt, or other issue found?"),
+    ...pmChecklist("26", "Abnormal Noise Inspection", "Check for any abnormal noise during operation.", "Was the visual check completed?"),
+    ...pmChecklist("27", "Charger-Vicinity Light Inspection", "Verify that all lights in the charger vicinity are glowing.", "Was the visual check completed?", "Was cleaning required?", "Upload 3 photos of the charger-vicinity lights after cleaning."),
+    ...pmChecklist("28", "Charging Accessory Inspection", "Check the supporting accessories, including guns and connectors, for damage.", "Was the visual check completed?", "Was any damage found on the supporting accessories?", "Upload 3 photos of the damaged supporting accessories."),
+    ...pmChecklist("29", "Door Function Verification", "Ensure that the doors are locked and working and that no damage is observed.", "Was the visual check completed?", "Was any door-open issue found in the error log, or was the door-lock sensor bypassed?"),
+    ...pmChecklist("30", "Foundation Bolt Inspection", "Ensure that the foundation bolts are tight.", "Was the visual check completed?", "Were any foundation bolts found loose?"),
+    ...pmChecklist("31", "Emergency Push Button Test", "Verify that the emergency push button is working.", "Was the visual check completed?", "Was the emergency push button checked and released?"),
+    ...pmChecklist("32", "Area Housekeeping", "Ensure that the area is free of scrap, flammable, and unwanted materials.", "Was the visual check completed?", undefined, "Upload 3 photos of the area after housekeeping."),
+    ...pmChecklist("33", "Paan, Cigarette and Trash Removal", "Check for signs of paan stains, cigarette waste, and trash.", "Was the visual check completed?", undefined, "Upload 3 photos of the area after removal of paan stains, cigarette waste, and trash."),
+    ...pmChecklist("34", "Water Leakage Inspection", "Check for water leakage and stagnation in any area.", "Was the visual check completed?", undefined, "Upload 3 photos of the water leakage or stagnation found."),
+    ...pmChecklist("35", "Overall Area Cleaning", "Ensure that the entire area is neat and clean.", "Was the visual check completed?", "Was cleaning required for the charger, parking bay, canopy, pedestal, gun, cable, PDB, or lights?", "Upload 3 photos of the area after cleaning."),
+    ...pmChecklist("36", "Bird Nest Removal", "Check for bird nests or traces of bird activity anywhere in the premises.", "Was the visual check completed?", "Was any bird nest found?", "Upload 3 photos of the bird nest or affected area after removal."),
+    ...pmChecklist("37", "Fire Extinguisher Location Verification", "Ensure that all fire extinguishers are at the designated place as per the SOP.", "Was the visual check completed?", "Was the fire-extinguisher pipe found to require cleaning?", "Upload 3 photos of the fire extinguisher at its designated location."),
+    ...pmChecklist("38", "Fire Extinguisher Validity Verification", "Verify that the fire extinguishers are charged, ready for use, and have valid test certificates.", "Was the visual check completed?", "Was the validity date found unclear or faded?", "Upload 3 photos of the fire extinguisher showing its validity or test marking."),
+    ...pmChecklist("39", "Parking Slot Inspection", "Ensure that the parking slot is free from potholes and damage.", "Was the visual check completed?", "Was any pothole or damage found?", "Upload 3 photos of the damaged parking slot."),
+    ...pmChecklist("40", "Canopy Fixing Inspection", "Ensure that the canopy is firmly fixed to the column and that there are no loose bolts.", "Was the visual check completed?", "Was any movement found when the canopy structure was gently pushed?"),
+    ...pmChecklist("41", "Bollard Foundation Inspection", "Ensure that the bollard foundation is in good condition and firmly fixed.", "Was the visual check completed?", "Were any bolts found loose?", "Upload 3 photos of the bollard after tightening or repair."),
+    ...pmChecklist("42", "Charger Fixing Inspection", "Ensure that the charger is firmly bolted and does not wobble.", "Was the visual check completed?", "Was any movement found when the charger was gently pushed?"),
+    ...pmChecklist("43", "Wheel Stopper Inspection", "Ensure that the wheel stopper is firmly fixed and not damaged.", "Was the visual check completed?", "Were any wheel-stopper bolts found loose?", "Upload 3 photos of the wheel stopper after tightening or replacement."),
+    ...pmChecklist("44", "Canopy Rust Inspection", "Ensure that the canopy structure is rust free.", "Was the visual check completed?", "Were any issues found with the canopy structure or bolts?", "Upload 3 photos of the canopy after rust treatment."),
+    ...pmChecklist("45", "PDB Rust Inspection", "Ensure that the PDB structure is rust free.", "Was the visual check completed?", "Were any issues found with the PDB or stand?", "Upload 3 photos of the PDB after rust treatment."),
+    ...pmChecklist("46", "Signage Inspection", "Ensure that the signages are intact, not damaged, and properly fixed.", "Was the visual check completed?", undefined, "Upload 3 photos of the signages after cleaning."),
+    ...pmChecklist("47", "Signage Fading Inspection", "Check that there is no fading of colour on the signages.", "Was the visual check completed?", undefined, "Upload 3 photos of the signages after replacement."),
+    ...pmChecklist("48", "Charger Information Signage Verification", "Ensure that the charger usage instructions, DOs and DON'Ts, and customer care number are available.", "Was the visual check completed?", "Was cleaning or replacement required?", "Upload 3 photos of the charger information signage after cleaning or replacement."),
 ];
 
 export const PREVENTIVE_EV_INFRA_QUESTION_COUNT = PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST.filter(
-    (item) => item.type === 'radio'
+    (item) => item.type !== 'section_header' && !item.isReadOnly
 ).length;
 
 export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
@@ -398,7 +392,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         assetIds: ['CPID-KN-01', 'CPID-KN-02'],
         checklistItems: PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST,
         offlineReady: true,
-        notes: 'Preventive Maintenance for EV Infra. Complete all 10 checklist sections (47 visual checks).',
+        notes: 'Preventive Maintenance for EV Infra. Complete all 47 checklists (instruction, observation, action, evidence).',
         latitude: 18.5314,
         longitude: 73.8446,
         priority: 'High',
@@ -608,9 +602,9 @@ export let WORK_ORDERS: WorkOrder[] = [
         address: 'NH48 Service Lane, Panvel',
         type: 'Service',
         stage: 'Fault Check',
-        status: 'Working',
+        status: 'Assigned',
         dueWindow: 'Today, 13:00 - 16:00',
-        eta: 'Resume now',
+        eta: 'Starts in 20 min',
         distance: '1.6 km',
         checklistCompleted: 5,
         checklistTotal: 8,
@@ -624,6 +618,8 @@ export let WORK_ORDERS: WorkOrder[] = [
         longitude: 73.8456,
         priority: 'High',
         targetTime: Date.now() + 1 * 60 * 60 * 1000,
+        assignedBy: 'Andrea Meuschke',
+        approver: 'Marcus Aurelius',
     },
     {
         id: 'wo-103',

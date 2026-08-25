@@ -43,12 +43,14 @@ export const OrderCard = ({
     hideStationChip?: boolean;
 }) => {
     const [cardRequested, setCardRequested] = useState(item.status === 'Requested' || item.isRequested);
+    const [cardStatus, setCardStatus] = useState(item.status);
 
     const handleSendRequestClick = (e: any) => {
         e.stopPropagation();
         item.status = 'Requested';
         item.isRequested = true;
         setCardRequested(true);
+        setCardStatus('Requested');
         Alert.alert(
             'Request Sent',
             `Preventive maintenance request for "${item.title}" at ${item.siteName} has been sent to Central Team.`,
@@ -56,20 +58,64 @@ export const OrderCard = ({
         );
     };
 
-    const isPreventive = item.type === 'Preventive';
-    const isCurrentlyRequested = cardRequested || item.status === 'Requested' || item.isRequested;
+    const handleAcceptClick = (e: any) => {
+        e.stopPropagation();
+        item.status = 'Working';
+        setCardStatus('Working');
+        Alert.alert(
+            'Work Accepted',
+            `"${item.title}" has been accepted and moved to Working.`,
+            [{ text: 'OK', onPress: onOpen }]
+        );
+    };
 
-    const actionConfig = isPreventive
-        ? (isCurrentlyRequested
-            ? { secondaryLabel: 'Details', primaryLabel: 'Requested', isRequestedState: true }
-            : { secondaryLabel: 'Details', primaryLabel: 'Send Request', isSendRequest: true })
-        : (item.status === 'Unassigned' || item.status === 'Assigned')
-            ? { secondaryLabel: 'Forward', primaryLabel: 'Accept Work' }
-            : item.status === 'Under Review'
-                ? { secondaryLabel: 'Reject', primaryLabel: 'Review Work' }
-                : null;
+    const handleRejectClick = (e: any) => {
+        e.stopPropagation();
+        Alert.alert(
+            'Reject Work',
+            `Reject assigned work "${item.title}"?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Reject',
+                    style: 'destructive',
+                    onPress: () => {
+                        item.status = 'Unassigned';
+                        item.isRequested = false;
+                        setCardRequested(false);
+                        setCardStatus('Unassigned');
+                        Alert.alert('Rejected', `"${item.title}" has been rejected and moved to Unassigned.`);
+                    },
+                },
+            ]
+        );
+    };
+
+    const isPreventive = item.type === 'Preventive';
+    const isService = item.type === 'Service';
+    const isPreventiveOrService = isPreventive || isService;
+    const isCurrentlyRequested = cardRequested || cardStatus === 'Requested' || item.isRequested;
+
+    const actionConfig = (() => {
+        if (isPreventiveOrService && cardStatus === 'Assigned') {
+            return { secondaryLabel: 'Reject', primaryLabel: 'Accept', isAcceptReject: true as const };
+        }
+        if (isPreventive) {
+            return isCurrentlyRequested
+                ? { secondaryLabel: 'Details', primaryLabel: 'Requested', isRequestedState: true as const }
+                : { secondaryLabel: 'Details', primaryLabel: 'Send Request', isSendRequest: true as const };
+        }
+        if (cardStatus === 'Unassigned') {
+            return { secondaryLabel: 'Forward', primaryLabel: 'Accept Work' };
+        }
+        if (cardStatus === 'Under Review') {
+            return { secondaryLabel: 'Reject', primaryLabel: 'Review Work' };
+        }
+        return null;
+    })();
     const typeColors = getServiceTypeColors(item.type, isDark);
     const priorityColor = item.priority === 'High' ? colors.danger : item.priority === 'Medium' ? colors.secondary : colors.textSecondary;
+    const displayStatus = isCurrentlyRequested && isPreventive && cardStatus !== 'Assigned' ? 'Requested' : cardStatus;
 
     return (
         <TouchableOpacity
@@ -100,14 +146,14 @@ export const OrderCard = ({
                     <View style={[
                         styles.statusBadgeInline, 
                         { 
-                            backgroundColor: getStatusColor(isCurrentlyRequested ? 'Requested' : item.status, colors, isDark) + '15',
-                            borderColor: getStatusColor(isCurrentlyRequested ? 'Requested' : item.status, colors, isDark)
+                            backgroundColor: getStatusColor(displayStatus, colors, isDark) + '15',
+                            borderColor: getStatusColor(displayStatus, colors, isDark)
                         }
                     ]}>
                         <Text style={[
                             styles.statusBadgeTextInline, 
-                            { color: getStatusColor(isCurrentlyRequested ? 'Requested' : item.status, colors, isDark) }
-                        ]}>{isCurrentlyRequested ? 'Requested' : item.status}</Text>
+                            { color: getStatusColor(displayStatus, colors, isDark) }
+                        ]}>{displayStatus}</Text>
                     </View>
                     <Text style={[{ ...FONTS.caption, fontSize: 11, color: colors.danger }]}>
                         {new Date(item.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -165,10 +211,20 @@ export const OrderCard = ({
             {actionConfig ? (
                 <View style={styles.actionRow}>
                     <TouchableOpacity
-                        onPress={onOpen}
-                        style={[styles.actionButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                        onPress={actionConfig.isAcceptReject ? handleRejectClick : onOpen}
+                        style={[
+                            styles.actionButton,
+                            actionConfig.isAcceptReject
+                                ? { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger }
+                                : { backgroundColor: colors.surfaceHighlight, borderColor: colors.border },
+                        ]}
                     >
-                        <Text style={[styles.actionButtonText, { color: colors.text }]}>{actionConfig.secondaryLabel}</Text>
+                        <Text style={[
+                            styles.actionButtonText,
+                            { color: actionConfig.isAcceptReject ? colors.danger : colors.text },
+                        ]}>
+                            {actionConfig.secondaryLabel}
+                        </Text>
                     </TouchableOpacity>
                     {actionConfig.isSendRequest ? (
                         <TouchableOpacity
@@ -183,6 +239,14 @@ export const OrderCard = ({
                             <Ionicons name="checkmark-circle" size={14} color={isDark ? '#FFB74D' : '#E65100'} />
                             <Text style={[styles.primaryActionText, { color: isDark ? '#FFB74D' : '#E65100' }]}>{actionConfig.primaryLabel}</Text>
                         </View>
+                    ) : actionConfig.isAcceptReject ? (
+                        <TouchableOpacity
+                            onPress={handleAcceptClick}
+                            style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        >
+                            <Ionicons name="checkmark" size={14} color={colors.white} />
+                            <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
+                        </TouchableOpacity>
                     ) : (
                         <TouchableOpacity
                             onPress={onOpen}
