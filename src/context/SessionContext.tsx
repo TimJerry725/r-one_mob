@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState } from 'react';
 type SessionState = {
     displayName: string;
     email: string;
+    dutyStatus: 'working' | 'away';
 };
 
 type SessionContextType = SessionState & {
@@ -14,6 +15,7 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 const DEFAULT_SESSION: SessionState = {
     displayName: 'Technician',
     email: '',
+    dutyStatus: 'working',
 };
 
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

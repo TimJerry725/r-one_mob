@@ -12,14 +12,19 @@ import {
     Share,
     Alert,
     Switch,
+    Image,
+    Linking,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { getStatusColor } from '../styles/statusColors';
 import { useTheme } from '../context/ThemeContext';
+import { useSession } from '../context/SessionContext';
 import { ACTIVITY_LOG, CHECKLIST_TEMPLATE, ChecklistTemplateItem, getWorkOrderById } from '../data/fieldDemo';
+import { PM_DEMO_PHOTOS, getPmDemoPhotoSeed, resolvePmDemoPhotoSource } from '../data/pmDemoPhotos';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { PopoverDropdown } from '../components/PopoverDropdown';
 import { DATA_TYPES, getSelectorOptions } from '../data/createTaskOptions';
@@ -28,14 +33,14 @@ import { getServiceTypeColors } from '../styles/workTypeColors';
 type ChecklistStateItem = {
     id: string;
     label: string;
-    type: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email' | 'section_header' | 'none';
+    type: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email' | 'section_header' | 'checklist_header' | 'none';
     dataType?: string;
     required: boolean;
     options?: string[];
     value: any;
     isNa?: boolean;
     isNotApplicable?: boolean;
-    originalType?: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email' | 'section_header' | 'none';
+    originalType?: 'toggle' | 'text' | 'textarea' | 'photo' | 'number' | 'date' | 'not_applicable' | 'radio' | 'multiselect' | 'checkbox' | 'dropdown' | 'media' | 'remarks_response' | 'three_phase_voltage' | 'email' | 'section_header' | 'checklist_header' | 'none';
     showWhenFieldId?: string;
     showWhenEquals?: string;
     defaultValue?: string;
@@ -115,6 +120,14 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): any => {
     if (t.includes('dropdown') || t.includes('select')) {
         return item.options?.[0] ?? 'Pass';
     }
+    if (t.includes('media') || t.includes('photo') || t.includes('image')) {
+        if (item.options && item.options.some((option) => /certificate|document|SLD|diagram/i.test(option))) {
+            return (item.options.length > 1 ? item.options : ['evidence']).map((option) =>
+                `${(option || 'attachment').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`
+            );
+        }
+        return getPmDemoPhotoSeed(Math.max(item.options?.length || 0, 3)).values;
+    }
     switch (item.type) {
         case 'date':
             return new Date().toISOString().slice(0, 10);
@@ -124,15 +137,12 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): any => {
             return 'Checked and verified on site.';
         case 'photo':
         case 'media':
-            if (item.options && item.options.length > 1) {
-                const isDoc = item.options.some((option) => /certificate|document|SLD|diagram/i.test(option));
-                return item.options.map((option, index) =>
-                    isDoc
-                        ? `${(option || 'attachment').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`
-                        : `photo-${index + 1}.jpg`
+            if (item.options && item.options.some((option) => /certificate|document|SLD|diagram/i.test(option))) {
+                return (item.options.length > 1 ? item.options : ['evidence']).map((option) =>
+                    `${(option || 'attachment').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`
                 );
             }
-            return 1;
+            return getPmDemoPhotoSeed(Math.max(item.options?.length || 0, 3)).values;
         case 'toggle':
             return 'Completed';
         case 'number':
@@ -160,7 +170,7 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
         } else if (item.defaultValue) {
             initialVal = item.defaultValue;
         } else if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
-            initialVal = 0;
+            initialVal = getPmDemoPhotoSeed(3).values;
         } else if (itemType === 'remarks_response') {
             initialVal = [['', '']];
         } else if (itemType === 'three_phase_voltage' || dataType === '3 phase voltage') {
@@ -175,8 +185,17 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
             ...item,
             type: rawType,
             dataType: item.dataType || getDataTypeLabel({ ...item, type: rawType, value: initialVal }),
-            options: isChoiceNone && (!item.options || item.options.length === 0) ? ['Yes', 'No'] : item.options,
-            value: rawType === 'section_header' ? '' : initialVal,
+            options: (() => {
+                if (isChoiceNone && (!item.options || item.options.length === 0)) return ['Yes', 'No'];
+                if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
+                    const seed = getPmDemoPhotoSeed(Math.max(item.options?.length || 0, 3));
+                    const existing = item.options || [];
+                    if (existing.length > 1 && existing.some((o) => String(o || '').trim())) return existing;
+                    return seed.options;
+                }
+                return item.options;
+            })(),
+            value: rawType === 'section_header' || rawType === 'checklist_header' ? '' : initialVal,
             showWhenFieldId: item.showWhenFieldId,
             showWhenEquals: item.showWhenEquals,
             defaultValue: item.defaultValue,
@@ -185,7 +204,7 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
     });
 
 const isComplete = (item: ChecklistStateItem) => {
-    if (item.type === 'section_header') return true;
+    if (item.type === 'section_header' || item.type === 'checklist_header') return true;
     if (item.isReadOnly || item.type === 'none') return true;
     if (item.isNa) return true;
     const itemType = (item.type || '').toLowerCase();
@@ -214,6 +233,21 @@ const isComplete = (item: ChecklistStateItem) => {
         return String(item.value).trim().length > 0;
     }
     return String(item.value ?? '').trim().length > 0;
+};
+
+const SITE_RADIUS_METERS = 250;
+
+const distanceMeters = (
+    from: { latitude: number; longitude: number },
+    to: { latitude: number; longitude: number }
+) => {
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const dLat = toRad(to.latitude - from.latitude);
+    const dLon = toRad(to.longitude - from.longitude);
+    const lat1 = toRad(from.latitude);
+    const lat2 = toRad(to.latitude);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(a)));
 };
 
 const getChecklistPlaceholder = (item: ChecklistStateItem) => {
@@ -358,11 +392,15 @@ export const TaskDetailScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const { colors, isDark } = useTheme();
+    const { dutyStatus } = useSession();
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const [workStatus, setWorkStatus] = useState(workOrder.status);
+    const [isNearSite, setIsNearSite] = useState<boolean | null>(null);
     const isUnderReview = workStatus === 'Under Review';
-    const isGeoFenceWarningVisible = workStatus === 'Working' || isUnderReview;
+    const isOffSite = isNearSite === false;
+    const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite;
+    const isGeoFenceWarningVisible = isOffSite;
     const isPreventiveOrService = ['preventive', 'service'].includes((workOrder.type || '').toLowerCase());
     const isAssignedPending = isPreventiveOrService && workStatus === 'Assigned';
     const isFillOnlyChecklist = isPreventiveOrService;
@@ -376,12 +414,18 @@ export const TaskDetailScreen = () => {
     const [expandedSectionIds, setExpandedSectionIds] = useState<Set<string>>(
         () => new Set(sectionIds.slice(0, 1))
     );
+    const hasChecklistHeaders = items.some((item) => item.type === 'checklist_header');
     const taskNumbers = useMemo(() => {
         const numbers = new Map<string, string>();
         let n = 0;
         items.forEach((item) => {
             if (item.type === 'section_header') {
                 n = 0;
+                return;
+            }
+            if (hasChecklistHeaders) {
+                if (item.type !== 'checklist_header') return;
+            } else if (item.type === 'checklist_header') {
                 return;
             }
             if (item.showWhenFieldId && item.showWhenEquals) {
@@ -393,7 +437,7 @@ export const TaskDetailScreen = () => {
             numbers.set(item.id, String(n));
         });
         return numbers;
-    }, [items]);
+    }, [items, hasChecklistHeaders]);
     const sectionTaskCounts = useMemo(() => {
         const counts = new Map<string, number>();
         let current: string | null = null;
@@ -403,15 +447,82 @@ export const TaskDetailScreen = () => {
                 counts.set(item.id, 0);
                 return;
             }
-            if (item.showWhenFieldId && item.showWhenEquals) {
-                const parentItem = items.find((i) => i.id === item.showWhenFieldId);
-                const parentValue = Array.isArray(parentItem?.value) ? parentItem?.value[0] : parentItem?.value;
-                if (parentValue !== item.showWhenEquals) return;
+            if (hasChecklistHeaders) {
+                if (item.type !== 'checklist_header') return;
+            } else {
+                if (item.type === 'checklist_header') return;
+                if (item.showWhenFieldId && item.showWhenEquals) {
+                    const parentItem = items.find((i) => i.id === item.showWhenFieldId);
+                    const parentValue = Array.isArray(parentItem?.value) ? parentItem?.value[0] : parentItem?.value;
+                    if (parentValue !== item.showWhenEquals) return;
+                }
             }
             if (current) counts.set(current, (counts.get(current) || 0) + 1);
         });
         return counts;
-    }, [items]);
+    }, [items, hasChecklistHeaders]);
+
+    type NestedChecklistBlock = { checklist: ChecklistStateItem; tasks: ChecklistStateItem[] };
+    type NestedSectionBlock = { section: ChecklistStateItem; checklists: NestedChecklistBlock[]; looseTasks: ChecklistStateItem[] };
+
+    const nestedFillTree = useMemo((): NestedSectionBlock[] => {
+        if (!hasChecklistHeaders) return [];
+        const tree: NestedSectionBlock[] = [];
+        let currentSection: NestedSectionBlock | null = null;
+        let currentChecklist: NestedChecklistBlock | null = null;
+
+        const pushChecklist = () => {
+            if (currentSection && currentChecklist) {
+                currentSection.checklists.push(currentChecklist);
+                currentChecklist = null;
+            }
+        };
+        const pushSection = () => {
+            pushChecklist();
+            if (currentSection) {
+                tree.push(currentSection);
+                currentSection = null;
+            }
+        };
+
+        items.forEach((item) => {
+            if (item.type === 'section_header') {
+                pushSection();
+                currentSection = { section: item, checklists: [], looseTasks: [] };
+                return;
+            }
+            if (item.type === 'checklist_header') {
+                pushChecklist();
+                currentChecklist = { checklist: item, tasks: [] };
+                if (!currentSection) {
+                    currentSection = {
+                        section: { id: '__root__', label: 'Tasks', type: 'section_header', required: false, value: '' },
+                        checklists: [],
+                        looseTasks: [],
+                    };
+                }
+                return;
+            }
+            if (currentChecklist) {
+                currentChecklist.tasks.push(item);
+            } else if (currentSection) {
+                currentSection.looseTasks.push(item);
+            }
+        });
+        pushSection();
+        return tree;
+    }, [items, hasChecklistHeaders]);
+
+    const checklistTaskCounts = useMemo(() => {
+        const counts = new Map<string, number>();
+        nestedFillTree.forEach((section) => {
+            section.checklists.forEach((block) => {
+                counts.set(block.checklist.id, block.tasks.length);
+            });
+        });
+        return counts;
+    }, [nestedFillTree]);
+
     const toggleSectionExpanded = (sectionId: string) => {
         setExpandedSectionIds((prev) => {
             const isOpen = prev.has(sectionId);
@@ -574,6 +685,37 @@ export const TaskDetailScreen = () => {
     const scrollViewRef = useRef<ScrollView>(null);
 
     useEffect(() => {
+        let cancelled = false;
+        const checkLocation = async () => {
+            const siteLat = Number(workOrder.latitude);
+            const siteLon = Number(workOrder.longitude);
+            if (!Number.isFinite(siteLat) || !Number.isFinite(siteLon) || (Math.abs(siteLat) < 0.01 && Math.abs(siteLon) < 0.01)) {
+                if (!cancelled) setIsNearSite(true);
+                return;
+            }
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                    if (!cancelled) setIsNearSite(false);
+                    return;
+                }
+                const current = await Location.getCurrentPositionAsync({});
+                const meters = distanceMeters(
+                    { latitude: current.coords.latitude, longitude: current.coords.longitude },
+                    { latitude: siteLat, longitude: siteLon }
+                );
+                if (!cancelled) setIsNearSite(meters <= SITE_RADIUS_METERS);
+            } catch {
+                if (!cancelled) setIsNearSite(false);
+            }
+        };
+        checkLocation();
+        return () => {
+            cancelled = true;
+        };
+    }, [workOrder.id, workOrder.latitude, workOrder.longitude]);
+
+    useEffect(() => {
         if (isUnderReview) {
             const timer = setTimeout(() => {
                 scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -589,9 +731,9 @@ export const TaskDetailScreen = () => {
         return parentValue === item.showWhenEquals;
     };
     const visibleItems = items.filter(isItemVisible);
-    const requiredItems = visibleItems.filter((item) => item.required && item.type !== 'section_header');
+    const requiredItems = visibleItems.filter((item) => item.required && item.type !== 'section_header' && item.type !== 'checklist_header');
     const completedRequired = requiredItems.filter(isComplete).length;
-    const allCompleted = visibleItems.every((item) => item.type === 'section_header' || isComplete(item));
+    const allCompleted = visibleItems.every((item) => item.type === 'section_header' || item.type === 'checklist_header' || isComplete(item));
     const readyToComplete = items.length > 0 && completedRequired === requiredItems.length;
     const completeActionLabel = isUnderReview ? 'Review Work' : 'Mark Complete';
     const filteredActivities = activities.filter((item) => {
@@ -605,6 +747,10 @@ export const TaskDetailScreen = () => {
     });
 
     const handleAddComment = () => {
+        if (isOffSite) {
+            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
         if (!newComment.trim()) return;
         const newActivity = {
             id: Date.now().toString(),
@@ -637,10 +783,15 @@ export const TaskDetailScreen = () => {
     };
 
     const updateItem = (id: string, value: string | number | string[] | string[][]) => {
+        if (isOffSite) return;
         setItems((current) => current.map((item) => (item.id === id ? { ...item, value } : item)));
     };
 
     const handleCompleteAction = () => {
+        if (isOffSite) {
+            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
         if (!allCompleted) {
             setConfirmationModalVisible(true);
         } else {
@@ -677,10 +828,18 @@ export const TaskDetailScreen = () => {
     };
 
     const handleApproveWork = () => {
+        if (isOffSite) {
+            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
         setApproveModalVisible(true);
     };
 
     const handleAcceptAssignedWork = () => {
+        if (isOffSite) {
+            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
         workOrder.status = 'Working';
         setWorkStatus('Working');
         Alert.alert(
@@ -712,6 +871,10 @@ export const TaskDetailScreen = () => {
     };
 
     const handleRejectWork = () => {
+        if (isOffSite) {
+            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
         setRejectModalVisible(true);
     };
 
@@ -808,12 +971,14 @@ export const TaskDetailScreen = () => {
                                 </View>
                             </View>
                             <View style={{ flexDirection: 'row', gap: 8 }}>
+                                {!isOffSite ? (
                                 <TouchableOpacity 
                                     onPress={() => isEditingDetails ? handleSaveDetails() : setIsEditingDetails(true)}
                                     style={[styles.navButton, { backgroundColor: colors.primary + '15', marginTop: 4 }]}
                                 >
                                     <Ionicons name={isEditingDetails ? "checkmark" : "pencil"} size={16} color={colors.primary} />
                                 </TouchableOpacity>
+                                ) : null}
                                 <TouchableOpacity 
                                     onPress={handleShareWork}
                                     style={[styles.navButton, { backgroundColor: colors.primary + '15', marginTop: 4 }]}
@@ -991,9 +1156,24 @@ export const TaskDetailScreen = () => {
                                     Location check
                                 </Text>
                                 <Text style={[styles.geoFenceMessage, { color: isDark ? colors.text : '#6B4A00' }]}>
-                                    You are not at or near the location coordinates of this work.
+                                    You are not at or near this work location. You can view the work, but all actions are disabled until you arrive on site.
                                 </Text>
                             </View>
+                            <TouchableOpacity
+                                style={{ padding: 4 }}
+                                onPress={() => {
+                                    const lat = workOrder.latitude;
+                                    const lon = workOrder.longitude;
+                                    if (!lat || !lon) return;
+                                    const url = Platform.select({
+                                        ios: `maps:?daddr=${lat},${lon}`,
+                                        default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,
+                                    });
+                                    if (url) Linking.openURL(url);
+                                }}
+                            >
+                                <Ionicons name="navigate-outline" size={24} color={isDark ? '#FFB74D' : '#A66A00'} />
+                            </TouchableOpacity>
                         </View>
                     ) : null}
 
@@ -1029,47 +1209,9 @@ export const TaskDetailScreen = () => {
                                 </View>
                             ) : (
                                 <>
-                                    <View style={styles.listColumn}>
+                                    <View style={[styles.listColumn, isFillOnlyChecklist && styles.listColumnCompact]}>
                                         {(() => {
-                                            let currentSectionId: string | null = null;
-                                            return items.map((item) => {
-                                            // Section header — render as a collapsible divider for fill-only PM/service
-                                            if (item.type === 'section_header') {
-                                                currentSectionId = item.id;
-                                                const isExpanded = !isFillOnlyChecklist || expandedSectionIds.has(item.id);
-                                                const taskCount = sectionTaskCounts.get(item.id) || 0;
-                                                return (
-                                                    <TouchableOpacity
-                                                        key={item.id}
-                                                        activeOpacity={isFillOnlyChecklist ? 0.7 : 1}
-                                                        onPress={() => {
-                                                            if (isFillOnlyChecklist) toggleSectionExpanded(item.id);
-                                                        }}
-                                                        style={[styles.sectionHeader, { borderBottomColor: colors.border }]}
-                                                    >
-                                                        <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
-                                                            {item.label}
-                                                        </Text>
-                                                        {isFillOnlyChecklist && (
-                                                            <View style={styles.sectionHeaderMeta}>
-                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
-                                                                    ({taskCount} {taskCount === 1 ? 'task' : 'tasks'})
-                                                                </Text>
-                                                                <Ionicons
-                                                                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                                                                    size={18}
-                                                                    color={colors.textSecondary}
-                                                                />
-                                                            </View>
-                                                        )}
-                                                    </TouchableOpacity>
-                                                );
-                                            }
-
-                                            if (isFillOnlyChecklist && currentSectionId && !expandedSectionIds.has(currentSectionId)) {
-                                                return null;
-                                            }
-
+                                            const renderTaskCard = (item: ChecklistStateItem) => {
                                             // Conditional visibility: hide if parent visual-check !== 'Yes'
                                             if (item.showWhenFieldId && item.showWhenEquals) {
                                                 const parentItem = items.find(i => i.id === item.showWhenFieldId);
@@ -1082,14 +1224,26 @@ export const TaskDetailScreen = () => {
                                             const isNA = item.type === 'not_applicable' || item.isNotApplicable;
                                             const hideStepIcon = isFillOnlyChecklist;
                                             return (
-                                                <View key={item.id} style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: openMenuId === item.id ? 100 : 1, opacity: isNA ? 0.6 : 1 }]}>
-                                            <View style={[styles.stepHeader, { zIndex: openMenuId === item.id ? 100 : 1 }]}>
+                                                <View
+                                                    key={item.id}
+                                                    style={[
+                                                        isFillOnlyChecklist ? styles.taskContainer : styles.stepCard,
+                                                        {
+                                                            backgroundColor: colors.surface,
+                                                            borderColor: colors.border,
+                                                            shadowColor: isFillOnlyChecklist ? 'transparent' : colors.shadow,
+                                                            zIndex: openMenuId === item.id ? 100 : 1,
+                                                            opacity: isNA ? 0.6 : 1,
+                                                        },
+                                                    ]}
+                                                >
+                                            <View style={[styles.stepHeader, isFillOnlyChecklist && styles.stepHeaderCompact, { zIndex: openMenuId === item.id ? 100 : 1 }]}>
                                                     {!hideStepIcon && (
                                                     <TouchableOpacity
                                                         activeOpacity={!isFillOnlyChecklist && !isNA && !item.isReadOnly ? 0.7 : 1}
                                                         onPress={() => {
                                                             if (isFillOnlyChecklist || item.type === 'radio' || item.dataType === 'Radio button') return;
-                                                            if (!isUnderReview && !isNA && !item.isReadOnly) {
+                                                            if (!isChecklistDisabled && !isNA && !item.isReadOnly) {
                                                                 const updateItem = (id: string, value: any) => {
                                                                     setItems(currentItems => currentItems.map(i => i.id === id ? { ...i, value } : i));
                                                                 };
@@ -1109,7 +1263,7 @@ export const TaskDetailScreen = () => {
                                                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginLeft: hideStepIcon ? 0 : 12 }}>
                                                             <View style={{ flex: 1 }}>
                                                                 {item.label ? (
-                                                                    <Text style={[styles.stepTitle, { color: isNA ? colors.textSecondary : colors.text, textDecorationLine: isNA ? 'line-through' : 'none' }]}>
+                                                                    <Text style={[isFillOnlyChecklist ? styles.stepTitleText : styles.stepTitle, { color: isNA ? colors.textSecondary : colors.text, textDecorationLine: isNA ? 'line-through' : 'none' }]}>
                                                                         {taskNumbers.get(item.id) ? `${taskNumbers.get(item.id)}. ${item.label}` : item.label}
                                                                     </Text>
                                                                 ) : null}
@@ -1119,7 +1273,7 @@ export const TaskDetailScreen = () => {
                                                                      </View>
                                                                  )}
                                                             </View>
-                                                            {!isUnderReview && !isFillOnlyChecklist && (
+                                                            {!isChecklistDisabled && !isFillOnlyChecklist && (
                                                                 <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 10 : 1, marginLeft: 8 }}>
                                                                     <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
                                                                         <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
@@ -1186,40 +1340,57 @@ export const TaskDetailScreen = () => {
                                                         ) : (
                                                             <>
                                                                 {item.type === 'photo' || item.type === 'media' || item.dataType === 'Media' ? (
-                                                                    <View style={{ gap: 8, marginTop: 4 }}>
+                                                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }} contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
                                                                         {(item.options?.length ? item.options : ['']).map((remark, idx) => {
                                                                             const slotValue = Array.isArray(item.value)
                                                                                 ? String(item.value[idx] ?? '')
                                                                                 : idx === 0
                                                                                     ? String(item.value && item.value !== 0 ? item.value : '')
                                                                                     : '';
+                                                                            const demoSource =
+                                                                                resolvePmDemoPhotoSource(slotValue) ||
+                                                                                (isFillOnlyChecklist && idx < PM_DEMO_PHOTOS.length
+                                                                                    ? PM_DEMO_PHOTOS[idx].source
+                                                                                    : null);
                                                                             const isDoc = (item.options || []).some((option) => /certificate|document|SLD|diagram/i.test(option));
                                                                             return (
-                                                                                <View key={`${item.id}-att-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                                                <View key={`${item.id}-att-${idx}`} style={{ width: 128 }}>
                                                                                     <TouchableOpacity
                                                                                         onPress={() => {
+                                                                                            if (isChecklistDisabled) return;
                                                                                             setActiveMediaId(item.id);
                                                                                             setMediaModalVisible(true);
                                                                                         }}
-                                                                                        style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, flex: 3 }]}
+                                                                                        style={{
+                                                                                            width: 128,
+                                                                                            height: 96,
+                                                                                            borderRadius: 8,
+                                                                                            borderWidth: 1,
+                                                                                            borderColor: colors.border,
+                                                                                            backgroundColor: colors.surfaceHighlight,
+                                                                                            overflow: 'hidden',
+                                                                                            alignItems: 'center',
+                                                                                            justifyContent: 'center',
+                                                                                        }}
                                                                                     >
-                                                                                        <FontAwesome name={isDoc ? 'file-text-o' : 'paperclip'} size={18} color={colors.primary} />
-                                                                                        <View style={{ alignItems: 'flex-start', flex: 1 }}>
-                                                                                            <Text style={[styles.captureButtonText, { color: colors.text }]}>
-                                                                                                {slotValue || (isDoc ? 'Add document' : 'Add attachment')}
-                                                                                            </Text>
-                                                                                            {!slotValue && (
-                                                                                                <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
-                                                                                            )}
-                                                                                        </View>
+                                                                                        {demoSource ? (
+                                                                                            <Image source={demoSource} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                                                                                        ) : (
+                                                                                            <>
+                                                                                                <FontAwesome name={isDoc ? 'file-text-o' : 'paperclip'} size={18} color={colors.primary} />
+                                                                                                <Text style={[styles.captureButtonText, { color: colors.text, marginTop: 6, fontSize: 11 }]} numberOfLines={2}>
+                                                                                                    {slotValue || (isDoc ? 'Add document' : 'Add attachment')}
+                                                                                                </Text>
+                                                                                            </>
+                                                                                        )}
                                                                                     </TouchableOpacity>
-                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, flex: 1 }]}>
-                                                                                            {remark || ((item.options?.length || 0) <= 1 ? 'Remarks' : `Remarks ${idx + 1}`)}
-                                                                                        </Text>
+                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 6, lineHeight: 16 }]} numberOfLines={3}>
+                                                                                        {remark || ((item.options?.length || 0) <= 1 ? 'Remarks' : `Remarks ${idx + 1}`)}
+                                                                                    </Text>
                                                                                 </View>
                                                                             );
                                                                         })}
-                                                                    </View>
+                                                                    </ScrollView>
                                                                 ) : item.type === 'three_phase_voltage' || item.dataType === '3 phase voltage' ? (
                                                                     <View style={{ gap: 10, marginTop: 4 }}>
                                                                         <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -1295,14 +1466,14 @@ export const TaskDetailScreen = () => {
                                                                     />
                                                                 ) : item.isReadOnly || item.type === 'textarea' || item.dataType === 'Long text' ? (
                                                                     item.isReadOnly ? (
-                                                                        <Text style={[styles.instructionText, { color: colors.text }]}>
+                                                                        <Text style={[styles.instructionText, isFillOnlyChecklist && styles.instructionTextCompact, { color: colors.textSecondary }]}>
                                                                             {String(item.value ?? item.defaultValue ?? item.label ?? '')}
                                                                         </Text>
                                                                     ) : (
                                                                     <TextInput
                                                                         multiline
                                                                         numberOfLines={3}
-                                                                        editable={!isUnderReview}
+                                                                        editable={!isChecklistDisabled}
                                                                         placeholder={'Enter detailed description / remarks...'}
                                                                         placeholderTextColor={colors.textSecondary}
                                                                         style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, minHeight: 70, textAlignVertical: 'top' }]}
@@ -1311,22 +1482,22 @@ export const TaskDetailScreen = () => {
                                                                     />
                                                                     )
                                                                 ) : item.type === 'radio' || item.dataType === 'Radio button' || item.type === 'dropdown' || item.dataType === 'Dropdown' ? (
-                                                                    <View style={{ gap: 12, marginTop: 4, flexDirection: (item.options || []).length <= 2 ? 'row' : 'column', flexWrap: 'wrap' }}>
+                                                                    <View style={{ gap: isFillOnlyChecklist ? 8 : 12, marginTop: isFillOnlyChecklist ? 2 : 4, flexDirection: (item.options || []).length <= 2 ? 'row' : 'column', flexWrap: 'wrap' }}>
                                                                         {(item.options || ['Option 1', 'Option 2']).map((opt) => {
                                                                             const selected = item.value === opt;
                                                                             return (
                                                                                 <TouchableOpacity
                                                                                     key={opt}
-                                                                                    disabled={isUnderReview}
+                                                                                    disabled={isChecklistDisabled}
                                                                                     onPress={() => updateItem(item.id, opt)}
-                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: isFillOnlyChecklist ? 6 : 10, paddingVertical: isFillOnlyChecklist ? 0 : 4 }}
                                                                                 >
                                                                                     <Ionicons
                                                                                         name={selected ? 'radio-button-on' : 'radio-button-off'}
-                                                                                        size={20}
+                                                                                        size={isFillOnlyChecklist ? 18 : 20}
                                                                                         color={selected ? colors.primary : colors.textSecondary}
                                                                                     />
-                                                                                    <Text style={[FONTS.body, { color: colors.text }]}>{opt}</Text>
+                                                                                    <Text style={[FONTS.body, { color: colors.text, fontSize: isFillOnlyChecklist ? 13 : undefined }]}>{opt}</Text>
                                                                                 </TouchableOpacity>
                                                                             );
                                                                         })}
@@ -1339,7 +1510,9 @@ export const TaskDetailScreen = () => {
                                                                              return (
                                                                                  <TouchableOpacity
                                                                                      key={opt}
+                                                                                     disabled={isChecklistDisabled}
                                                                                      onPress={() => {
+                                                                                         if (isChecklistDisabled) return;
                                                                                          const isNoneType = item.dataType === 'None' || (item.type as string) === 'None' || (item.dataType && item.dataType.toLowerCase() === 'none');
                                                                                          const nextArray = isNoneType
                                                                                              ? (selected ? [] : [opt])
@@ -1364,11 +1537,12 @@ export const TaskDetailScreen = () => {
                                                                          colors={colors}
                                                                          updateItem={updateItem}
                                                                          setItems={setItems}
-                                                                         isUnderReview={isUnderReview}
+                                                                         isUnderReview={isChecklistDisabled}
                                                                      />
                                                                 ) : (
                                                                     <TextInput
                                                                         keyboardType="default"
+                                                                        editable={!isChecklistDisabled}
                                                                         placeholder={getChecklistPlaceholder(item)}
                                                                         placeholderTextColor={colors.textSecondary}
                                                                         style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
@@ -1381,6 +1555,122 @@ export const TaskDetailScreen = () => {
                                                     )}
                                                 </View>
                                             );
+                                            };
+
+                                            if (isFillOnlyChecklist && hasChecklistHeaders) {
+                                                return nestedFillTree.map((sectionBlock) => {
+                                                    const sectionId = sectionBlock.section.id;
+                                                    const isExpanded = !isFillOnlyChecklist || expandedSectionIds.has(sectionId) || sectionId === '__root__';
+                                                    const checklistCount = sectionBlock.checklists.length;
+                                                    return (
+                                                        <View
+                                                            key={sectionId}
+                                                            style={[styles.sectionBlockText, { borderBottomColor: colors.border }]}
+                                                        >
+                                                            {sectionId !== '__root__' && (
+                                                                <TouchableOpacity
+                                                                    activeOpacity={0.7}
+                                                                    onPress={() => toggleSectionExpanded(sectionId)}
+                                                                    style={styles.sectionHeader}
+                                                                >
+                                                                    <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
+                                                                        {sectionBlock.section.label}
+                                                                    </Text>
+                                                                    <View style={styles.sectionHeaderMeta}>
+                                                                        <Text style={[FONTS.caption, { color: colors.textSecondary, fontSize: 11 }]}>
+                                                                            ({checklistCount} {checklistCount === 1 ? 'checklist' : 'checklists'})
+                                                                        </Text>
+                                                                        <Ionicons
+                                                                            name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                                                            size={16}
+                                                                            color={colors.textSecondary}
+                                                                        />
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                            )}
+                                                            {isExpanded && (
+                                                                <>
+                                                                    {sectionBlock.checklists.map((block) => {
+                                                                        const num = taskNumbers.get(block.checklist.id);
+                                                                        const nestCount = checklistTaskCounts.get(block.checklist.id) || block.tasks.length;
+                                                                        return (
+                                                                            <View key={block.checklist.id} style={styles.checklistBlockText}>
+                                                                                <View style={styles.checklistCardHeader}>
+                                                                                    <Text style={[styles.checklistHeaderText, { color: colors.text }]} numberOfLines={3}>
+                                                                                        {num ? `${num}. ` : ''}{block.checklist.label}
+                                                                                    </Text>
+                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, fontSize: 11 }]}>
+                                                                                        ({nestCount} {nestCount === 1 ? 'task' : 'tasks'})
+                                                                                    </Text>
+                                                                                </View>
+                                                                                {block.tasks.map((taskItem) => renderTaskCard(taskItem))}
+                                                                            </View>
+                                                                        );
+                                                                    })}
+                                                                    {sectionBlock.looseTasks.map((taskItem) => renderTaskCard(taskItem))}
+                                                                </>
+                                                            )}
+                                                        </View>
+                                                    );
+                                                });
+                                            }
+
+                                            let currentSectionId: string | null = null;
+                                            return items.map((item) => {
+                                            // Section header — render as a collapsible divider for fill-only PM/service
+                                            if (item.type === 'section_header') {
+                                                currentSectionId = item.id;
+                                                const isExpanded = !isFillOnlyChecklist || expandedSectionIds.has(item.id);
+                                                const taskCount = sectionTaskCounts.get(item.id) || 0;
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={item.id}
+                                                        activeOpacity={isFillOnlyChecklist ? 0.7 : 1}
+                                                        onPress={() => {
+                                                            if (isFillOnlyChecklist) toggleSectionExpanded(item.id);
+                                                        }}
+                                                        style={[styles.sectionHeader, { borderBottomColor: colors.border }]}
+                                                    >
+                                                        <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
+                                                            {item.label}
+                                                        </Text>
+                                                        {isFillOnlyChecklist && (
+                                                            <View style={styles.sectionHeaderMeta}>
+                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
+                                                                    ({taskCount} {hasChecklistHeaders ? (taskCount === 1 ? 'checklist' : 'checklists') : (taskCount === 1 ? 'task' : 'tasks')})
+                                                                </Text>
+                                                                <Ionicons
+                                                                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                                                    size={18}
+                                                                    color={colors.textSecondary}
+                                                                />
+                                                            </View>
+                                                        )}
+                                                    </TouchableOpacity>
+                                                );
+                                            }
+
+                                            if (isFillOnlyChecklist && currentSectionId && !expandedSectionIds.has(currentSectionId)) {
+                                                return null;
+                                            }
+
+                                            if (item.type === 'checklist_header') {
+                                                const num = taskNumbers.get(item.id);
+                                                const nestCount = checklistTaskCounts.get(item.id) || 0;
+                                                return (
+                                                    <View
+                                                        key={item.id}
+                                                        style={[styles.checklistHeader, { borderBottomColor: colors.border }]}
+                                                    >
+                                                        <Text style={[styles.checklistHeaderText, { color: colors.text }]} numberOfLines={3}>
+                                                            {num ? `${num}. ` : ''}{item.label}
+                                                            {nestCount ? `  (${nestCount} ${nestCount === 1 ? 'task' : 'tasks'})` : ''}
+                                                        </Text>
+                                                    </View>
+                                                );
+                                            }
+
+                                            return renderTaskCard(item);
                                         });
                                         })()}
                                     </View>
@@ -1554,6 +1844,7 @@ export const TaskDetailScreen = () => {
                                 </View>
                             </View>
 
+                            {!isOffSite ? (
                             <TouchableOpacity style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, marginTop: 16 }]}>
                                 <Ionicons name="cloud-upload-outline" size={24} color={colors.primary} />
                                 <View style={{ alignItems: 'flex-start' }}>
@@ -1561,11 +1852,12 @@ export const TaskDetailScreen = () => {
                                     <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
                                 </View>
                             </TouchableOpacity>
+                            ) : null}
                         </>
                     ) : null}
                 </ScrollView>
 
-                {activeTab === 'Tasks' && isAssignedPending && (
+                {activeTab === 'Tasks' && isAssignedPending && !isOffSite && (
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
@@ -1594,7 +1886,7 @@ export const TaskDetailScreen = () => {
                     </KeyboardAvoidingView>
                 )}
 
-                {activeTab === 'Tasks' && isUnderReview && (
+                {activeTab === 'Tasks' && isUnderReview && !isOffSite && (
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
@@ -1623,7 +1915,7 @@ export const TaskDetailScreen = () => {
                     </KeyboardAvoidingView>
                 )}
 
-                {activeTab === 'Activities' && (
+                {activeTab === 'Activities' && !isOffSite && (
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={[
@@ -1690,7 +1982,7 @@ export const TaskDetailScreen = () => {
                     </KeyboardAvoidingView>
                 )}
 
-                {activeTab === 'Tasks' && !isFillOnlyChecklist && (
+                {activeTab === 'Tasks' && !isFillOnlyChecklist && !isOffSite && (
                     <TouchableOpacity
                         style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000' }]}
                         activeOpacity={0.9}
@@ -1738,7 +2030,14 @@ export const TaskDetailScreen = () => {
                 <Modal visible={actionModalVisible} transparent animationType="fade">
                     <TouchableOpacity style={[styles.modalOverlay, { justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 16 }]} activeOpacity={1} onPress={() => setActionModalVisible(false)}>
                         <View style={[{ backgroundColor: colors.surface, borderRadius: 16, padding: 12, minWidth: 260, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 20, elevation: 12 }]}>
-                            {isAssignedPending ? (
+                            {isOffSite ? (
+                                <View style={{ paddingVertical: 16, paddingHorizontal: 16 }}>
+                                    <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 16, marginBottom: 6 }]}>View only</Text>
+                                    <Text style={[{ color: colors.textSecondary, ...FONTS.body, fontSize: 14 }]}>
+                                        Work actions are disabled until you are near this location.
+                                    </Text>
+                                </View>
+                            ) : isAssignedPending ? (
                                 <>
                                     <TouchableOpacity onPress={() => { setActionModalVisible(false); handleAcceptAssignedWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                                         <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
@@ -2391,6 +2690,10 @@ const styles = StyleSheet.create({
         gap: 8,
         marginBottom: 8,
     },
+    listColumnCompact: {
+        gap: 4,
+        marginBottom: 4,
+    },
     filterRow: {
         flexDirection: 'row',
         gap: 8,
@@ -2524,10 +2827,26 @@ const styles = StyleSheet.create({
         shadowRadius: 18,
         elevation: 5,
     },
+    taskContainer: {
+        borderRadius: 10,
+        borderWidth: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        marginBottom: 8,
+    },
+    stepRowText: {
+        paddingVertical: 4,
+        paddingHorizontal: 0,
+        marginBottom: 2,
+    },
     stepHeader: {
         flexDirection: 'row',
         gap: 12,
         marginBottom: 14,
+    },
+    stepHeaderCompact: {
+        gap: 0,
+        marginBottom: 4,
     },
     stepIcon: {
         width: 40,
@@ -2539,6 +2858,13 @@ const styles = StyleSheet.create({
     stepTitle: {
         ...FONTS.h3,
         marginBottom: 4,
+    },
+    stepTitleText: {
+        ...FONTS.body,
+        fontSize: 13,
+        lineHeight: 18,
+        marginBottom: 0,
+        fontWeight: '500',
     },
     stepMeta: {
         ...FONTS.caption,
@@ -2825,25 +3151,74 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 3,
     },
+    checklistHeader: {
+        paddingHorizontal: 0,
+        paddingTop: 4,
+        paddingBottom: 6,
+    },
+    checklistHeaderText: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+        lineHeight: 20,
+        fontWeight: '700',
+        flex: 1,
+        paddingRight: 8,
+    },
+    checklistCard: {
+        borderWidth: 1,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingTop: 10,
+        paddingBottom: 8,
+        marginBottom: 10,
+    },
+    checklistBlockText: {
+        paddingHorizontal: 0,
+        paddingTop: 4,
+        paddingBottom: 2,
+        marginBottom: 8,
+        marginLeft: 0,
+    },
+    checklistCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    sectionCard: {
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingTop: 10,
+        paddingBottom: 8,
+        marginBottom: 12,
+    },
+    sectionBlockText: {
+        paddingHorizontal: 0,
+        paddingTop: 4,
+        paddingBottom: 6,
+        marginBottom: 10,
+    },
     sectionHeader: {
-        paddingVertical: 10,
-        paddingHorizontal: 4,
-        marginTop: 8,
-        marginBottom: 2,
-        borderBottomWidth: 1,
+        paddingVertical: 4,
+        paddingHorizontal: 0,
+        marginTop: 0,
+        marginBottom: 8,
+        borderBottomWidth: 0,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
     },
     sectionHeaderText: {
         ...FONTS.bodyStrong,
-        fontSize: 13,
-        letterSpacing: 0.2,
+        fontSize: 15,
+        letterSpacing: 0.1,
+        lineHeight: 20,
+        fontWeight: '700',
     },
     sectionHeaderMeta: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 4,
         flexShrink: 0,
     },
     instructionText: {
@@ -2851,5 +3226,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 20,
         marginTop: 2,
+    },
+    instructionTextCompact: {
+        fontSize: 12,
+        lineHeight: 16,
+        marginTop: 0,
+        marginBottom: 2,
     },
 });

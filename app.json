@@ -37,7 +37,13 @@
     },
     "plugins": [
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow r-one to use your location to confirm you are at the work site."
+        }
+      ]
     ],
     "extra": {
       "eas": {

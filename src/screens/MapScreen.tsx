@@ -8,6 +8,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
+import { useSession } from '../context/SessionContext';
 import { WORK_ORDERS } from '../data/fieldDemo';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { getServiceTypeColors, ServiceType } from '../styles/workTypeColors';
@@ -115,7 +116,7 @@ export const MapScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrderId, setSelectedOrderId] = useState(WORK_ORDERS[0].id);
     const [mapMode, setMapMode] = useState<'work' | 'live' | 'both'>('work');
-    const [dutyStatus, setDutyStatus] = useState<'working' | 'away'>('working');
+    const { dutyStatus, setSession } = useSession();
 
     const filteredOrders = WORK_ORDERS.filter((item) => {
         const haystack = `${item.title} ${item.siteName} ${item.address}`.toLowerCase();
@@ -372,8 +373,8 @@ export const MapScreen = () => {
                             ]}
                         >
                             <TouchableOpacity
+                                onPress={() => setSession({ dutyStatus: 'working' })}
                                 activeOpacity={0.8}
-                                onPress={() => setDutyStatus('working')}
                                 style={[
                                     styles.statusCapsuleSegment,
                                     dutyStatus === 'working' && {
@@ -402,8 +403,8 @@ export const MapScreen = () => {
                             </TouchableOpacity>
 
                             <TouchableOpacity
+                                onPress={() => setSession({ dutyStatus: 'away' })}
                                 activeOpacity={0.8}
-                                onPress={() => setDutyStatus('away')}
                                 style={[
                                     styles.statusCapsuleSegment,
                                     dutyStatus === 'away' && {
