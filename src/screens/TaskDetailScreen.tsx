@@ -124,6 +124,14 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): any => {
             return 'Checked and verified on site.';
         case 'photo':
         case 'media':
+            if (item.options && item.options.length > 1) {
+                const isDoc = item.options.some((option) => /certificate|document|SLD|diagram/i.test(option));
+                return item.options.map((option, index) =>
+                    isDoc
+                        ? `${(option || 'attachment').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`
+                        : `photo-${index + 1}.jpg`
+                );
+            }
             return 1;
         case 'toggle':
             return 'Completed';
@@ -195,6 +203,10 @@ const isComplete = (item: ChecklistStateItem) => {
     }
     if (itemType === 'not_applicable') return String(item.value).length > 0;
     if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
+        if (Array.isArray(item.value)) {
+            return item.value.some((value) => String(value ?? '').trim().length > 0);
+        }
+        if (typeof item.value === 'string') return item.value.trim().length > 0;
         return Number(item.value) > 0;
     }
     if (itemType === 'multiselect' || itemType === 'checkbox' || dataType === 'multiple choice' || dataType === 'checkbox') {
@@ -323,7 +335,7 @@ const MultiResponseEntryItem: React.FC<{
                 );
             })}
 
-            {maxEntries < 4 && !isUnderReview && (
+            {maxEntries < ((item.type === 'photo' || item.type === 'media' || item.dataType === 'Media') ? 20 : 4) && !isUnderReview && (
                 <TouchableOpacity
                     onPress={addAnotherSlot}
                     style={{
@@ -402,10 +414,15 @@ export const TaskDetailScreen = () => {
     }, [items]);
     const toggleSectionExpanded = (sectionId: string) => {
         setExpandedSectionIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(sectionId)) next.delete(sectionId);
-            else next.add(sectionId);
-            return next;
+            const isOpen = prev.has(sectionId);
+            if (!isOpen) {
+                return new Set([sectionId]);
+            }
+            const currentIndex = sectionIds.indexOf(sectionId);
+            const nextId = sectionIds[currentIndex + 1];
+            if (nextId) return new Set([nextId]);
+            const firstId = sectionIds[0];
+            return firstId && firstId !== sectionId ? new Set([firstId]) : prev;
         });
     };
 
@@ -1169,19 +1186,40 @@ export const TaskDetailScreen = () => {
                                                         ) : (
                                                             <>
                                                                 {item.type === 'photo' || item.type === 'media' || item.dataType === 'Media' ? (
-                                                                    <TouchableOpacity
-                                                                        onPress={() => {
-                                                                            setActiveMediaId(item.id);
-                                                                            setMediaModalVisible(true);
-                                                                        }}
-                                                                        style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
-                                                                    >
-                                                                        <FontAwesome name="paperclip" size={18} color={colors.primary} />
-                                                                        <View style={{ alignItems: 'flex-start' }}>
-                                                                            <Text style={[styles.captureButtonText, { color: colors.text }]}>Add attachment</Text>
-                                                                            <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
-                                                                        </View>
-                                                                    </TouchableOpacity>
+                                                                    <View style={{ gap: 8, marginTop: 4 }}>
+                                                                        {(item.options?.length ? item.options : ['']).map((remark, idx) => {
+                                                                            const slotValue = Array.isArray(item.value)
+                                                                                ? String(item.value[idx] ?? '')
+                                                                                : idx === 0
+                                                                                    ? String(item.value && item.value !== 0 ? item.value : '')
+                                                                                    : '';
+                                                                            const isDoc = (item.options || []).some((option) => /certificate|document|SLD|diagram/i.test(option));
+                                                                            return (
+                                                                                <View key={`${item.id}-att-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                                                    <TouchableOpacity
+                                                                                        onPress={() => {
+                                                                                            setActiveMediaId(item.id);
+                                                                                            setMediaModalVisible(true);
+                                                                                        }}
+                                                                                        style={[styles.captureButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, flex: 3 }]}
+                                                                                    >
+                                                                                        <FontAwesome name={isDoc ? 'file-text-o' : 'paperclip'} size={18} color={colors.primary} />
+                                                                                        <View style={{ alignItems: 'flex-start', flex: 1 }}>
+                                                                                            <Text style={[styles.captureButtonText, { color: colors.text }]}>
+                                                                                                {slotValue || (isDoc ? 'Add document' : 'Add attachment')}
+                                                                                            </Text>
+                                                                                            {!slotValue && (
+                                                                                                <Text style={[styles.stepMeta, { color: colors.textSecondary, fontSize: 12, marginTop: 2 }]}>Max-125mb size limit</Text>
+                                                                                            )}
+                                                                                        </View>
+                                                                                    </TouchableOpacity>
+                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, flex: 1 }]}>
+                                                                                            {remark || ((item.options?.length || 0) <= 1 ? 'Remarks' : `Remarks ${idx + 1}`)}
+                                                                                        </Text>
+                                                                                </View>
+                                                                            );
+                                                                        })}
+                                                                    </View>
                                                                 ) : item.type === 'three_phase_voltage' || item.dataType === '3 phase voltage' ? (
                                                                     <View style={{ gap: 10, marginTop: 4 }}>
                                                                         <View style={{ flexDirection: 'row', gap: 10 }}>

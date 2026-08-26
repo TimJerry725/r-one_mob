@@ -250,15 +250,41 @@ const yesNoRadio = (id: string, label: string, showWhenFieldId?: string): Checkl
     ...(showWhenFieldId ? { showWhenFieldId, showWhenEquals: 'Yes' } : {}),
 });
 
-const evidenceRow = (id: string, label: string, showWhenFieldId: string): ChecklistTemplateItem => ({
-    id,
-    label,
-    type: 'media',
-    dataType: 'Media',
-    required: true,
-    showWhenFieldId,
-    showWhenEquals: 'Yes',
-});
+const THREE_PHOTO_REMARKS = ['Photo 1', 'Photo 2', 'Photo 3'];
+
+const evidenceRow = (
+    id: string,
+    label: string,
+    showWhenFieldId: string,
+    kind: 'photos' | 'documents' = 'photos'
+): ChecklistTemplateItem => {
+    if (kind === 'documents') {
+        const options = /SLD|diagram/i.test(label)
+            ? ['SLD document', 'As-installed copy']
+            : ['Test certificate', 'Validity marking'];
+        return {
+            id,
+            label,
+            type: 'media',
+            dataType: 'Media',
+            required: true,
+            showWhenFieldId,
+            showWhenEquals: 'Yes',
+            options,
+        };
+    }
+    const threePhotos = /3 photos/i.test(label);
+    return {
+        id,
+        label,
+        type: 'media',
+        dataType: 'Media',
+        required: true,
+        showWhenFieldId,
+        showWhenEquals: 'Yes',
+        options: threePhotos ? [...THREE_PHOTO_REMARKS] : [''],
+    };
+};
 
 const section = (id: string, label: string): ChecklistTemplateItem => ({ id, label, type: 'section_header', required: false });
 
@@ -268,7 +294,8 @@ const pmChecklist = (
     instruction: string,
     observation: string,
     action?: string,
-    evidence?: string
+    evidence?: string,
+    evidenceKind: 'photos' | 'documents' = 'photos'
 ): ChecklistTemplateItem[] => {
     const instructionId = `evpm-t${sno}-instruction`;
     const observationId = `evpm-t${sno}-obs`;
@@ -283,10 +310,10 @@ const pmChecklist = (
     if (hasAction) {
         rows.push(yesNoRadio(observationId, observation));
         rows.push(yesNoRadio(actionId, action as string, observationId));
-        if (hasEvidence) rows.push(evidenceRow(evidenceId, evidence as string, actionId));
+        if (hasEvidence) rows.push(evidenceRow(evidenceId, evidence as string, actionId, evidenceKind));
     } else {
         rows.push(yesNoRadio(observationId, observation));
-        if (hasEvidence) rows.push(evidenceRow(evidenceId, evidence as string, observationId));
+        if (hasEvidence) rows.push(evidenceRow(evidenceId, evidence as string, observationId, evidenceKind));
     }
     return rows;
 };
@@ -304,7 +331,7 @@ export const PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST: ChecklistTemplateItem[] = [
     ...pmChecklist("10", "Water Accumulation Inspection", "Inspect the surroundings for signs of water accumulation.", "Was the visual check completed?", "Were any water marks found?", "Upload 3 photos of the water accumulation or water marks found."),
     ...pmChecklist("11", "Insulation Mat Inspection", "Verify IS15652 compliance and ensure that the insulation mat is undamaged.", "Was the visual check completed?", "Was the insulation mat found damaged or missing?", "Upload 3 photos of the insulation mat after replacement."),
     ...pmChecklist("13", "Cable Gland Inspection", "Ensure that the cable glands are securely fitted, correctly sized, and free of gaps.", "Was the visual check completed?", "Were any cable glands found loose or damaged?"),
-    ...pmChecklist("14", "SLD Display Verification", "Confirm that the single line diagram (SLD) is displayed inside the panel door.", "Was the visual check completed?", "Was the single line diagram missing?"),
+    ...pmChecklist("14", "SLD Display Verification", "Confirm that the single line diagram (SLD) is displayed inside the panel door.", "Was the visual check completed?", "Was the single line diagram missing?", "Attach the single line diagram (SLD) document.", "documents"),
     ...pmChecklist("15", "Cable Termination Inspection", "Inspect the terminal blocks and cable terminations for overheating or damage.", "Was the visual check completed?"),
     ...pmChecklist("16", "PDB Cleaning", "Ensure that the power distribution board (PDB) is clean internally and externally.", "Was the visual check completed?", "Was cleaning required using a blower?", "Upload 3 photos of the PDB after cleaning."),
     ...pmChecklist("17", "Neutral-Earth Voltage Measurement", "Measure the neutral-to-earth voltage and verify earth integrity.", "Was the visual check completed?", "Was the neutral-to-earth voltage checked using a voltmeter or multimeter, and was the reading recorded?"),
@@ -328,7 +355,7 @@ export const PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST: ChecklistTemplateItem[] = [
     ...pmChecklist("35", "Overall Area Cleaning", "Ensure that the entire area is neat and clean.", "Was the visual check completed?", "Was cleaning required for the charger, parking bay, canopy, pedestal, gun, cable, PDB, or lights?", "Upload 3 photos of the area after cleaning."),
     ...pmChecklist("36", "Bird Nest Removal", "Check for bird nests or traces of bird activity anywhere in the premises.", "Was the visual check completed?", "Was any bird nest found?", "Upload 3 photos of the bird nest or affected area after removal."),
     ...pmChecklist("37", "Fire Extinguisher Location Verification", "Ensure that all fire extinguishers are at the designated place as per the SOP.", "Was the visual check completed?", "Was the fire-extinguisher pipe found to require cleaning?", "Upload 3 photos of the fire extinguisher at its designated location."),
-    ...pmChecklist("38", "Fire Extinguisher Validity Verification", "Verify that the fire extinguishers are charged, ready for use, and have valid test certificates.", "Was the visual check completed?", "Was the validity date found unclear or faded?", "Upload 3 photos of the fire extinguisher showing its validity or test marking."),
+    ...pmChecklist("38", "Fire Extinguisher Validity Verification", "Verify that the fire extinguishers are charged, ready for use, and have valid test certificates.", "Was the visual check completed?", "Was the validity date found unclear or faded?", "Attach the fire extinguisher test certificate and validity marking.", "documents"),
     ...pmChecklist("39", "Parking Slot Inspection", "Ensure that the parking slot is free from potholes and damage.", "Was the visual check completed?", "Was any pothole or damage found?", "Upload 3 photos of the damaged parking slot."),
     ...pmChecklist("40", "Canopy Fixing Inspection", "Ensure that the canopy is firmly fixed to the column and that there are no loose bolts.", "Was the visual check completed?", "Was any movement found when the canopy structure was gently pushed?"),
     ...pmChecklist("41", "Bollard Foundation Inspection", "Ensure that the bollard foundation is in good condition and firmly fixed.", "Was the visual check completed?", "Were any bolts found loose?", "Upload 3 photos of the bollard after tightening or repair."),
@@ -359,7 +386,7 @@ export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
     { id: 'htpm-11', label: 'Apply lubrication to the engaged parts of the VCB used for establishing the connection, after taking the required shutdown and restoring the system after testing.', type: 'checkbox', dataType: 'None', required: true, options: ['Yes', 'No'] },
     { id: 'htpm-12', label: 'Verify and record all settings according to the load applied with SEB, after taking the required shutdown and restoring the system after testing.', type: 'textarea', dataType: 'Long text', required: false },
     { id: 'htpm-13', label: 'Check the condition of the SEB seal on the meter box and record any damage observed.', type: 'textarea', dataType: 'Long text', required: false },
-    { id: 'htpm-14', label: 'Capture the HT meter reading.', type: 'media', dataType: 'Media', required: true },
+    { id: 'htpm-14', label: 'Capture the HT meter reading.', type: 'media', dataType: 'Media', required: true, options: ['Photo 1', 'Photo 2', 'Photo 3'] },
     { id: 'htpm-15', label: 'Record the transformer winding temperature from the Winding Temperature Indicator (WTI).', type: 'number', dataType: 'Number', required: true },
     { id: 'htpm-16', label: 'Check the transformer conservator oil level through the sight glass and ensure it is above the half-level mark; top up if required.', type: 'textarea', dataType: 'Long text', required: false },
     { id: 'htpm-17', label: 'Check the transformer unit for any oil leakage and record any leakage observed.', type: 'textarea', dataType: 'Long text', required: false },
