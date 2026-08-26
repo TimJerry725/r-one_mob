@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import { WORK_ORDERS, WorkOrder } from '../data/fieldDemo';
+import { WORK_ORDERS } from '../data/fieldDemo';
 import { FONTS } from '../styles/futurist';
 import { getStatusColor } from '../styles/statusColors';
 
@@ -12,7 +12,6 @@ export const AdminTeamScreen = () => {
     const navigation = useNavigation<any>();
     const { colors, isDark } = useTheme();
     const [filterTab, setFilterTab] = useState<'All' | 'Requested' | 'Pending Request' | 'Completed'>('All');
-    const [, forceUpdate] = useState({});
 
     // Filter preventive work orders
     const preventiveOrders = WORK_ORDERS.filter((item) => item.type === 'Preventive');
@@ -23,18 +22,6 @@ export const AdminTeamScreen = () => {
         if (filterTab === 'Completed') return item.status === 'Completed';
         return true;
     });
-
-    const handleSendRequest = (item: WorkOrder) => {
-        item.status = 'Requested';
-        item.isRequested = true;
-        forceUpdate({});
-
-        Alert.alert(
-            'Request Sent',
-            `Preventive maintenance request for "${item.title}" at ${item.siteName} has been sent to Central Team.`,
-            [{ text: 'OK' }]
-        );
-    };
 
     const totalCount = preventiveOrders.length;
     const requestedCount = preventiveOrders.filter((i) => i.status === 'Requested' || i.isRequested).length;
@@ -167,7 +154,7 @@ export const AdminTeamScreen = () => {
                                                 </Text>
                                             </View>
 
-                                            {/* Action Button: Send Request (only for Preventive) */}
+                                            {/* Requested work keeps its status badge; other work has no secondary action. */}
                                             {isRequested ? (
                                                 <View style={[styles.requestedBadge, { backgroundColor: isDark ? 'rgba(255, 183, 77, 0.15)' : 'rgba(230, 81, 0, 0.1)', borderColor: isDark ? '#FFB74D' : '#E65100' }]}>
                                                     <Ionicons name="checkmark-circle" size={14} color={isDark ? '#FFB74D' : '#E65100'} />
@@ -175,16 +162,7 @@ export const AdminTeamScreen = () => {
                                                         Requested
                                                     </Text>
                                                 </View>
-                                            ) : (
-                                                <TouchableOpacity
-                                                    activeOpacity={0.8}
-                                                    onPress={() => handleSendRequest(item)}
-                                                    style={[styles.sendRequestBtn, { backgroundColor: colors.primary }]}
-                                                >
-                                                    <Ionicons name="paper-plane" size={14} color={colors.white} />
-                                                    <Text style={styles.sendRequestBtnText}>Send Request</Text>
-                                                </TouchableOpacity>
-                                            )}
+                                            ) : null}
                                         </View>
                                     </View>
                                 );
@@ -280,21 +258,6 @@ const styles = StyleSheet.create({
     cardDivider: {
         height: 1,
         marginVertical: 2,
-    },
-    sendRequestBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 10,
-    },
-    sendRequestBtnText: {
-        color: '#FFFFFF',
-        ...FONTS.label,
-        fontSize: 12,
-        fontWeight: '700',
     },
     requestedBadge: {
         flexDirection: 'row',

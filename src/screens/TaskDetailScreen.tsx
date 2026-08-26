@@ -350,6 +350,7 @@ export const TaskDetailScreen = () => {
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const [workStatus, setWorkStatus] = useState(workOrder.status);
     const isUnderReview = workStatus === 'Under Review';
+    const isGeoFenceWarningVisible = workStatus === 'Working' || isUnderReview;
     const isPreventiveOrService = ['preventive', 'service'].includes((workOrder.type || '').toLowerCase());
     const isAssignedPending = isPreventiveOrService && workStatus === 'Assigned';
     const isFillOnlyChecklist = isPreventiveOrService;
@@ -949,6 +950,35 @@ export const TaskDetailScreen = () => {
                             </View>
                         </View>
                     </View>
+
+                    {isGeoFenceWarningVisible ? (
+                        <View
+                            style={[
+                                styles.geoFenceWarning,
+                                {
+                                    backgroundColor: isDark ? 'rgba(255, 183, 77, 0.14)' : '#FFF8E1',
+                                    borderColor: isDark ? '#FFB74D' : '#E0A000',
+                                },
+                            ]}
+                        >
+                            <View
+                                style={[
+                                    styles.geoFenceIcon,
+                                    { backgroundColor: isDark ? 'rgba(255, 183, 77, 0.2)' : '#FFECB3' },
+                                ]}
+                            >
+                                <Ionicons name="location-outline" size={20} color={isDark ? '#FFB74D' : '#A66A00'} />
+                            </View>
+                            <View style={styles.geoFenceCopy}>
+                                <Text style={[styles.geoFenceTitle, { color: isDark ? '#FFB74D' : '#8A5800' }]}>
+                                    Location check
+                                </Text>
+                                <Text style={[styles.geoFenceMessage, { color: isDark ? colors.text : '#6B4A00' }]}>
+                                    You are not at or near the location coordinates of this work.
+                                </Text>
+                            </View>
+                        </View>
+                    ) : null}
 
                     <View style={[styles.tabSwitch, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
                         {(['Tasks', 'Activities', 'Attachments'] as const).map((tab) => {
@@ -2206,6 +2236,34 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.08,
         shadowRadius: 18,
         elevation: 5,
+    },
+    geoFenceWarning: {
+        borderRadius: 14,
+        borderWidth: 1,
+        padding: 12,
+        marginBottom: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    geoFenceIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    geoFenceCopy: {
+        flex: 1,
+        gap: 3,
+    },
+    geoFenceTitle: {
+        ...FONTS.bodyStrong,
+        fontSize: 13,
+    },
+    geoFenceMessage: {
+        ...FONTS.caption,
+        lineHeight: 18,
     },
     heroTopRow: {
         flexDirection: 'row',

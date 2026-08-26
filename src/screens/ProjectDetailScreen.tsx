@@ -45,19 +45,6 @@ export const OrderCard = ({
     const [cardRequested, setCardRequested] = useState(item.status === 'Requested' || item.isRequested);
     const [cardStatus, setCardStatus] = useState(item.status);
 
-    const handleSendRequestClick = (e: any) => {
-        e.stopPropagation();
-        item.status = 'Requested';
-        item.isRequested = true;
-        setCardRequested(true);
-        setCardStatus('Requested');
-        Alert.alert(
-            'Request Sent',
-            `Preventive maintenance request for "${item.title}" at ${item.siteName} has been sent to Central Team.`,
-            [{ text: 'OK' }]
-        );
-    };
-
     const handleAcceptClick = (e: any) => {
         e.stopPropagation();
         item.status = 'Working';
@@ -102,8 +89,8 @@ export const OrderCard = ({
         }
         if (isPreventive) {
             return isCurrentlyRequested
-                ? { secondaryLabel: 'Details', primaryLabel: 'Requested', isRequestedState: true as const }
-                : { secondaryLabel: 'Details', primaryLabel: 'Send Request', isSendRequest: true as const };
+                ? { primaryLabel: 'Requested', isRequestedState: true as const }
+                : null;
         }
         if (cardStatus === 'Unassigned') {
             return { secondaryLabel: 'Forward', primaryLabel: 'Accept Work' };
@@ -210,31 +197,25 @@ export const OrderCard = ({
 
             {actionConfig ? (
                 <View style={styles.actionRow}>
-                    <TouchableOpacity
-                        onPress={actionConfig.isAcceptReject ? handleRejectClick : onOpen}
-                        style={[
-                            styles.actionButton,
-                            actionConfig.isAcceptReject
-                                ? { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger }
-                                : { backgroundColor: colors.surfaceHighlight, borderColor: colors.border },
-                        ]}
-                    >
-                        <Text style={[
-                            styles.actionButtonText,
-                            { color: actionConfig.isAcceptReject ? colors.danger : colors.text },
-                        ]}>
-                            {actionConfig.secondaryLabel}
-                        </Text>
-                    </TouchableOpacity>
-                    {actionConfig.isSendRequest ? (
+                    {actionConfig.secondaryLabel ? (
                         <TouchableOpacity
-                            onPress={handleSendRequestClick}
-                            style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                            onPress={actionConfig.isAcceptReject ? handleRejectClick : onOpen}
+                            style={[
+                                styles.actionButton,
+                                actionConfig.isAcceptReject
+                                    ? { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger }
+                                    : { backgroundColor: colors.surfaceHighlight, borderColor: colors.border },
+                            ]}
                         >
-                            <Ionicons name="paper-plane" size={14} color={colors.white} />
-                            <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
+                            <Text style={[
+                                styles.actionButtonText,
+                                { color: actionConfig.isAcceptReject ? colors.danger : colors.text },
+                            ]}>
+                                {actionConfig.secondaryLabel}
+                            </Text>
                         </TouchableOpacity>
-                    ) : actionConfig.isRequestedState ? (
+                    ) : null}
+                    {actionConfig.isRequestedState ? (
                         <View style={[styles.actionButton, { backgroundColor: isDark ? 'rgba(255, 183, 77, 0.18)' : 'rgba(230, 81, 0, 0.12)', borderColor: isDark ? '#FFB74D' : '#E65100' }]}>
                             <Ionicons name="checkmark-circle" size={14} color={isDark ? '#FFB74D' : '#E65100'} />
                             <Text style={[styles.primaryActionText, { color: isDark ? '#FFB74D' : '#E65100' }]}>{actionConfig.primaryLabel}</Text>
