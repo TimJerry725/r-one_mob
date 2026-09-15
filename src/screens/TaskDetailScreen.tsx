@@ -1384,7 +1384,7 @@ export const TaskDetailScreen = () => {
                                                                                             </>
                                                                                         )}
                                                                                     </TouchableOpacity>
-                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 6, lineHeight: 16 }]} numberOfLines={3}>
+                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 6, lineHeight: 16 }]} numberOfLines={2}>
                                                                                         {remark || ((item.options?.length || 0) <= 1 ? 'Remarks' : `Remarks ${idx + 1}`)}
                                                                                     </Text>
                                                                                 </View>
