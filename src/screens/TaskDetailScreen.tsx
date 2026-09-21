@@ -401,7 +401,7 @@ export const TaskDetailScreen = () => {
     const isOffSite = isNearSite === false;
     const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite;
     const isGeoFenceWarningVisible = isOffSite;
-    const isPreventiveOrService = ['preventive', 'service'].includes((workOrder.type || '').toLowerCase());
+    const isPreventiveOrService = ['preventive', 'service', 'reactive'].includes((workOrder.type || '').toLowerCase());
     const isAssignedPending = isPreventiveOrService && workStatus === 'Assigned';
     const isFillOnlyChecklist = isPreventiveOrService;
     const isAllowNotApplicable = !isPreventiveOrService;
@@ -612,6 +612,32 @@ export const TaskDetailScreen = () => {
         setEditTaskOptions(task.options ? [...task.options] : []);
         setEditTaskRequired(task.required ?? true);
         setEditTaskModalVisible(true);
+    };
+
+    const [addTaskModalVisible, setAddTaskModalVisible] = useState(false);
+    const [newTaskLabel, setNewTaskLabel] = useState('');
+    const [newDataType, setNewDataType] = useState<typeof DATA_TYPES[number]>('Short text');
+    const [newTaskOptions, setNewTaskOptions] = useState<string[]>([]);
+    const [addNewTaskOptionInput, setAddNewTaskOptionInput] = useState('');
+
+    const handleAddNewTask = () => {
+        if (!newTaskLabel.trim()) return;
+        const newType = mapDataTypeToType(newDataType);
+        const isChoiceType = ['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(newDataType);
+        const newItem: ChecklistStateItem = {
+            id: `task-${Date.now()}`,
+            label: newTaskLabel.trim(),
+            type: newType,
+            dataType: newDataType,
+            required: false,
+            options: isChoiceType ? [...newTaskOptions] : undefined,
+            value: isChoiceType ? [] : '',
+        };
+        setItems([...items, newItem]);
+        setNewTaskLabel('');
+        setNewDataType('Short text');
+        setNewTaskOptions([]);
+        setAddTaskModalVisible(false);
     };
 
     const saveEditTask = () => {
@@ -1058,11 +1084,36 @@ export const TaskDetailScreen = () => {
                             )}
                         </View>
 
-                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Approvals</Text>
+                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Approvals & Assignees</Text>
 
                         {isEditingDetails ? (
-                            <View style={{ zIndex: 1000 }}>
-                                <View style={{ marginTop: 8, marginBottom: 12, flexDirection: 'row', gap: 12 }}>
+                            <View style={{ zIndex: 1000, gap: 12 }}>
+                                {/* Approvers First */}
+                                <View style={{ marginTop: 8, flexDirection: 'row', gap: 12, zIndex: 1010 }}>
+                                    <View style={{ flex: 1, zIndex: 1010 }}>
+                                        <PopoverDropdown
+                                            label="Primary Approver"
+                                            placeholder="Select primary approver..."
+                                            options={getSelectorOptions('assignees').options}
+                                            value={editedPrimaryApprover}
+                                            onSelect={(val) => setEditedPrimaryApprover(val as string)}
+                                            isMulti={false}
+                                        />
+                                    </View>
+                                    <View style={{ flex: 1, zIndex: 1009 }}>
+                                        <PopoverDropdown
+                                            label="Secondary Approver"
+                                            placeholder="Select secondary approver..."
+                                            options={getSelectorOptions('assignees').options}
+                                            value={editedSecondaryApprover}
+                                            onSelect={(val) => setEditedSecondaryApprover(val as string)}
+                                            isMulti={false}
+                                        />
+                                    </View>
+                                </View>
+
+                                {/* Lead & Assignees */}
+                                <View style={{ marginBottom: 4, flexDirection: 'row', gap: 12, zIndex: 1000 }}>
                                     <View style={{ flex: 1, zIndex: 1000 }}>
                                         <PopoverDropdown
                                             label="Lead"
@@ -1101,45 +1152,8 @@ export const TaskDetailScreen = () => {
                                 </View>
                             </View>
                         ) : (
-                            <View style={[styles.chipRow, { alignItems: 'center' }]}>
-                                {assignees.map((tech, idx) => {
-                                    const isLead = idx === 0;
-                                    return (
-                                        <View key={tech} style={[styles.heroChip, { backgroundColor: isLead ? colors.primary : colors.primary + '15', borderColor: colors.primary, flexDirection: 'row', alignItems: 'center' }]}>
-                                            <Text style={[styles.heroChipText, { color: isLead ? colors.white : colors.primary }]}>
-                                                {isLead ? `Lead: ${tech}` : tech}
-                                            </Text>
-                                        </View>
-                                    );
-                                })}
-                            </View>
-                        )}
-                        
-                        <View style={{ marginTop: 12, gap: 10 }}>
-                            {isEditingDetails ? (
-                                <View style={{ flexDirection: 'row', gap: 12 }}>
-                                    <View style={{ flex: 1 }}>
-                                        <PopoverDropdown
-                                            label="Primary Approver"
-                                            placeholder="Select primary approver..."
-                                            options={getSelectorOptions('assignees').options}
-                                            value={editedPrimaryApprover}
-                                            onSelect={(val) => setEditedPrimaryApprover(val as string)}
-                                            isMulti={false}
-                                        />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <PopoverDropdown
-                                            label="Secondary Approver"
-                                            placeholder="Select secondary approver..."
-                                            options={getSelectorOptions('assignees').options}
-                                            value={editedSecondaryApprover}
-                                            onSelect={(val) => setEditedSecondaryApprover(val as string)}
-                                            isMulti={false}
-                                        />
-                                    </View>
-                                </View>
-                            ) : (
+                            <View style={{ gap: 10, marginTop: 6 }}>
+                                {/* Approvers First in View Mode */}
                                 <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
                                     <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
                                         Primary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}</Text>
@@ -1148,11 +1162,36 @@ export const TaskDetailScreen = () => {
                                         Secondary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.secondaryApprover || 'Andrea Meuschke'}</Text>
                                     </Text>
                                 </View>
-                            )}
-                            <View style={{ marginTop: 2 }}>
-                                <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>Assigned by: {workOrder.assignedBy || 'Andrea Meuschke'}</Text>
+
+                                {/* Assignee chips */}
+                                {assignees.length > 0 && (
+                                    <View style={[styles.chipRow, { alignItems: 'center' }]}>
+                                        {assignees.map((tech, idx) => {
+                                            const isLead = idx === 0;
+                                            return (
+                                                <View key={tech} style={[styles.heroChip, { backgroundColor: isLead ? colors.primary : colors.primary + '15', borderColor: colors.primary, flexDirection: 'row', alignItems: 'center' }]}>
+                                                    <Text style={[styles.heroChipText, { color: isLead ? colors.white : colors.primary }]}>
+                                                        {isLead ? `Lead: ${tech}` : tech}
+                                                    </Text>
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                )}
+
+                                <View style={{ marginTop: 4, gap: 4 }}>
+                                    <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+                                        <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
+                                            Created by: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.createdBy || workOrder.assignedBy || 'Andrea Meuschke'}</Text>
+                                        </Text>
+                                        <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
+                                            Requested by: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.requestedBy || 'Timothy Jerry'}</Text>
+                                        </Text>
+                                    </View>
+                                    <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>Assigned by: {workOrder.assignedBy || 'Andrea Meuschke'}</Text>
+                                </View>
                             </View>
-                        </View>
+                        )}
                     </View>
 
                     {isGeoFenceWarningVisible ? (
@@ -1723,6 +1762,32 @@ export const TaskDetailScreen = () => {
                                                 </View>
                                             </View>
                                         </View>
+                                    )}
+                                    {!isUnderReview && (
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setNewTaskLabel('');
+                                                setNewDataType('Short text');
+                                                setNewTaskOptions([]);
+                                                setAddTaskModalVisible(true);
+                                            }}
+                                            style={{
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: colors.surfaceHighlight,
+                                                borderWidth: 1.5,
+                                                borderColor: colors.border,
+                                                borderStyle: 'dashed',
+                                                borderRadius: 12,
+                                                paddingVertical: 14,
+                                                marginTop: 12,
+                                                gap: 8,
+                                            }}
+                                        >
+                                            <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+                                            <Text style={[FONTS.bodyStrong, { color: colors.primary }]}>+ Add Task / Step</Text>
+                                        </TouchableOpacity>
                                     )}
                                 </>
                             )}
@@ -2513,6 +2578,112 @@ export const TaskDetailScreen = () => {
                                         style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
                                     >
                                         <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Save Changes</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </TouchableOpacity>
+                        </KeyboardAvoidingView>
+                    </TouchableOpacity>
+                </Modal>
+
+                {/* Add New Task Modal */}
+                <Modal
+                    visible={addTaskModalVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setAddTaskModalVisible(false)}
+                >
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}
+                        onPress={() => setAddTaskModalVisible(false)}
+                    >
+                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%', maxWidth: 450 }}>
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 20, gap: 16, maxHeight: '85%' }}
+                            >
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Text style={[FONTS.h3, { color: colors.text }]}>Add New Task / Step</Text>
+                                    <TouchableOpacity onPress={() => setAddTaskModalVisible(false)}>
+                                        <Ionicons name="close" size={24} color={colors.textSecondary} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 16 }} showsVerticalScrollIndicator={false}>
+                                    <View style={{ gap: 6 }}>
+                                        <Text style={[FONTS.label, { color: colors.textSecondary }]}>Task Title / Question</Text>
+                                        <TextInput
+                                            style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                            placeholder="Enter task title or question..."
+                                            placeholderTextColor={colors.textSecondary}
+                                            value={newTaskLabel}
+                                            onChangeText={setNewTaskLabel}
+                                        />
+                                    </View>
+
+                                    <View style={{ gap: 6, zIndex: 1000 }}>
+                                        <PopoverDropdown
+                                            label="Data Type"
+                                            placeholder="Select data type..."
+                                            options={DATA_TYPES.map(dt => ({ label: dt, value: dt }))}
+                                            value={newDataType}
+                                            onSelect={(val) => setNewDataType(val as any)}
+                                        />
+                                    </View>
+
+                                    {['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(newDataType) && (
+                                        <View style={{ gap: 8 }}>
+                                            <Text style={[FONTS.label, { color: colors.textSecondary }]}>Options</Text>
+                                            {newTaskOptions.map((option, idx) => (
+                                                <View key={`${option}-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 10 }}>
+                                                    <Text style={[FONTS.body, { color: colors.text }]}>{option}</Text>
+                                                    <TouchableOpacity onPress={() => setNewTaskOptions(newTaskOptions.filter((_, i) => i !== idx))}>
+                                                        <Ionicons name="close-circle" size={20} color={colors.danger} />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))}
+                                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                <TextInput
+                                                    style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
+                                                    placeholder="Add option..."
+                                                    placeholderTextColor={colors.textSecondary}
+                                                    value={addNewTaskOptionInput}
+                                                    onChangeText={setAddNewTaskOptionInput}
+                                                    onSubmitEditing={() => {
+                                                        if (addNewTaskOptionInput.trim() && !newTaskOptions.includes(addNewTaskOptionInput.trim())) {
+                                                            setNewTaskOptions([...newTaskOptions, addNewTaskOptionInput.trim()]);
+                                                            setAddNewTaskOptionInput('');
+                                                        }
+                                                    }}
+                                                />
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        if (addNewTaskOptionInput.trim() && !newTaskOptions.includes(addNewTaskOptionInput.trim())) {
+                                                            setNewTaskOptions([...newTaskOptions, addNewTaskOptionInput.trim()]);
+                                                            setAddNewTaskOptionInput('');
+                                                        }
+                                                    }}
+                                                    style={{ backgroundColor: colors.primary, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    <Ionicons name="add" size={24} color="#FFF" />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    )}
+                                </ScrollView>
+
+                                <View style={{ flexDirection: 'row', gap: 12, paddingTop: 8 }}>
+                                    <TouchableOpacity
+                                        onPress={() => setAddTaskModalVisible(false)}
+                                        style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}
+                                    >
+                                        <Text style={[FONTS.bodyStrong, { color: colors.text }]}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleAddNewTask}
+                                        style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
+                                    >
+                                        <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Add Task</Text>
                                     </TouchableOpacity>
                                 </View>
                             </TouchableOpacity>

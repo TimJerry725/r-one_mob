@@ -1,4 +1,4 @@
-export type ServiceType = 'Installation' | 'Service' | 'Preventive' | 'Request Preventive';
+export type ServiceType = 'Installation' | 'Service' | 'Reactive' | 'Preventive' | 'Request Preventive';
 
 type ServiceTypeColors = {
     background: string;
@@ -17,6 +17,13 @@ const LIGHT_TYPE_COLORS: Record<ServiceType, ServiceTypeColors> = {
         tintText: '#003F74',
     },
     Service: {
+        background: '#A64B00',
+        border: '#7A3600',
+        text: '#FFFFFF',
+        tint: '#FDEFE2',
+        tintText: '#6B2E00',
+    },
+    Reactive: {
         background: '#A64B00',
         border: '#7A3600',
         text: '#FFFFFF',
@@ -54,6 +61,13 @@ const DARK_TYPE_COLORS: Record<ServiceType, ServiceTypeColors> = {
         tint: '#FFE4BF',
         tintText: '#5E2E00',
     },
+    Reactive: {
+        background: '#FFB04C',
+        border: '#7A4208',
+        text: '#2A1400',
+        tint: '#FFE4BF',
+        tintText: '#5E2E00',
+    },
     Preventive: {
         background: '#54E0A4',
         border: '#1F6B4E',
@@ -71,4 +85,4 @@ const DARK_TYPE_COLORS: Record<ServiceType, ServiceTypeColors> = {
 };
 
 export const getServiceTypeColors = (type: ServiceType, isDark: boolean) =>
-    (isDark ? DARK_TYPE_COLORS : LIGHT_TYPE_COLORS)[type];
+    (isDark ? DARK_TYPE_COLORS : LIGHT_TYPE_COLORS)[type] || (isDark ? DARK_TYPE_COLORS.Reactive : LIGHT_TYPE_COLORS.Reactive);

@@ -1,4 +1,4 @@
-export type WorkOrderStatus = 'Unassigned' | 'Assigned' | 'Working' | 'Under Review' | 'Completed' | 'Requested';
+export type WorkOrderStatus = 'Unassigned' | 'Assigned' | 'Accepted' | 'Working' | 'Under Review' | 'Completed' | 'Requested';
 
 export type WorkOrder = {
     id: string;
@@ -6,7 +6,7 @@ export type WorkOrder = {
     title: string;
     siteName: string;
     address: string;
-    type: 'Installation' | 'Service' | 'Preventive';
+    type: 'Installation' | 'Service' | 'Reactive' | 'Preventive';
     stage: string;
     status: WorkOrderStatus;
     dueWindow: string;
@@ -31,6 +31,8 @@ export type WorkOrder = {
     approver?: string;
     primaryApprover?: string;
     secondaryApprover?: string;
+    createdBy?: string;
+    requestedBy?: string;
     isRequested?: boolean;
 };
 
@@ -553,6 +555,33 @@ export const PREVENTIVE_EV_CHARGER_QUESTION_COUNT = PREVENTIVE_EV_CHARGER_MONTHL
     (item) => item.type !== 'section_header' && item.type !== 'checklist_header' && !item.isReadOnly
 ).length;
 
+export const WORK_ORDER_TEMPLATES = [
+    {
+        id: 'ev-infra-monthly',
+        name: 'EV Infrastructure Monthly Maintenance Checklist',
+        items: PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST,
+        total: PREVENTIVE_EV_INFRA_QUESTION_COUNT,
+    },
+    {
+        id: 'ev-charger-monthly',
+        name: 'EV Charger Monthly Inspection Checklist',
+        items: PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST,
+        total: PREVENTIVE_EV_CHARGER_QUESTION_COUNT,
+    },
+    {
+        id: 'ht-yard-quarterly',
+        name: 'HT Yard Quarterly Maintenance Checklist',
+        items: PREVENTIVE_HT_YARD_CHECKLIST,
+        total: 8,
+    },
+    {
+        id: 'standard-fault',
+        name: 'Standard Reactive Fault Checklist',
+        items: CHECKLIST_TEMPLATE,
+        total: 5,
+    },
+];
+
 export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
     section('htpm-yellow-1', 'HT / DP - INSTALLATION'),
     checklist('htpm-t1-instruction', 'Check that all equipments-Lighting arrestor (LA\'s) Gang operated switch are properly opeartional'),
@@ -859,7 +888,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         title: 'Connector Fault Investigation',
         siteName: 'Mumbai Highway Point',
         address: 'NH48 Service Lane, Panvel',
-        type: 'Service',
+        type: 'Reactive',
         stage: 'Fault Check',
         status: 'Assigned',
         dueWindow: 'Today, 13:00 - 16:00',
@@ -911,7 +940,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         title: 'Cable Replacement and Test',
         siteName: 'Industrial Zone B',
         address: 'Plot 14, Peenya, Bengaluru',
-        type: 'Service',
+        type: 'Reactive',
         stage: 'Closeout',
         status: 'Completed',
         dueWindow: 'Completed on 22 Mar',

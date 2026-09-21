@@ -10,7 +10,7 @@ import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { getServiceTypeColors } from '../styles/workTypeColors';
 import { WORK_ORDERS, WorkOrder, WorkOrderStatus, STATION_BUSINESS_IMPACT } from '../data/fieldDemo';
 
-const STATUS_TABS: WorkOrderStatus[] = ['Unassigned', 'Assigned', 'Working', 'Under Review', 'Completed'];
+const STATUS_TABS: WorkOrderStatus[] = ['Unassigned', 'Assigned', 'Accepted', 'Working', 'Under Review', 'Completed'];
 
 type StationSummary = {
     id: string;
@@ -79,7 +79,7 @@ export const OrderCard = ({
     };
 
     const isPreventive = item.type === 'Preventive';
-    const isService = item.type === 'Service';
+    const isService = item.type === 'Service' || item.type === 'Reactive';
     const isPreventiveOrService = isPreventive || isService;
     const isCurrentlyRequested = cardRequested || cardStatus === 'Requested' || item.isRequested;
 
@@ -193,6 +193,15 @@ export const OrderCard = ({
                         ) : null}
                     </View>
                 </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 16, marginTop: 8, marginBottom: 4 }}>
+                <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
+                    Created by: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.createdBy || item.assignedBy || 'Andrea Meuschke'}</Text>
+                </Text>
+                <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
+                    Requested by: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.requestedBy || 'Timothy Jerry'}</Text>
+                </Text>
             </View>
 
             {actionConfig ? (
@@ -415,8 +424,8 @@ export const ProjectDetailScreen = () => {
     
     const filterCounts = useMemo(() => {
         const counts: Record<string, number> = { 
-            'Unassigned': 0, 'Assigned': 0, 'Working': 0, 'Under Review': 0, 'Completed': 0,
-            'Installation': 0, 'Service': 0, 'Preventive': 0
+            'Unassigned': 0, 'Assigned': 0, 'Accepted': 0, 'Working': 0, 'Under Review': 0, 'Completed': 0,
+            'Installation': 0, 'Service': 0, 'Reactive': 0, 'Preventive': 0
         };
         WORK_ORDERS.forEach((item) => {
             const matchesStatus = selectedStatuses.length === 0 ? true : selectedStatuses.includes(item.status);
@@ -457,8 +466,8 @@ export const ProjectDetailScreen = () => {
                             <Text style={[styles.typeMetricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Installation</Text>
                         </View>
                         <View style={[styles.typeMetricBox, { backgroundColor: colors.secondary + '15', borderColor: colors.secondary }]}>
-                            <Text style={[styles.typeMetricCount, { color: colors.secondary }]}>{filterCounts['Service'] || 0}</Text>
-                            <Text style={[styles.typeMetricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Service</Text>
+                            <Text style={[styles.typeMetricCount, { color: colors.secondary }]}>{(filterCounts['Reactive'] || 0) + (filterCounts['Service'] || 0)}</Text>
+                            <Text style={[styles.typeMetricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Reactive</Text>
                         </View>
                         <View style={[styles.typeMetricBox, { backgroundColor: colors.warning + '15', borderColor: colors.warning }]}>
                             <Text style={[styles.typeMetricCount, { color: colors.warning }]}>{filterCounts['Preventive'] || 0}</Text>
@@ -556,7 +565,7 @@ export const ProjectDetailScreen = () => {
 
                                         <View style={[styles.filterDivider, { backgroundColor: colors.border, marginTop: 16 }]} />
                                         <Text style={[styles.filterHeader, { color: colors.textSecondary }]}>TYPE</Text>
-                                        {['Installation', 'Service', 'Preventive'].map((type) => {
+                                        {['Installation', 'Reactive', 'Preventive'].map((type) => {
                                             const isSelected = tempSelectedTypes.includes(type);
                                             return (
                                                 <TouchableOpacity

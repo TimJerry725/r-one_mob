@@ -12,7 +12,7 @@ export const getStatusColor = (status: string, colors: any, isDark: boolean): st
     }
     
     // Others
-    if (['assigned', 'on route', 'at site'].includes(s)) {
+    if (['assigned', 'accepted', 'on route', 'at site'].includes(s)) {
         return colors.secondary;
     }
     if (['requested', 'send requested', 'request pending'].includes(s)) {

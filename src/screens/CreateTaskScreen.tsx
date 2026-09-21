@@ -33,7 +33,7 @@ import {
     STAGE_NAMES,
     TaskDraftResult,
 } from '../data/createTaskOptions';
-import { WORK_ORDERS, PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST, PREVENTIVE_EV_INFRA_QUESTION_COUNT } from '../data/fieldDemo';
+import { WORK_ORDERS, PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST, PREVENTIVE_EV_INFRA_QUESTION_COUNT, WORK_ORDER_TEMPLATES } from '../data/fieldDemo';
 
 const MOCK_PM_WORKS_LIST = [
     {
@@ -115,7 +115,8 @@ export const CreateTaskScreen = () => {
     const [assignmentType, setAssignmentType] = useState('Self');
     const [primaryApprover, setPrimaryApprover] = useState<string>('Marcus Aurelius');
     const [secondaryApprover, setSecondaryApprover] = useState<string>('Andrea Meuschke');
-    const [serviceType, setServiceType] = useState<typeof SERVICE_TYPES[number]>('Service');
+    const [serviceType, setServiceType] = useState<typeof SERVICE_TYPES[number]>('Reactive');
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('ev-infra-monthly');
     const [selectedPmWorkIds, setSelectedPmWorkIds] = useState<string[]>(['PM-9012', 'PM-9015']);
 
     const isAllPmSelected = selectedPmWorkIds.length === MOCK_PM_WORKS_LIST.length && MOCK_PM_WORKS_LIST.length > 0;
@@ -138,7 +139,7 @@ export const CreateTaskScreen = () => {
     const handledTaskToken = useRef<number | null>(null);
 
     const handleCreateWorkOrder = () => {
-        if (serviceType === 'Service' && !title.trim()) {
+        if ((serviceType as string === 'Reactive' || serviceType as string === 'Service') && !title.trim()) {
             Alert.alert('Required Field', 'Please enter a work title.');
             return;
         }
@@ -148,6 +149,7 @@ export const CreateTaskScreen = () => {
         }
 
         const techs = assignmentType === 'Self' ? ['Self'] : assignees;
+        const chosenTemplate = WORK_ORDER_TEMPLATES.find((t) => t.id === selectedTemplateId) ?? WORK_ORDER_TEMPLATES[0];
 
         const newWO = {
             id: `wo-${Date.now()}`,
@@ -156,26 +158,30 @@ export const CreateTaskScreen = () => {
             description: description.trim(),
             siteName: siteName,
             address: 'Platform Road, Shivajinagar, Pune',
-            type: serviceType === 'Request Preventive' ? 'Preventive' as const : 'Service' as const,
+            type: serviceType === 'Request Preventive' ? 'Preventive' as const : 'Reactive' as const,
             stage: serviceType === 'Request Preventive' ? 'Commissioning' : 'Site Prep',
             status: 'Unassigned' as const,
             dueWindow: 'Today, 14:00 - 17:00',
             eta: 'Not started',
             distance: '1.2 km',
             checklistCompleted: 0,
-            checklistTotal: serviceType === 'Request Preventive' ? PREVENTIVE_EV_INFRA_QUESTION_COUNT : 5,
-            checklistItems: serviceType === 'Request Preventive' ? PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST : undefined,
+            checklistTotal: chosenTemplate.total,
+            checklistItems: chosenTemplate.items,
             tools: [],
             parts: [],
             technicians: techs,
             assetId: chargePoint || 'CP-100239',
             offlineReady: true,
-            notes: description.trim() || 'Service job',
+            notes: description.trim() || 'Reactive job',
             latitude: 18.5314,
             longitude: 73.8446,
             priority: (priority || 'Medium') as any,
             targetTime: Date.now() + 6 * 60 * 60 * 1000,
             assignedBy: 'Andrea Meuschke',
+            createdBy: 'Timothy Jerry',
+            requestedBy: serviceType === 'Request Preventive' ? 'Timothy Jerry' : 'Andrea Meuschke',
+            primaryApprover: primaryApprover,
+            secondaryApprover: secondaryApprover,
         };
 
         WORK_ORDERS.unshift(newWO);
@@ -291,7 +297,7 @@ export const CreateTaskScreen = () => {
                                             </Text>
                                         ) : (
                                             <Text style={[styles.headerTitle, { color: colors.text }]}>
-                                                Create Service Work
+                                                Create Reactive Work
                                             </Text>
                                         )}
                                     </View>
@@ -336,7 +342,7 @@ export const CreateTaskScreen = () => {
                                                     })}
                                                 </View>
 
-                                                {serviceType === 'Service' && (
+                                                {(serviceType as string === 'Reactive' || serviceType as string === 'Service') && (
                                                     <>
                                                         {/* Title */}
                                                         <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
@@ -388,6 +394,15 @@ export const CreateTaskScreen = () => {
                                                     ]}
                                                     value={chargePoint}
                                                     onSelect={(val) => setChargePoint(val as string)}
+                                                />
+
+                                                {/* Template Selection */}
+                                                <PopoverDropdown
+                                                    label="* Select Template"
+                                                    placeholder="Choose template..."
+                                                    options={WORK_ORDER_TEMPLATES.map((t) => ({ label: t.name, value: t.id }))}
+                                                    value={selectedTemplateId}
+                                                    onSelect={(val) => setSelectedTemplateId(val as string)}
                                                 />
 
                                                 {/* PM Works Available (Request Preventive tab - Shown only when charger is selected) */}
@@ -485,7 +500,7 @@ export const CreateTaskScreen = () => {
                                                     </View>
                                                 )}
 
-                                                {serviceType === 'Service' && (
+                                                {(serviceType as string === 'Reactive' || serviceType as string === 'Service') && (
                                                     <>
 
                                                 {/* Priority */}
@@ -587,6 +602,30 @@ export const CreateTaskScreen = () => {
                                                         </View>
                                                     )}
                                                 </View>
+                                                {/* Primary & Secondary Approvers (Above Assignment Type & Assignees) */}
+                                                <View style={{ flexDirection: 'row', gap: 12, zIndex: 950 }}>
+                                                    <View style={{ flex: 1, zIndex: 950 }}>
+                                                        <PopoverDropdown
+                                                            label="Primary Approver"
+                                                            placeholder="Select primary approver..."
+                                                            options={getSelectorOptions('assignees').options}
+                                                            value={primaryApprover}
+                                                            onSelect={(val) => setPrimaryApprover(val as string)}
+                                                            isMulti={false}
+                                                        />
+                                                    </View>
+                                                    <View style={{ flex: 1, zIndex: 949 }}>
+                                                        <PopoverDropdown
+                                                            label="Secondary Approver"
+                                                            placeholder="Select secondary approver..."
+                                                            options={getSelectorOptions('assignees').options}
+                                                            value={secondaryApprover}
+                                                            onSelect={(val) => setSecondaryApprover(val as string)}
+                                                            isMulti={false}
+                                                        />
+                                                    </View>
+                                                </View>
+
                                                 {/* Assignment Type */}
                                                 <PopoverDropdown
                                                     label="* Assignment Type"
@@ -599,30 +638,6 @@ export const CreateTaskScreen = () => {
                                                     value={assignmentType}
                                                     onSelect={(val) => setAssignmentType(val as string)}
                                                 />
-
-                                                {/* Primary & Secondary Approvers (Below Assignment Type, Single-Select) */}
-                                                <View style={{ flexDirection: 'row', gap: 12, zIndex: 900 }}>
-                                                    <View style={{ flex: 1, zIndex: 900 }}>
-                                                        <PopoverDropdown
-                                                            label="Primary Approver"
-                                                            placeholder="Select primary approver..."
-                                                            options={getSelectorOptions('assignees').options}
-                                                            value={primaryApprover}
-                                                            onSelect={(val) => setPrimaryApprover(val as string)}
-                                                            isMulti={false}
-                                                        />
-                                                    </View>
-                                                    <View style={{ flex: 1, zIndex: 899 }}>
-                                                        <PopoverDropdown
-                                                            label="Secondary Approver"
-                                                            placeholder="Select secondary approver..."
-                                                            options={getSelectorOptions('assignees').options}
-                                                            value={secondaryApprover}
-                                                            onSelect={(val) => setSecondaryApprover(val as string)}
-                                                            isMulti={false}
-                                                        />
-                                                    </View>
-                                                </View>
 
                                                 {/* Assignees (Conditional) */}
                                                 {assignmentType === 'Team' && (
