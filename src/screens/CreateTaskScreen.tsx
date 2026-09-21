@@ -113,6 +113,8 @@ export const CreateTaskScreen = () => {
     const [endDate, setEndDate] = useState('05 Jul 2026');
     const [task, setTask] = useState('');
     const [assignmentType, setAssignmentType] = useState('Self');
+    const [primaryApprover, setPrimaryApprover] = useState<string>('Marcus Aurelius');
+    const [secondaryApprover, setSecondaryApprover] = useState<string>('Andrea Meuschke');
     const [serviceType, setServiceType] = useState<typeof SERVICE_TYPES[number]>('Service');
     const [selectedPmWorkIds, setSelectedPmWorkIds] = useState<string[]>(['PM-9012', 'PM-9015']);
 
@@ -597,6 +599,30 @@ export const CreateTaskScreen = () => {
                                                     value={assignmentType}
                                                     onSelect={(val) => setAssignmentType(val as string)}
                                                 />
+
+                                                {/* Primary & Secondary Approvers (Below Assignment Type, Single-Select) */}
+                                                <View style={{ flexDirection: 'row', gap: 12, zIndex: 900 }}>
+                                                    <View style={{ flex: 1, zIndex: 900 }}>
+                                                        <PopoverDropdown
+                                                            label="Primary Approver"
+                                                            placeholder="Select primary approver..."
+                                                            options={getSelectorOptions('assignees').options}
+                                                            value={primaryApprover}
+                                                            onSelect={(val) => setPrimaryApprover(val as string)}
+                                                            isMulti={false}
+                                                        />
+                                                    </View>
+                                                    <View style={{ flex: 1, zIndex: 899 }}>
+                                                        <PopoverDropdown
+                                                            label="Secondary Approver"
+                                                            placeholder="Select secondary approver..."
+                                                            options={getSelectorOptions('assignees').options}
+                                                            value={secondaryApprover}
+                                                            onSelect={(val) => setSecondaryApprover(val as string)}
+                                                            isMulti={false}
+                                                        />
+                                                    </View>
+                                                </View>
 
                                                 {/* Assignees (Conditional) */}
                                                 {assignmentType === 'Team' && (
