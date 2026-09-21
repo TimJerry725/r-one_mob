@@ -514,59 +514,6 @@ export const ProjectDetailScreen = () => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Quick Status Filter Chips Bar (Under Filter Controls) */}
-                    <View style={{ marginBottom: 12, marginTop: 4 }}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
-                            {(['All', ...STATUS_TABS] as const).map((status) => {
-                                const isAll = status === 'All';
-                                const isSelected = isAll ? selectedStatuses.length === 0 : selectedStatuses.includes(status as WorkOrderStatus);
-                                const count = isAll
-                                    ? WORK_ORDERS.length
-                                    : (filterCounts[status] || 0);
-                                return (
-                                    <TouchableOpacity
-                                        key={status}
-                                        onPress={() => {
-                                            if (isAll) {
-                                                setSelectedStatuses([]);
-                                            } else {
-                                                setSelectedStatuses((current) =>
-                                                    current.includes(status as WorkOrderStatus)
-                                                        ? current.filter((s) => s !== status)
-                                                        : [...current, status as WorkOrderStatus]
-                                                );
-                                            }
-                                        }}
-                                        style={{
-                                            backgroundColor: isSelected ? colors.primary : colors.surface,
-                                            borderColor: isSelected ? colors.primary : colors.border,
-                                            borderWidth: 1,
-                                            paddingHorizontal: 12,
-                                            paddingVertical: 6,
-                                            borderRadius: 20,
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            gap: 6,
-                                        }}
-                                    >
-                                        <Text style={{ fontSize: 13, fontWeight: '600', color: isSelected ? colors.white : colors.text }}>
-                                            {status}
-                                        </Text>
-                                        <View style={{
-                                            backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : colors.surfaceHighlight,
-                                            paddingHorizontal: 6,
-                                            paddingVertical: 2,
-                                            borderRadius: 10,
-                                        }}>
-                                            <Text style={{ fontSize: 11, fontWeight: '700', color: isSelected ? colors.white : colors.textSecondary }}>
-                                                {count}
-                                            </Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
-                    </View>
 
                     <Modal
                         visible={showFilterMenu}
