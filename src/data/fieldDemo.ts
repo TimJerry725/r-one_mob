@@ -29,6 +29,8 @@ export type WorkOrder = {
     targetTime: number;
     assignedBy?: string;
     approver?: string;
+    primaryApprover?: string;
+    secondaryApprover?: string;
     isRequested?: boolean;
 };
 
@@ -652,6 +654,8 @@ export let WORK_ORDERS: WorkOrder[] = [
         targetTime: Date.now() + 3 * 60 * 60 * 1000,
         assignedBy: 'Andrea Meuschke',
         approver: 'Marcus Aurelius',
+        primaryApprover: 'Marcus Aurelius',
+        secondaryApprover: 'Andrea Meuschke',
     },
     {
         id: 'wo-pm-ht-yard-01',
@@ -681,6 +685,8 @@ export let WORK_ORDERS: WorkOrder[] = [
         targetTime: Date.now() + 5 * 60 * 60 * 1000,
         assignedBy: 'Marcus Aurelius',
         approver: 'Andrea Meuschke',
+        primaryApprover: 'Andrea Meuschke',
+        secondaryApprover: 'Marcus Aurelius',
     },
     {
         id: 'wo-101',

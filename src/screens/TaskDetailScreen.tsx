@@ -586,11 +586,14 @@ export const TaskDetailScreen = () => {
     const [editedNotes, setEditedNotes] = useState(workOrder.notes || '');
     const [editedStartTime, setEditedStartTime] = useState(new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toISOString().slice(0, 10));
     const [editedEndTime, setEditedEndTime] = useState(new Date(workOrder.targetTime).toISOString().slice(0, 10));
-    const [editedApprover, setEditedApprover] = useState(workOrder.approver || 'Marcus Aurelius');
+    const [editedPrimaryApprover, setEditedPrimaryApprover] = useState(workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius');
+    const [editedSecondaryApprover, setEditedSecondaryApprover] = useState(workOrder.secondaryApprover || 'Andrea Meuschke');
 
     const handleSaveDetails = () => {
         workOrder.notes = editedNotes;
-        workOrder.approver = editedApprover;
+        workOrder.primaryApprover = editedPrimaryApprover;
+        workOrder.secondaryApprover = editedSecondaryApprover;
+        workOrder.approver = editedPrimaryApprover;
         const startTime = new Date(editedStartTime).getTime();
         if (!isNaN(startTime)) {
             workOrder.targetStartTime = startTime;
@@ -1112,22 +1115,41 @@ export const TaskDetailScreen = () => {
                             </View>
                         )}
                         
-                        <View style={{ marginTop: 12, flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+                        <View style={{ marginTop: 12, gap: 10 }}>
                             {isEditingDetails ? (
-                                <View style={{ flex: 1 }}>
-                                    <PopoverDropdown
-                                        label="Approver"
-                                        placeholder="Select approver..."
-                                        options={getSelectorOptions('assignees').options}
-                                        value={editedApprover}
-                                        onSelect={(val) => setEditedApprover(val as string)}
-                                        isMulti={false}
-                                    />
+                                <View style={{ flexDirection: 'row', gap: 12 }}>
+                                    <View style={{ flex: 1 }}>
+                                        <PopoverDropdown
+                                            label="Primary Approver"
+                                            placeholder="Select primary approver..."
+                                            options={getSelectorOptions('assignees').options}
+                                            value={editedPrimaryApprover}
+                                            onSelect={(val) => setEditedPrimaryApprover(val as string)}
+                                            isMulti={false}
+                                        />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <PopoverDropdown
+                                            label="Secondary Approver"
+                                            placeholder="Select secondary approver..."
+                                            options={getSelectorOptions('assignees').options}
+                                            value={editedSecondaryApprover}
+                                            onSelect={(val) => setEditedSecondaryApprover(val as string)}
+                                            isMulti={false}
+                                        />
+                                    </View>
                                 </View>
                             ) : (
-                                <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>Approver: {workOrder.approver || 'Marcus Aurelius'}</Text>
+                                <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+                                    <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
+                                        Primary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}</Text>
+                                    </Text>
+                                    <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
+                                        Secondary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.secondaryApprover || 'Andrea Meuschke'}</Text>
+                                    </Text>
+                                </View>
                             )}
-                            <View style={{ flex: 1 }}>
+                            <View style={{ marginTop: 2 }}>
                                 <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>Assigned by: {workOrder.assignedBy || 'Andrea Meuschke'}</Text>
                             </View>
                         </View>
