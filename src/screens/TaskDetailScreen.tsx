@@ -869,11 +869,11 @@ export const TaskDetailScreen = () => {
             Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
             return;
         }
-        workOrder.status = 'Working';
-        setWorkStatus('Working');
+        workOrder.status = 'Accepted';
+        setWorkStatus('Accepted');
         Alert.alert(
             'Work Accepted',
-            `"${workOrder.title}" has been accepted and moved to Working.`
+            `"${workOrder.title}" has been accepted.`
         );
     };
 

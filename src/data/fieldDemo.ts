@@ -865,7 +865,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         address: 'Platform Road, Shivajinagar, Pune',
         type: 'Installation',
         stage: 'Closeout',
-        status: 'Assigned',
+        status: 'Accepted',
         dueWindow: 'Next Week, 10:00 - 11:00',
         eta: 'Scheduled',
         distance: '0.8 km',

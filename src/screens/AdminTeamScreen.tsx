@@ -11,12 +11,13 @@ import { getStatusColor } from '../styles/statusColors';
 export const AdminTeamScreen = () => {
     const navigation = useNavigation<any>();
     const { colors, isDark } = useTheme();
-    const [filterTab, setFilterTab] = useState<'All' | 'Requested' | 'Pending Request' | 'Completed'>('All');
+    const [filterTab, setFilterTab] = useState<'All' | 'Accepted' | 'Requested' | 'Pending Request' | 'Completed'>('All');
 
     // Filter preventive work orders
     const preventiveOrders = WORK_ORDERS.filter((item) => item.type === 'Preventive');
 
     const filteredOrders = preventiveOrders.filter((item) => {
+        if (filterTab === 'Accepted') return item.status === 'Accepted';
         if (filterTab === 'Requested') return item.status === 'Requested' || item.isRequested;
         if (filterTab === 'Pending Request') return item.status !== 'Requested' && !item.isRequested && item.status !== 'Completed';
         if (filterTab === 'Completed') return item.status === 'Completed';
@@ -66,7 +67,7 @@ export const AdminTeamScreen = () => {
 
                     {/* Filter Tabs */}
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                        {(['All', 'Requested', 'Pending Request', 'Completed'] as const).map((tab) => (
+                        {(['All', 'Accepted', 'Requested', 'Pending Request', 'Completed'] as const).map((tab) => (
                             <TouchableOpacity
                                 key={tab}
                                 onPress={() => setFilterTab(tab)}

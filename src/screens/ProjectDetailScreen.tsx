@@ -47,11 +47,11 @@ export const OrderCard = ({
 
     const handleAcceptClick = (e: any) => {
         e.stopPropagation();
-        item.status = 'Working';
-        setCardStatus('Working');
+        item.status = 'Accepted';
+        setCardStatus('Accepted');
         Alert.alert(
             'Work Accepted',
-            `"${item.title}" has been accepted and moved to Working.`,
+            `"${item.title}" has been accepted and moved to Accepted status.`,
             [{ text: 'OK', onPress: onOpen }]
         );
     };
