@@ -826,9 +826,9 @@ export const TaskDetailScreen = () => {
 
         const mandatoryIncomplete = visibleItems.filter((item) => 
             item.required && 
-            item.type !== 'section_header' && 
-            item.type !== 'checklist_header' && 
-            item.type !== 'instruction' && 
+            (item.type as any) !== 'section_header' && 
+            (item.type as any) !== 'checklist_header' && 
+            (item.type as any) !== 'instruction' && 
             !isComplete(item)
         );
 
@@ -848,9 +848,9 @@ export const TaskDetailScreen = () => {
     const handleSubmitCompletion = () => {
         const mandatoryIncomplete = visibleItems.filter((item) => 
             item.required && 
-            item.type !== 'section_header' && 
-            item.type !== 'checklist_header' && 
-            item.type !== 'instruction' && 
+            (item.type as any) !== 'section_header' && 
+            (item.type as any) !== 'checklist_header' && 
+            (item.type as any) !== 'instruction' && 
             !isComplete(item)
         );
 
@@ -2188,6 +2188,7 @@ export const TaskDetailScreen = () => {
                             )}
                         </View>
                     </TouchableOpacity>
+                </Modal>
                 <Modal visible={mandatoryErrorModalVisible} transparent animationType="fade">
                     <View style={styles.modalOverlay}>
                         <View style={[styles.confirmSheet, { backgroundColor: colors.surface, maxWidth: 440, width: '90%', padding: 20 }]}>
@@ -2220,7 +2221,7 @@ export const TaskDetailScreen = () => {
                                         <Ionicons name="alert-circle-outline" size={20} color={colors.danger} style={{ marginTop: 2 }} />
                                         <View style={{ flex: 1 }}>
                                             <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 14 }]}>
-                                                {t.label || t.title || 'Mandatory Task'}
+                                                {t.label || (t as any).title || 'Mandatory Task'}
                                             </Text>
                                             <Text style={[FONTS.caption, { color: colors.danger, marginTop: 2 }]}>
                                                 * Required field missing

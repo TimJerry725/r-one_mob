@@ -555,33 +555,6 @@ export const PREVENTIVE_EV_CHARGER_QUESTION_COUNT = PREVENTIVE_EV_CHARGER_MONTHL
     (item) => item.type !== 'section_header' && item.type !== 'checklist_header' && !item.isReadOnly
 ).length;
 
-export const WORK_ORDER_TEMPLATES = [
-    {
-        id: 'ev-infra-monthly',
-        name: 'EV Infrastructure Monthly Maintenance Checklist',
-        items: PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST,
-        total: PREVENTIVE_EV_INFRA_QUESTION_COUNT,
-    },
-    {
-        id: 'ev-charger-monthly',
-        name: 'EV Charger Monthly Inspection Checklist',
-        items: PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST,
-        total: PREVENTIVE_EV_CHARGER_QUESTION_COUNT,
-    },
-    {
-        id: 'ht-yard-quarterly',
-        name: 'HT Yard Quarterly Maintenance Checklist',
-        items: PREVENTIVE_HT_YARD_CHECKLIST,
-        total: 8,
-    },
-    {
-        id: 'standard-fault',
-        name: 'Standard Reactive Fault Checklist',
-        items: CHECKLIST_TEMPLATE,
-        total: 5,
-    },
-];
-
 export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
     section('htpm-yellow-1', 'HT / DP - INSTALLATION'),
     checklist('htpm-t1-instruction', 'Check that all equipments-Lighting arrestor (LA\'s) Gang operated switch are properly opeartional'),
@@ -652,6 +625,33 @@ export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
     yesNoRadio('htpm-t21-visual', 'Visual Check'),
     checklist('htpm-t22-instruction', 'BDV Test'),
     yesNoRadio('htpm-t22-visual', 'Visual Check'),
+];
+
+export const WORK_ORDER_TEMPLATES = [
+    {
+        id: 'ev-infra-monthly',
+        name: 'EV Infrastructure Monthly Maintenance Checklist',
+        items: PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST,
+        total: PREVENTIVE_EV_INFRA_QUESTION_COUNT,
+    },
+    {
+        id: 'ev-charger-monthly',
+        name: 'EV Charger Monthly Inspection Checklist',
+        items: PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST,
+        total: PREVENTIVE_EV_CHARGER_QUESTION_COUNT,
+    },
+    {
+        id: 'ht-yard-quarterly',
+        name: 'HT Yard Quarterly Maintenance Checklist',
+        items: PREVENTIVE_HT_YARD_CHECKLIST,
+        total: 8,
+    },
+    {
+        id: 'standard-fault',
+        name: 'Standard Reactive Fault Checklist',
+        items: CHECKLIST_TEMPLATE,
+        total: 5,
+    },
 ];
 
 export let WORK_ORDERS: WorkOrder[] = [
