@@ -11,8 +11,13 @@ export const getStatusColor = (status: string, colors: any, isDark: boolean): st
         return isDark ? (colors.primaryLight || colors.primary) : colors.primary;
     }
     
+    // Accepted -> Teal
+    if (['accepted', 'accept'].includes(s)) {
+        return isDark ? '#2DD4BF' : '#009688';
+    }
+
     // Others
-    if (['assigned', 'accepted', 'on route', 'at site'].includes(s)) {
+    if (['assigned', 'on route', 'at site'].includes(s)) {
         return colors.secondary;
     }
     if (['requested', 'send requested', 'request pending'].includes(s)) {
