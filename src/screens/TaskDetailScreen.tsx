@@ -704,6 +704,8 @@ export const TaskDetailScreen = () => {
 
     const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
     const [completionModalVisible, setCompletionModalVisible] = useState(false);
+    const [mandatoryErrorModalVisible, setMandatoryErrorModalVisible] = useState(false);
+    const [incompleteMandatoryTasks, setIncompleteMandatoryTasks] = useState<ChecklistStateItem[]>([]);
     const [completionComments, setCompletionComments] = useState('');
     const [completionHasAttachment, setCompletionHasAttachment] = useState(false);
 
@@ -821,6 +823,21 @@ export const TaskDetailScreen = () => {
             Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
             return;
         }
+
+        const mandatoryIncomplete = visibleItems.filter((item) => 
+            item.required && 
+            item.type !== 'section_header' && 
+            item.type !== 'checklist_header' && 
+            item.type !== 'instruction' && 
+            !isComplete(item)
+        );
+
+        if (mandatoryIncomplete.length > 0) {
+            setIncompleteMandatoryTasks(mandatoryIncomplete);
+            setMandatoryErrorModalVisible(true);
+            return;
+        }
+
         if (!allCompleted) {
             setConfirmationModalVisible(true);
         } else {
@@ -829,6 +846,21 @@ export const TaskDetailScreen = () => {
     };
 
     const handleSubmitCompletion = () => {
+        const mandatoryIncomplete = visibleItems.filter((item) => 
+            item.required && 
+            item.type !== 'section_header' && 
+            item.type !== 'checklist_header' && 
+            item.type !== 'instruction' && 
+            !isComplete(item)
+        );
+
+        if (mandatoryIncomplete.length > 0) {
+            setCompletionModalVisible(false);
+            setIncompleteMandatoryTasks(mandatoryIncomplete);
+            setMandatoryErrorModalVisible(true);
+            return;
+        }
+
         if (!completionComments.trim()) {
             Alert.alert('Comments Required', 'Please provide completion details/comments.');
             return;
@@ -2156,6 +2188,60 @@ export const TaskDetailScreen = () => {
                             )}
                         </View>
                     </TouchableOpacity>
+                <Modal visible={mandatoryErrorModalVisible} transparent animationType="fade">
+                    <View style={styles.modalOverlay}>
+                        <View style={[styles.confirmSheet, { backgroundColor: colors.surface, maxWidth: 440, width: '90%', padding: 20 }]}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                <View style={[styles.warningIconCircle, { backgroundColor: colors.danger + '18', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' }]}>
+                                    <Ionicons name="alert-circle" size={28} color={colors.danger} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.confirmTitle, { color: colors.danger, fontSize: 18, marginBottom: 2, textAlign: 'left' }]}>
+                                        Cannot Submit for Review
+                                    </Text>
+                                    <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
+                                        Mandatory task(s) incomplete
+                                    </Text>
+                                </View>
+                                <TouchableOpacity onPress={() => setMandatoryErrorModalVisible(false)}>
+                                    <Ionicons name="close" size={24} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 14 }} />
+
+                            <Text style={[FONTS.body, { color: colors.text, marginBottom: 12, lineHeight: 20 }]}>
+                                The work order cannot be moved to <Text style={{ fontWeight: '700', color: colors.warning }}>Under Review</Text> because mandatory task(s) have not been completed:
+                            </Text>
+
+                            <ScrollView style={{ maxHeight: 180, marginVertical: 4 }} showsVerticalScrollIndicator={true}>
+                                {incompleteMandatoryTasks.map((t, idx) => (
+                                    <View key={t.id || idx} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: colors.danger + '30' }}>
+                                        <Ionicons name="alert-circle-outline" size={20} color={colors.danger} style={{ marginTop: 2 }} />
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 14 }]}>
+                                                {t.label || t.title || 'Mandatory Task'}
+                                            </Text>
+                                            <Text style={[FONTS.caption, { color: colors.danger, marginTop: 2 }]}>
+                                                * Required field missing
+                                            </Text>
+                                        </View>
+                                    </View>
+                                ))}
+                            </ScrollView>
+
+                            <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 8, marginBottom: 16 }]}>
+                                Please complete all required tasks or mark them as <Text style={{ fontWeight: '700', color: colors.text }}>Not Applicable (N/A)</Text> before submitting.
+                            </Text>
+
+                            <TouchableOpacity
+                                style={[styles.confirmBtn, { backgroundColor: colors.primary, width: '100%', height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }]}
+                                onPress={() => setMandatoryErrorModalVisible(false)}
+                            >
+                                <Text style={[styles.confirmBtnText, { color: colors.white, fontSize: 16, fontWeight: '700' }]}>Got it, complete tasks</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </Modal>
 
                 <Modal visible={confirmationModalVisible} transparent animationType="fade">
