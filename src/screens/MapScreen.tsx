@@ -732,7 +732,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     map: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
     },
     overlay: {
         flex: 1,
