@@ -361,92 +361,6 @@ export const MapScreen = () => {
 
             <SafeAreaView style={styles.overlay} edges={['top', 'left', 'right']} pointerEvents="box-none">
                 <View style={styles.topStack}>
-                    {/* Header Control Row: Duty Status Capsule Toggle + Profile */}
-                    <View style={styles.headerControlRow}>
-                        <View
-                            style={[
-                                styles.statusCapsuleContainer,
-                                {
-                                    backgroundColor: isDark ? '#0B131A' : '#DDE5EC',
-                                    borderColor: isDark ? '#1C2B36' : '#C1CBD5',
-                                },
-                            ]}
-                        >
-                            <TouchableOpacity
-                                onPress={() => setSession({ dutyStatus: 'working' })}
-                                activeOpacity={0.8}
-                                style={[
-                                    styles.statusCapsuleSegment,
-                                    dutyStatus === 'working' && {
-                                        backgroundColor: isDark ? '#0D4B33' : '#147952',
-                                        borderColor: isDark ? '#1C7550' : '#0F5E3F',
-                                    },
-                                ]}
-                            >
-                                <View
-                                    style={[
-                                        styles.statusDotIndicator,
-                                        { backgroundColor: dutyStatus === 'working' ? '#43D39E' : colors.textSecondary },
-                                    ]}
-                                />
-                                <Text
-                                    style={[
-                                        styles.statusCapsuleText,
-                                        {
-                                            color: dutyStatus === 'working' ? '#FFFFFF' : (isDark ? '#8A9DAE' : '#5E7285'),
-                                            fontWeight: dutyStatus === 'working' ? '700' : '500',
-                                        },
-                                    ]}
-                                >
-                                    Working
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={() => setSession({ dutyStatus: 'away' })}
-                                activeOpacity={0.8}
-                                style={[
-                                    styles.statusCapsuleSegment,
-                                    dutyStatus === 'away' && {
-                                        backgroundColor: isDark ? '#4A340D' : '#8A5900',
-                                        borderColor: isDark ? '#7A5718' : '#6E4700',
-                                    },
-                                ]}
-                            >
-                                <Ionicons
-                                    name="pause-circle"
-                                    size={14}
-                                    color={dutyStatus === 'away' ? '#FFD166' : colors.textSecondary}
-                                />
-                                <Text
-                                    style={[
-                                        styles.statusCapsuleText,
-                                        {
-                                            color: dutyStatus === 'away' ? '#FFFFFF' : (isDark ? '#8A9DAE' : '#5E7285'),
-                                            fontWeight: dutyStatus === 'away' ? '700' : '500',
-                                        },
-                                    ]}
-                                >
-                                    Away
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <TouchableOpacity
-                            activeOpacity={0.8}
-                            onPress={() => navigation.navigate('Profile')}
-                            style={[
-                                styles.profileIconButton,
-                                {
-                                    backgroundColor: isDark ? 'rgba(19, 32, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)',
-                                    borderColor: isDark ? 'rgba(244, 247, 251, 0.28)' : 'rgba(20, 33, 43, 0.18)',
-                                },
-                            ]}
-                        >
-                            <Ionicons name="person-circle" size={26} color={colors.primary} />
-                        </TouchableOpacity>
-                    </View>
-
                     {/* Search Bar */}
                     <View
                         style={[
@@ -467,6 +381,9 @@ export const MapScreen = () => {
                             placeholderTextColor={colors.textSecondary}
                             style={[styles.searchInput, { color: colors.text }]}
                         />
+                        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('Profile')}>
+                            <Ionicons name="person-circle" size={28} color={colors.primary} />
+                        </TouchableOpacity>
                     </View>
                 </View>
 
