@@ -1345,7 +1345,7 @@ export const TaskDetailScreen = () => {
                                                                      </View>
                                                                  )}
                                                             </View>
-                                                            {!isChecklistDisabled && !isFillOnlyChecklist && (
+                                                            {!isChecklistDisabled && (
                                                                 <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 10 : 1, marginLeft: 8 }}>
                                                                     <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
                                                                         <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
@@ -1723,7 +1723,7 @@ export const TaskDetailScreen = () => {
                                                             )}
                                                         </TouchableOpacity>
 
-                                                        {!isChecklistDisabled && !isFillOnlyChecklist && (
+                                                        {!isChecklistDisabled && (
                                                             <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 110 : 1, marginLeft: 8 }}>
                                                                 <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
                                                                     <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
@@ -1778,7 +1778,7 @@ export const TaskDetailScreen = () => {
                                                             {nestCount ? `  (${nestCount} ${nestCount === 1 ? 'task' : 'tasks'})` : ''}
                                                         </Text>
 
-                                                        {!isChecklistDisabled && !isFillOnlyChecklist && (
+                                                        {!isChecklistDisabled && (
                                                             <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 110 : 1, marginLeft: 8 }}>
                                                                 <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
                                                                     <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
