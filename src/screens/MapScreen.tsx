@@ -155,6 +155,15 @@ export const MapScreen = () => {
         setMapReady(true);
     }, []);
 
+    // Fallback: force mapReady after 4 seconds in case onMapReady never fires
+    // (e.g. Expo Go, slow devices, API key issues)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setMapReady(true);
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, []);
+
     useEffect(() => {
         let cancelled = false;
         (async () => {
@@ -365,11 +374,8 @@ export const MapScreen = () => {
                 showsMyLocationButton={false}
                 onMapReady={handleMapReady}
                 moveOnMarkerPress={false}
-                loadingEnabled={true}
-                loadingIndicatorColor={colors.primary}
-                loadingBackgroundColor={colors.background}
             >
-                {mapReady && (mapMode === 'work' || mapMode === 'both') && stationCards.map((station) => {
+                {(mapMode === 'work' || mapMode === 'both') && stationCards.map((station) => {
                     const active = activeStationName === station.siteName;
                     const accent = getStationAccent(station);
                     return (
@@ -385,7 +391,7 @@ export const MapScreen = () => {
                     );
                 })}
 
-                {mapReady && (mapMode === 'live' || mapMode === 'both') && MOCK_USER_LOCATIONS.map((user) => (
+                {(mapMode === 'live' || mapMode === 'both') && MOCK_USER_LOCATIONS.map((user) => (
                     <Marker
                         key={`user-${user.name}`}
                         coordinate={{ latitude: user.latitude, longitude: user.longitude }}
@@ -401,11 +407,13 @@ export const MapScreen = () => {
                 ))}
             </MapView>
 
-            {/* Loading overlay while map initialises */}
+            {/* Subtle loading indicator (not a blocking overlay) */}
             {!mapReady && (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={[FONTS.body, { color: colors.textSecondary, marginTop: 12 }]}>Loading map…</Text>
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                    <View style={{ backgroundColor: isDark ? 'rgba(17,27,35,0.82)' : 'rgba(255,255,255,0.82)', borderRadius: 16, padding: 20, alignItems: 'center', gap: 10 }}>
+                        <ActivityIndicator size="large" color={colors.primary} />
+                        <Text style={[FONTS.body, { color: colors.textSecondary }]}>Loading map…</Text>
+                    </View>
                 </View>
             )}
 
