@@ -2179,20 +2179,16 @@ export const TaskDetailScreen = () => {
                     </KeyboardAvoidingView>
                 )}
 
-                {activeTab === 'Tasks' && !isFillOnlyChecklist && !isOffSite && (
+                {activeTab === 'Tasks' && !isUnderReview && (
                     <TouchableOpacity
-                        style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000' }]}
+                        style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000', zIndex: 90 }]}
                         activeOpacity={0.9}
-                        onPress={() => navigation.navigate('CreateTask', {
-                            fromDetail: true,
-                            prefill: {
-                                serviceType: workOrder.type,
-                                siteName: workOrder.siteName,
-                                projectId: workOrder.projectId,
-                                stageName: 'Inspection',
-                                checklistName: 'Pedestal Repair'
-                            }
-                        })}
+                        onPress={() => {
+                            setNewTaskLabel('');
+                            setNewDataType('Short text');
+                            setNewTaskOptions([]);
+                            setAddTaskModalVisible(true);
+                        }}
                     >
                         <Ionicons name="add" size={32} color={colors.white} />
                     </TouchableOpacity>
