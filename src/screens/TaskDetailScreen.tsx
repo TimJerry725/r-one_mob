@@ -2190,10 +2190,10 @@ export const TaskDetailScreen = () => {
                     </TouchableOpacity>
                 </Modal>
                 <Modal visible={mandatoryErrorModalVisible} transparent animationType="fade">
-                    <View style={styles.modalOverlay}>
-                        <View style={[styles.confirmSheet, { backgroundColor: colors.surface, maxWidth: 440, width: '90%', padding: 20 }]}>
+                    <View style={styles.popupOverlay}>
+                        <View style={[{ backgroundColor: colors.surface, maxWidth: 440, width: '90%', borderRadius: 24, padding: 20, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12 }]}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                                <View style={[styles.warningIconCircle, { backgroundColor: colors.danger + '18', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' }]}>
+                                <View style={[styles.warningIconCircle, { backgroundColor: colors.danger + '18', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginBottom: 0 }]}>
                                     <Ionicons name="alert-circle" size={28} color={colors.danger} />
                                 </View>
                                 <View style={{ flex: 1 }}>
@@ -2246,8 +2246,8 @@ export const TaskDetailScreen = () => {
                 </Modal>
 
                 <Modal visible={confirmationModalVisible} transparent animationType="fade">
-                    <View style={styles.modalOverlay}>
-                        <View style={[styles.confirmSheet, { backgroundColor: colors.surface }]}>
+                    <View style={styles.popupOverlay}>
+                        <View style={[styles.popupModal, { backgroundColor: colors.surface }]}>
                             <View style={[styles.warningIconCircle, { backgroundColor: colors.secondary + '15' }]}>
                                 <Ionicons name="warning" size={32} color={colors.secondary} />
                             </View>
