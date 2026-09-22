@@ -385,8 +385,8 @@ export const CreateTaskScreen = () => {
 
                                                 {/* Charge Point */}
                                                 <PopoverDropdown
-                                                    label="* Charge Point (CPID)"
-                                                    placeholder="Choose CPID"
+                                                    label="Charge Point (CPID) (Optional)"
+                                                    placeholder="Choose CPID (Optional)"
                                                     options={[
                                                         { label: 'CPID-KN-01 (Fast Charger 1)', value: 'CPID-KN-01' },
                                                         { label: 'CPID-KN-02 (Fast Charger 2)', value: 'CPID-KN-02' },
