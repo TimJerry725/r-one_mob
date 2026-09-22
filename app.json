@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.timjerry725.rone",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -30,7 +30,7 @@
       "predictiveBackGestureEnabled": false,
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyBvfhnvDhgCQL4gUELzIYkcHorD2YFMTTg"
+          "apiKey": "AIzaSyBwqLIWDCYD1eeQIbS9olF8ad87eU9cGoI"
         }
       },
       "permissions": [
@@ -61,8 +61,8 @@
       [
         "react-native-maps",
         {
-          "iosGoogleMapsApiKey": "AIzaSyBvfhnvDhgCQL4gUELzIYkcHorD2YFMTTg",
-          "androidGoogleMapsApiKey": "AIzaSyBvfhnvDhgCQL4gUELzIYkcHorD2YFMTTg"
+          "iosGoogleMapsApiKey": "AIzaSyBwqLIWDCYD1eeQIbS9olF8ad87eU9cGoI",
+          "androidGoogleMapsApiKey": "AIzaSyBwqLIWDCYD1eeQIbS9olF8ad87eU9cGoI"
         }
       ],
       "expo-splash-screen",
