@@ -400,11 +400,12 @@ export const TaskDetailScreen = () => {
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const [workStatus, setWorkStatus] = useState(workOrder.status);
-    const [isNearSite, setIsNearSite] = useState<boolean | null>(null);
+    // Location check disabled for now (location-based access check disabled)
+    const [isNearSite, setIsNearSite] = useState<boolean | null>(true);
     const isUnderReview = workStatus === 'Under Review';
-    const isOffSite = isNearSite === false;
-    const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite;
-    const isGeoFenceWarningVisible = isOffSite;
+    const isOffSite = false;
+    const isChecklistDisabled = isUnderReview || dutyStatus === 'away';
+    const isGeoFenceWarningVisible = false;
     const isPreventiveOrService = ['preventive', 'service', 'reactive'].includes((workOrder.type || '').toLowerCase());
     const isAssignedPending = isPreventiveOrService && workStatus === 'Assigned';
     const isFillOnlyChecklist = isPreventiveOrService;
@@ -720,35 +721,9 @@ export const TaskDetailScreen = () => {
     const scrollViewRef = useRef<ScrollView>(null);
 
     useEffect(() => {
-        let cancelled = false;
-        const checkLocation = async () => {
-            const siteLat = Number(workOrder.latitude);
-            const siteLon = Number(workOrder.longitude);
-            if (!Number.isFinite(siteLat) || !Number.isFinite(siteLon) || (Math.abs(siteLat) < 0.01 && Math.abs(siteLon) < 0.01)) {
-                if (!cancelled) setIsNearSite(true);
-                return;
-            }
-            try {
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') {
-                    if (!cancelled) setIsNearSite(false);
-                    return;
-                }
-                const current = await Location.getCurrentPositionAsync({});
-                const meters = distanceMeters(
-                    { latitude: current.coords.latitude, longitude: current.coords.longitude },
-                    { latitude: siteLat, longitude: siteLon }
-                );
-                if (!cancelled) setIsNearSite(meters <= SITE_RADIUS_METERS);
-            } catch {
-                if (!cancelled) setIsNearSite(false);
-            }
-        };
-        checkLocation();
-        return () => {
-            cancelled = true;
-        };
-    }, [workOrder.id, workOrder.latitude, workOrder.longitude]);
+        // Location check disabled for now
+        setIsNearSite(true);
+    }, [workOrder.id]);
 
     useEffect(() => {
         if (isUnderReview) {
