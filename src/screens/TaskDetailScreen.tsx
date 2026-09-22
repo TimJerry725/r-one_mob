@@ -62,6 +62,8 @@ const getDataTypeColor = (dataType?: string, type?: string): string => {
 
 const getDataTypeLabel = (item: ChecklistStateItem): string => {
     if (item.dataType) return item.dataType;
+    if (item.type === 'section_header') return 'Section Header';
+    if (item.type === 'checklist_header') return 'Checklist Header';
     switch (item.type) {
         case 'text': return 'Short text';
         case 'textarea': return 'Long text';
@@ -84,6 +86,8 @@ const getDataTypeLabel = (item: ChecklistStateItem): string => {
 
 const mapDataTypeToType = (dataType: string): ChecklistStateItem['type'] => {
     switch (dataType) {
+        case 'Section Header': return 'section_header';
+        case 'Checklist Header': return 'checklist_header';
         case 'Short text': return 'text';
         case 'Long text': return 'textarea';
         case 'Number': return 'number';
@@ -1716,30 +1720,69 @@ export const TaskDetailScreen = () => {
                                                 const isExpanded = !isFillOnlyChecklist || expandedSectionIds.has(item.id);
                                                 const taskCount = sectionTaskCounts.get(item.id) || 0;
                                                 return (
-                                                    <TouchableOpacity
-                                                        key={item.id}
-                                                        activeOpacity={isFillOnlyChecklist ? 0.7 : 1}
-                                                        onPress={() => {
-                                                            if (isFillOnlyChecklist) toggleSectionExpanded(item.id);
-                                                        }}
-                                                        style={[styles.sectionHeader, { borderBottomColor: colors.border }]}
-                                                    >
-                                                        <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
-                                                            {item.label}
-                                                        </Text>
-                                                        {isFillOnlyChecklist && (
-                                                            <View style={styles.sectionHeaderMeta}>
-                                                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
-                                                                    ({taskCount} {hasChecklistHeaders ? (taskCount === 1 ? 'checklist' : 'checklists') : (taskCount === 1 ? 'task' : 'tasks')})
-                                                                </Text>
-                                                                <Ionicons
-                                                                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                                                                    size={18}
-                                                                    color={colors.textSecondary}
-                                                                />
+                                                     <View
+                                                         key={item.id}
+                                                         style={[styles.sectionHeader, { borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: openMenuId === item.id ? 100 : 1 }]}
+                                                     >
+                                                        <TouchableOpacity
+                                                            activeOpacity={isFillOnlyChecklist ? 0.7 : 1}
+                                                            onPress={() => {
+                                                                if (isFillOnlyChecklist) toggleSectionExpanded(item.id);
+                                                            }}
+                                                            style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                                                        >
+                                                            <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
+                                                                {item.label}
+                                                            </Text>
+                                                            {isFillOnlyChecklist && (
+                                                                <View style={styles.sectionHeaderMeta}>
+                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
+                                                                        ({taskCount} {hasChecklistHeaders ? (taskCount === 1 ? 'checklist' : 'checklists') : (taskCount === 1 ? 'task' : 'tasks')})
+                                                                    </Text>
+                                                                    <Ionicons
+                                                                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                                                        size={18}
+                                                                        color={colors.textSecondary}
+                                                                    />
+                                                                </View>
+                                                            )}
+                                                        </TouchableOpacity>
+
+                                                        {!isChecklistDisabled && !isFillOnlyChecklist && (
+                                                            <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 110 : 1, marginLeft: 8 }}>
+                                                                <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
+                                                                    <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
+                                                                </TouchableOpacity>
+                                                                {openMenuId === item.id && (
+                                                                    <View style={{
+                                                                        position: 'absolute',
+                                                                        top: 30,
+                                                                        right: 0,
+                                                                        backgroundColor: colors.surfaceHighlight,
+                                                                        borderRadius: 8,
+                                                                        paddingVertical: 8,
+                                                                        paddingHorizontal: 12,
+                                                                        width: 140,
+                                                                        shadowColor: '#000',
+                                                                        shadowOffset: { width: 0, height: 2 },
+                                                                        shadowOpacity: 0.15,
+                                                                        shadowRadius: 4,
+                                                                        elevation: 4,
+                                                                        zIndex: 120
+                                                                    }}>
+                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
+                                                                            <FontAwesome name="pencil" size={16} color={colors.primary} />
+                                                                            <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                        </TouchableOpacity>
+                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
+                                                                            <FontAwesome name="trash-o" size={16} color={colors.danger} />
+                                                                            <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
+                                                                        </TouchableOpacity>
+                                                                    </View>
+                                                                )}
                                                             </View>
                                                         )}
-                                                    </TouchableOpacity>
+                                                    </View>
                                                 );
                                             }
 
@@ -1753,12 +1796,47 @@ export const TaskDetailScreen = () => {
                                                 return (
                                                     <View
                                                         key={item.id}
-                                                        style={[styles.checklistHeader, { borderBottomColor: colors.border }]}
+                                                        style={[styles.checklistHeader, { borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: openMenuId === item.id ? 100 : 1 }]}
                                                     >
-                                                        <Text style={[styles.checklistHeaderText, { color: colors.text }]} numberOfLines={3}>
+                                                        <Text style={[styles.checklistHeaderText, { color: colors.text, flex: 1 }]} numberOfLines={3}>
                                                             {num ? `${num}. ` : ''}{item.label}
                                                             {nestCount ? `  (${nestCount} ${nestCount === 1 ? 'task' : 'tasks'})` : ''}
                                                         </Text>
+
+                                                        {!isChecklistDisabled && !isFillOnlyChecklist && (
+                                                            <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 110 : 1, marginLeft: 8 }}>
+                                                                <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
+                                                                    <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
+                                                                </TouchableOpacity>
+                                                                {openMenuId === item.id && (
+                                                                    <View style={{
+                                                                        position: 'absolute',
+                                                                        top: 30,
+                                                                        right: 0,
+                                                                        backgroundColor: colors.surfaceHighlight,
+                                                                        borderRadius: 8,
+                                                                        paddingVertical: 8,
+                                                                        paddingHorizontal: 12,
+                                                                        width: 140,
+                                                                        shadowColor: '#000',
+                                                                        shadowOffset: { width: 0, height: 2 },
+                                                                        shadowOpacity: 0.15,
+                                                                        shadowRadius: 4,
+                                                                        elevation: 4,
+                                                                        zIndex: 120
+                                                                    }}>
+                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
+                                                                            <FontAwesome name="pencil" size={16} color={colors.primary} />
+                                                                            <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                        </TouchableOpacity>
+                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
+                                                                            <FontAwesome name="trash-o" size={16} color={colors.danger} />
+                                                                            <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
+                                                                        </TouchableOpacity>
+                                                                    </View>
+                                                                )}
+                                                            </View>
+                                                        )}
                                                     </View>
                                                 );
                                             }
