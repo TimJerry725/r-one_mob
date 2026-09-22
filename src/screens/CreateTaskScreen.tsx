@@ -116,7 +116,7 @@ export const CreateTaskScreen = () => {
     const [primaryApprover, setPrimaryApprover] = useState<string>('');
     const [secondaryApprover, setSecondaryApprover] = useState<string>('');
     const [serviceType, setServiceType] = useState<typeof SERVICE_TYPES[number]>('Reactive');
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('standard-fault');
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
     const [selectedPmWorkIds, setSelectedPmWorkIds] = useState<string[]>(['PM-9012', 'PM-9015']);
 
     const isAllPmSelected = selectedPmWorkIds.length === MOCK_PM_WORKS_LIST.length && MOCK_PM_WORKS_LIST.length > 0;
@@ -149,7 +149,9 @@ export const CreateTaskScreen = () => {
         }
 
         const techs = assignmentType === 'Self' ? ['Self'] : assignees;
-        const chosenTemplate = WORK_ORDER_TEMPLATES.find((t) => t.id === selectedTemplateId) ?? WORK_ORDER_TEMPLATES[0];
+        const chosenTemplate = selectedTemplateId
+            ? WORK_ORDER_TEMPLATES.find((t) => t.id === selectedTemplateId) ?? null
+            : null;
 
         const newWO = {
             id: `wo-${Date.now()}`,
@@ -165,8 +167,8 @@ export const CreateTaskScreen = () => {
             eta: 'Not started',
             distance: '1.2 km',
             checklistCompleted: 0,
-            checklistTotal: chosenTemplate.total,
-            checklistItems: chosenTemplate.items,
+            checklistTotal: chosenTemplate ? chosenTemplate.total : 0,
+            checklistItems: chosenTemplate ? chosenTemplate.items : [],
             tools: [],
             parts: [],
             technicians: techs,
@@ -398,9 +400,12 @@ export const CreateTaskScreen = () => {
 
                                                 {/* Template Selection */}
                                                 <PopoverDropdown
-                                                    label="* Select Template"
-                                                    placeholder="Choose template..."
-                                                    options={WORK_ORDER_TEMPLATES.map((t) => ({ label: t.name, value: t.id }))}
+                                                    label="Select Template (Optional)"
+                                                    placeholder="Choose template (Optional)..."
+                                                    options={[
+                                                        { label: 'None (No template)', value: '' },
+                                                        ...WORK_ORDER_TEMPLATES.map((t) => ({ label: t.name, value: t.id })),
+                                                    ]}
                                                     value={selectedTemplateId}
                                                     onSelect={(val) => setSelectedTemplateId(val as string)}
                                                 />
