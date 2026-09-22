@@ -15,9 +15,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.timjerry725.rone",
-      "config": {
-        "googleMapsApiKey": "AIzaSyAOcbvs0MtHhAiHevyu63o1kkp7OXHfVRY"
-      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -58,6 +55,13 @@
         "expo-camera",
         {
           "cameraPermission": "Allow r-one to access your camera to scan asset QR codes."
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "iosGoogleMapsApiKey": "AIzaSyAOcbvs0MtHhAiHevyu63o1kkp7OXHfVRY",
+          "androidGoogleMapsApiKey": "AIzaSyAOcbvs0MtHhAiHevyu63o1kkp7OXHfVRY"
         }
       ],
       "expo-splash-screen",

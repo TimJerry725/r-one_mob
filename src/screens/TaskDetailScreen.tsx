@@ -2721,31 +2721,39 @@ export const TaskDetailScreen = () => {
                     </TouchableOpacity>
                 </Modal>
 
-                {/* Add New Task Modal */}
+                {/* Add New Task Modal (BottomSheet) */}
                 <Modal
                     visible={addTaskModalVisible}
                     transparent
-                    animationType="fade"
+                    animationType="slide"
                     onRequestClose={() => setAddTaskModalVisible(false)}
                 >
                     <TouchableOpacity
                         activeOpacity={1}
-                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}
+                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
                         onPress={() => setAddTaskModalVisible(false)}
                     >
-                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%', maxWidth: 450 }}>
+                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%' }}>
                             <TouchableOpacity
                                 activeOpacity={1}
-                                style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 20, gap: 16, maxHeight: '85%' }}
+                                style={{
+                                    backgroundColor: colors.surface,
+                                    borderTopLeftRadius: 24,
+                                    borderTopRightRadius: 24,
+                                    padding: 20,
+                                    maxHeight: 650,
+                                    gap: 16,
+                                }}
                             >
+                                <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 4 }} />
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Text style={[FONTS.h3, { color: colors.text }]}>Add New Task / Step</Text>
-                                    <TouchableOpacity onPress={() => setAddTaskModalVisible(false)}>
+                                    <TouchableOpacity onPress={() => setAddTaskModalVisible(false)} style={{ padding: 4 }}>
                                         <Ionicons name="close" size={24} color={colors.textSecondary} />
                                     </TouchableOpacity>
                                 </View>
 
-                                <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 16 }} showsVerticalScrollIndicator={false}>
+                                <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 16, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
                                     <View style={{ gap: 6 }}>
                                         <Text style={[FONTS.label, { color: colors.textSecondary }]}>Task Title / Question</Text>
                                         <TextInput
@@ -2764,6 +2772,7 @@ export const TaskDetailScreen = () => {
                                             options={DATA_TYPES.map(dt => ({ label: dt, value: dt }))}
                                             value={newDataType}
                                             onSelect={(val) => setNewDataType(val as any)}
+                                            placement="top"
                                         />
                                     </View>
 
