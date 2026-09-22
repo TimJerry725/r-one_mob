@@ -2312,9 +2312,24 @@ export const TaskDetailScreen = () => {
                         </View>
                     </TouchableOpacity>
                 </Modal>
-                <Modal visible={mandatoryErrorModalVisible} transparent animationType="fade">
-                    <View style={styles.popupOverlay}>
-                        <View style={[{ backgroundColor: colors.surface, maxWidth: 440, width: '90%', borderRadius: 24, padding: 20, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12 }]}>
+                <Modal visible={mandatoryErrorModalVisible} transparent animationType="slide" onRequestClose={() => setMandatoryErrorModalVisible(false)}>
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                        onPress={() => setMandatoryErrorModalVisible(false)}
+                    >
+                        <TouchableOpacity
+                            activeOpacity={1}
+                            style={{
+                                backgroundColor: colors.surface,
+                                borderTopLeftRadius: 24,
+                                borderTopRightRadius: 24,
+                                padding: 20,
+                                maxHeight: '85%',
+                                gap: 14,
+                            }}
+                        >
+                            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 4 }} />
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                                 <View style={[styles.warningIconCircle, { backgroundColor: colors.danger + '18', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginBottom: 0 }]}>
                                     <Ionicons name="alert-circle" size={28} color={colors.danger} />
@@ -2327,18 +2342,18 @@ export const TaskDetailScreen = () => {
                                         Mandatory task(s) incomplete
                                     </Text>
                                 </View>
-                                <TouchableOpacity onPress={() => setMandatoryErrorModalVisible(false)}>
+                                <TouchableOpacity onPress={() => setMandatoryErrorModalVisible(false)} style={{ padding: 4 }}>
                                     <Ionicons name="close" size={24} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             </View>
 
-                            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 14 }} />
+                            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 4 }} />
 
-                            <Text style={[FONTS.body, { color: colors.text, marginBottom: 12, lineHeight: 20 }]}>
+                            <Text style={[FONTS.body, { color: colors.text, lineHeight: 20 }]}>
                                 The work order cannot be moved to <Text style={{ fontWeight: '700', color: colors.warning }}>Under Review</Text> because mandatory task(s) have not been completed:
                             </Text>
 
-                            <ScrollView style={{ maxHeight: 180, marginVertical: 4 }} showsVerticalScrollIndicator={true}>
+                            <ScrollView style={{ maxHeight: 220, marginVertical: 4 }} showsVerticalScrollIndicator={true}>
                                 {incompleteMandatoryTasks.map((t, idx) => (
                                     <View key={t.id || idx} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: colors.danger + '30' }}>
                                         <Ionicons name="alert-circle-outline" size={20} color={colors.danger} style={{ marginTop: 2 }} />
@@ -2354,7 +2369,7 @@ export const TaskDetailScreen = () => {
                                 ))}
                             </ScrollView>
 
-                            <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 8, marginBottom: 16 }]}>
+                            <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 8 }]}>
                                 Please complete all required tasks or mark them as <Text style={{ fontWeight: '700', color: colors.text }}>Not Applicable (N/A)</Text> before submitting.
                             </Text>
 
@@ -2364,27 +2379,43 @@ export const TaskDetailScreen = () => {
                             >
                                 <Text style={[styles.confirmBtnText, { color: colors.white, fontSize: 16, fontWeight: '700' }]}>Got it, complete tasks</Text>
                             </TouchableOpacity>
-                        </View>
-                    </View>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
                 </Modal>
 
-                <Modal visible={confirmationModalVisible} transparent animationType="fade">
-                    <View style={styles.popupOverlay}>
-                        <View style={[styles.popupModal, { backgroundColor: colors.surface }]}>
-                            <View style={[styles.warningIconCircle, { backgroundColor: colors.secondary + '15' }]}>
-                                <Ionicons name="warning" size={32} color={colors.secondary} />
+                <Modal visible={confirmationModalVisible} transparent animationType="slide" onRequestClose={() => setConfirmationModalVisible(false)}>
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                        onPress={() => setConfirmationModalVisible(false)}
+                    >
+                        <TouchableOpacity
+                            activeOpacity={1}
+                            style={{
+                                backgroundColor: colors.surface,
+                                borderTopLeftRadius: 24,
+                                borderTopRightRadius: 24,
+                                padding: 20,
+                                gap: 16,
+                            }}
+                        >
+                            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 4 }} />
+                            <View style={{ alignItems: 'center', gap: 10 }}>
+                                <View style={[styles.warningIconCircle, { backgroundColor: colors.secondary + '15' }]}>
+                                    <Ionicons name="warning" size={32} color={colors.secondary} />
+                                </View>
+
+                                <Text style={[styles.confirmTitle, { color: colors.text }]}>Incomplete Tasks</Text>
+                                <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                                    Are you sure you want to move the checklists with applicable incomplete tasks to review?
+                                </Text>
+
+                                <View style={[styles.checklistBadge, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                    <Text style={[styles.checklistBadgeText, { color: colors.text }]}>{workOrder.title}</Text>
+                                </View>
                             </View>
 
-                            <Text style={[styles.confirmTitle, { color: colors.text }]}>Incomplete Tasks</Text>
-                            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-                                Are you sure you want to move the checklists with applicable incomplete tasks to review?
-                            </Text>
-
-                            <View style={[styles.checklistBadge, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                <Text style={[styles.checklistBadgeText, { color: colors.text }]}>{workOrder.title}</Text>
-                            </View>
-
-                            <View style={styles.confirmActions}>
+                            <View style={[styles.confirmActions, { paddingTop: 8 }]}>
                                 <TouchableOpacity
                                     style={[styles.confirmBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                                     onPress={() => setConfirmationModalVisible(false)}
@@ -2402,8 +2433,8 @@ export const TaskDetailScreen = () => {
                                     <Text style={[styles.confirmBtnText, { color: colors.white }]}>Move to Review</Text>
                                 </TouchableOpacity>
                             </View>
-                        </View>
-                    </View>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
                 </Modal>
 
                 <Modal visible={naConfirmModalVisible} transparent animationType="fade">
