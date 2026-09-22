@@ -367,9 +367,9 @@ export const MapScreen = () => {
             <MapView
                 ref={mapRef}
                 style={styles.map}
-                provider={PROVIDER_GOOGLE}
+                provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
                 initialRegion={region}
-                customMapStyle={isDark ? DARK_MAP_STYLE : undefined}
+                customMapStyle={Platform.OS === 'android' && isDark ? DARK_MAP_STYLE : undefined}
                 showsUserLocation={locationState === 'granted'}
                 showsMyLocationButton={false}
                 onMapReady={handleMapReady}
