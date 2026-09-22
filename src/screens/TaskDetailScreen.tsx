@@ -1640,25 +1640,62 @@ export const TaskDetailScreen = () => {
                                                             style={[styles.sectionBlockText, { borderBottomColor: colors.border }]}
                                                         >
                                                             {sectionId !== '__root__' && (
-                                                                <TouchableOpacity
-                                                                    activeOpacity={0.7}
-                                                                    onPress={() => toggleSectionExpanded(sectionId)}
-                                                                    style={styles.sectionHeader}
-                                                                >
-                                                                    <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
-                                                                        {sectionBlock.section.label}
-                                                                    </Text>
-                                                                    <View style={styles.sectionHeaderMeta}>
-                                                                        <Text style={[FONTS.caption, { color: colors.textSecondary, fontSize: 11 }]}>
-                                                                            ({checklistCount} {checklistCount === 1 ? 'checklist' : 'checklists'})
+                                                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: openMenuId === sectionBlock.section.id ? 100 : 1 }}>
+                                                                    <TouchableOpacity
+                                                                        activeOpacity={0.7}
+                                                                        onPress={() => toggleSectionExpanded(sectionId)}
+                                                                        style={[styles.sectionHeader, { flex: 1 }]}
+                                                                    >
+                                                                        <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
+                                                                            {sectionBlock.section.label}
                                                                         </Text>
-                                                                        <Ionicons
-                                                                            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                                                                            size={16}
-                                                                            color={colors.textSecondary}
-                                                                        />
-                                                                    </View>
-                                                                </TouchableOpacity>
+                                                                        <View style={styles.sectionHeaderMeta}>
+                                                                            <Text style={[FONTS.caption, { color: colors.textSecondary, fontSize: 11 }]}>
+                                                                                ({checklistCount} {checklistCount === 1 ? 'checklist' : 'checklists'})
+                                                                            </Text>
+                                                                            <Ionicons
+                                                                                name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                                                                size={16}
+                                                                                color={colors.textSecondary}
+                                                                            />
+                                                                        </View>
+                                                                    </TouchableOpacity>
+
+                                                                    {!isChecklistDisabled && (
+                                                                        <View style={{ position: 'relative', zIndex: openMenuId === sectionBlock.section.id ? 110 : 1, marginLeft: 8 }}>
+                                                                            <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === sectionBlock.section.id ? null : sectionBlock.section.id)} style={{ padding: 4 }}>
+                                                                                <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
+                                                                            </TouchableOpacity>
+                                                                            {openMenuId === sectionBlock.section.id && (
+                                                                                <View style={{
+                                                                                    position: 'absolute',
+                                                                                    top: 30,
+                                                                                    right: 0,
+                                                                                    backgroundColor: colors.surfaceHighlight,
+                                                                                    borderRadius: 8,
+                                                                                    paddingVertical: 8,
+                                                                                    paddingHorizontal: 12,
+                                                                                    width: 140,
+                                                                                    shadowColor: '#000',
+                                                                                    shadowOffset: { width: 0, height: 2 },
+                                                                                    shadowOpacity: 0.15,
+                                                                                    shadowRadius: 4,
+                                                                                    elevation: 4,
+                                                                                    zIndex: 120
+                                                                                }}>
+                                                                                    <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(sectionBlock.section); }}>
+                                                                                        <FontAwesome name="pencil" size={16} color={colors.primary} />
+                                                                                        <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                                    </TouchableOpacity>
+                                                                                    <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(sectionBlock.section.id); }}>
+                                                                                        <FontAwesome name="trash-o" size={16} color={colors.danger} />
+                                                                                        <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
+                                                                                    </TouchableOpacity>
+                                                                                </View>
+                                                                            )}
+                                                                        </View>
+                                                                    )}
+                                                                </View>
                                                             )}
                                                             {isExpanded && (
                                                                 <>
@@ -1667,13 +1704,50 @@ export const TaskDetailScreen = () => {
                                                                         const nestCount = checklistTaskCounts.get(block.checklist.id) || block.tasks.length;
                                                                         return (
                                                                             <View key={block.checklist.id} style={styles.checklistBlockText}>
-                                                                                <View style={styles.checklistCardHeader}>
-                                                                                    <Text style={[styles.checklistHeaderText, { color: colors.text }]} numberOfLines={3}>
-                                                                                        {num ? `${num}. ` : ''}{block.checklist.label}
-                                                                                    </Text>
-                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, fontSize: 11 }]}>
-                                                                                        ({nestCount} {nestCount === 1 ? 'task' : 'tasks'})
-                                                                                    </Text>
+                                                                                <View style={[styles.checklistCardHeader, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: openMenuId === block.checklist.id ? 100 : 1 }]}>
+                                                                                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                                                                                        <Text style={[styles.checklistHeaderText, { color: colors.text, flex: 1 }]} numberOfLines={3}>
+                                                                                            {num ? `${num}. ` : ''}{block.checklist.label}
+                                                                                        </Text>
+                                                                                        <Text style={[FONTS.caption, { color: colors.textSecondary, fontSize: 11, marginLeft: 6 }]}>
+                                                                                            ({nestCount} {nestCount === 1 ? 'task' : 'tasks'})
+                                                                                        </Text>
+                                                                                    </View>
+
+                                                                                    {!isChecklistDisabled && (
+                                                                                        <View style={{ position: 'relative', zIndex: openMenuId === block.checklist.id ? 110 : 1, marginLeft: 8 }}>
+                                                                                            <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === block.checklist.id ? null : block.checklist.id)} style={{ padding: 4 }}>
+                                                                                                <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
+                                                                                            </TouchableOpacity>
+                                                                                            {openMenuId === block.checklist.id && (
+                                                                                                <View style={{
+                                                                                                    position: 'absolute',
+                                                                                                    top: 30,
+                                                                                                    right: 0,
+                                                                                                    backgroundColor: colors.surfaceHighlight,
+                                                                                                    borderRadius: 8,
+                                                                                                    paddingVertical: 8,
+                                                                                                    paddingHorizontal: 12,
+                                                                                                    width: 140,
+                                                                                                    shadowColor: '#000',
+                                                                                                    shadowOffset: { width: 0, height: 2 },
+                                                                                                    shadowOpacity: 0.15,
+                                                                                                    shadowRadius: 4,
+                                                                                                    elevation: 4,
+                                                                                                    zIndex: 120
+                                                                                                }}>
+                                                                                                    <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(block.checklist); }}>
+                                                                                                        <FontAwesome name="pencil" size={16} color={colors.primary} />
+                                                                                                        <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                                                    </TouchableOpacity>
+                                                                                                    <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(block.checklist.id); }}>
+                                                                                                        <FontAwesome name="trash-o" size={16} color={colors.danger} />
+                                                                                                        <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
+                                                                                                    </TouchableOpacity>
+                                                                                                </View>
+                                                                                            )}
+                                                                                        </View>
+                                                                                    )}
                                                                                 </View>
                                                                                 {block.tasks.map((taskItem) => renderTaskCard(taskItem))}
                                                                             </View>
