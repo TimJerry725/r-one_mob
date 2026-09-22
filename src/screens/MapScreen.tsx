@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform, StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, NativeScrollEvent, NativeSyntheticEvent, ActivityIndicator } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from '../components/MapViewWrapper';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
@@ -113,6 +113,7 @@ export const MapScreen = () => {
     const mapRef = useRef<MapView | null>(null);
     const [region, setRegion] = useState<Region>(DEFAULT_REGION);
     const [locationState, setLocationState] = useState<'loading' | 'granted' | 'denied'>('loading');
+    const [mapReady, setMapReady] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrderId, setSelectedOrderId] = useState(WORK_ORDERS[0].id);
     const [mapMode, setMapMode] = useState<'work' | 'live' | 'both'>('work');
@@ -150,32 +151,63 @@ export const MapScreen = () => {
         return Array.from(grouped.values());
     }, [filteredOrders]);
 
-    useEffect(() => {
-        (async () => {
-            const { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                setLocationState('denied');
-                return;
-            }
-
-            try {
-                const current = await Location.getCurrentPositionAsync({});
-                const nextRegion = {
-                    latitude: current.coords.latitude,
-                    longitude: current.coords.longitude,
-                    latitudeDelta: 0.12,
-                    longitudeDelta: 0.12,
-                };
-                setRegion(nextRegion);
-                setLocationState('granted');
-                mapRef.current?.animateToRegion(nextRegion, 600);
-            } catch {
-                setLocationState('denied');
-            }
-        })();
+    const handleMapReady = useCallback(() => {
+        setMapReady(true);
     }, []);
 
     useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                    if (!cancelled) setLocationState('denied');
+                    return;
+                }
+
+                // Use low accuracy + 10s timeout so the map shows quickly on all devices
+                const current = await Promise.race([
+                    Location.getCurrentPositionAsync({
+                        accuracy: Location.Accuracy.Balanced,
+                    }),
+                    new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+                ]);
+
+                if (cancelled) return;
+
+                if (current && typeof current === 'object' && 'coords' in current) {
+                    const nextRegion = {
+                        latitude: current.coords.latitude,
+                        longitude: current.coords.longitude,
+                        latitudeDelta: 0.12,
+                        longitudeDelta: 0.12,
+                    };
+                    setRegion(nextRegion);
+                    setLocationState('granted');
+                    // Animate only after map is ready
+                    if (mapReady) {
+                        mapRef.current?.animateToRegion(nextRegion, 600);
+                    }
+                } else {
+                    // Timed out — still show the map with default region
+                    setLocationState('denied');
+                }
+            } catch {
+                if (!cancelled) setLocationState('denied');
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
+
+    // Animate when map becomes ready (if we already have location)
+    useEffect(() => {
+        if (mapReady && locationState === 'granted') {
+            mapRef.current?.animateToRegion(region, 600);
+        }
+    }, [mapReady]);
+
+    useEffect(() => {
+        if (!mapReady) return;
         if (mapMode === 'live' || mapMode === 'both') {
             // Animate map to show all of India
             mapRef.current?.animateToRegion({
@@ -188,7 +220,7 @@ export const MapScreen = () => {
             // Focus back to Pune / default user region
             mapRef.current?.animateToRegion(region, 600);
         }
-    }, [mapMode]);
+    }, [mapMode, mapReady]);
 
     useEffect(() => {
         if (filteredOrders.length === 0) {
@@ -227,15 +259,17 @@ export const MapScreen = () => {
         }
 
         setSelectedOrderId(nextOrder.id);
-        mapRef.current?.animateToRegion(
-            {
-                latitude: station.latitude,
-                longitude: station.longitude,
-                latitudeDelta: 0.08,
-                longitudeDelta: 0.08,
-            },
-            500,
-        );
+        if (mapReady) {
+            mapRef.current?.animateToRegion(
+                {
+                    latitude: station.latitude,
+                    longitude: station.longitude,
+                    latitudeDelta: 0.08,
+                    longitudeDelta: 0.08,
+                },
+                500,
+            );
+        }
     };
 
     const getStationAccent = (station: StationMapCard) => {
@@ -274,6 +308,7 @@ export const MapScreen = () => {
     };
 
     const handleCardScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        if (!mapReady) return;
         const rawIndex = event.nativeEvent.contentOffset.x / (MAP_CARD_WIDTH + MAP_CARD_GAP);
         const index = Math.round(rawIndex);
 
@@ -325,11 +360,16 @@ export const MapScreen = () => {
                 style={styles.map}
                 provider={PROVIDER_GOOGLE}
                 initialRegion={region}
-                customMapStyle={isDark ? DARK_MAP_STYLE : []}
+                customMapStyle={isDark ? DARK_MAP_STYLE : undefined}
                 showsUserLocation={locationState === 'granted'}
                 showsMyLocationButton={false}
+                onMapReady={handleMapReady}
+                moveOnMarkerPress={false}
+                loadingEnabled={true}
+                loadingIndicatorColor={colors.primary}
+                loadingBackgroundColor={colors.background}
             >
-                {(mapMode === 'work' || mapMode === 'both') && stationCards.map((station) => {
+                {mapReady && (mapMode === 'work' || mapMode === 'both') && stationCards.map((station) => {
                     const active = activeStationName === station.siteName;
                     const accent = getStationAccent(station);
                     return (
@@ -338,17 +378,19 @@ export const MapScreen = () => {
                             coordinate={{ latitude: station.latitude, longitude: station.longitude }}
                             anchor={{ x: 0.5, y: 0.95 }}
                             onPress={() => openStationWork(station.siteName)}
+                            tracksViewChanges={false}
                         >
                             <StationMarkerPin count={station.count} accent={accent} active={active} />
                         </Marker>
                     );
                 })}
 
-                {(mapMode === 'live' || mapMode === 'both') && MOCK_USER_LOCATIONS.map((user) => (
+                {mapReady && (mapMode === 'live' || mapMode === 'both') && MOCK_USER_LOCATIONS.map((user) => (
                     <Marker
                         key={`user-${user.name}`}
                         coordinate={{ latitude: user.latitude, longitude: user.longitude }}
                         anchor={{ x: 0.5, y: 0.95 }}
+                        tracksViewChanges={false}
                     >
                         <View style={styles.userMarkerWrap}>
                             <View style={[styles.userAvatarCircle, { backgroundColor: colors.primary, borderColor: colors.background, borderWidth: 2 }]}>
@@ -358,6 +400,14 @@ export const MapScreen = () => {
                     </Marker>
                 ))}
             </MapView>
+
+            {/* Loading overlay while map initialises */}
+            {!mapReady && (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={[FONTS.body, { color: colors.textSecondary, marginTop: 12 }]}>Loading map…</Text>
+                </View>
+            )}
 
             <SafeAreaView style={styles.overlay} edges={['top', 'left', 'right']} pointerEvents="box-none">
                 <View style={styles.topStack}>
@@ -486,7 +536,7 @@ export const MapScreen = () => {
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            onPress={() => mapRef.current?.animateToRegion(region, 500)}
+                            onPress={() => mapReady && mapRef.current?.animateToRegion(region, 500)}
                             style={[
                                 styles.locateButton,
                                 {
@@ -524,6 +574,7 @@ export const MapScreen = () => {
                                         key={user.name}
                                         activeOpacity={0.92}
                                         onPress={() => {
+                                            if (!mapReady) return;
                                             mapRef.current?.animateToRegion({
                                                 latitude: user.latitude,
                                                 longitude: user.longitude,
@@ -671,6 +722,7 @@ export const MapScreen = () => {
                                             key={`both-user-${user.name}`}
                                             activeOpacity={0.92}
                                             onPress={() => {
+                                                if (!mapReady) return;
                                                 mapRef.current?.animateToRegion({
                                                     latitude: user.latitude,
                                                     longitude: user.longitude,
