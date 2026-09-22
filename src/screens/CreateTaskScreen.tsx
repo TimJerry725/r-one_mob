@@ -116,7 +116,7 @@ export const CreateTaskScreen = () => {
     const [primaryApprover, setPrimaryApprover] = useState<string>('');
     const [secondaryApprover, setSecondaryApprover] = useState<string>('');
     const [serviceType, setServiceType] = useState<typeof SERVICE_TYPES[number]>('Reactive');
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('ev-infra-monthly');
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('standard-fault');
     const [selectedPmWorkIds, setSelectedPmWorkIds] = useState<string[]>(['PM-9012', 'PM-9015']);
 
     const isAllPmSelected = selectedPmWorkIds.length === MOCK_PM_WORKS_LIST.length && MOCK_PM_WORKS_LIST.length > 0;

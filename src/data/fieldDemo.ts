@@ -115,122 +115,6 @@ export type ActivityItem = {
     time: string;
 };
 
-export const CHECKLIST_TEMPLATE: ChecklistTemplateItem[] = [
-    {
-        id: 'step-1',
-        label: 'Date of service',
-        type: 'date',
-        required: true,
-    },
-    {
-        id: 'step-2',
-        label: 'Charger visual condition',
-        type: 'radio',
-        required: true,
-        options: ['Pass', 'Needs cleaning', 'Damage found'],
-    },
-    {
-        id: 'step-3',
-        label: 'Connector temperature or voltage note',
-        type: 'text',
-        required: true,
-    },
-    {
-        id: 'step-4',
-        label: 'Capture enclosure and connector photos',
-        type: 'photo',
-        required: true,
-    },
-    {
-        id: 'step-5',
-        label: 'Customer access area restored and verified',
-        type: 'toggle',
-        required: true,
-    },
-    {
-        id: 'step-6',
-        label: 'Parts used',
-        type: 'radio',
-        required: false,
-        options: ['None', 'Fuse set', 'Cable', 'Connector latch'],
-    },
-    {
-        id: 'step-7',
-        label: 'Voltage reading (V)',
-        type: 'number',
-        required: true,
-    },
-    {
-        id: 'step-8',
-        label: 'Next service date',
-        type: 'date',
-        required: false,
-    },
-    {
-        id: 'step-9',
-        label: 'Hardware upgrade needed?',
-        type: 'not_applicable',
-        required: false,
-    },
-    {
-        id: 'step-10',
-        label: 'Cellular network',
-        type: 'radio',
-        required: true,
-        options: ['Vodafone', 'AT&T', 'Verizon', 'T-Mobile'],
-    },
-    {
-        id: 'step-11',
-        label: 'Power module type',
-        type: 'radio',
-        required: true,
-        options: ['AC 22kW', 'DC 50kW', 'DC 150kW'],
-    },
-    {
-        id: 'step-12',
-        label: 'Consumables applied',
-        type: 'multiselect',
-        required: false,
-        options: ['Thermal paste', 'Cable ties', 'Insulation tape', 'Screws'],
-    },
-    {
-        id: 'step-13',
-        label: 'Attach site survey files',
-        type: 'media',
-        dataType: 'Media',
-        required: true,
-    },
-    {
-        id: 'step-14',
-        label: 'Three-phase input voltage measurements',
-        type: 'three_phase_voltage',
-        dataType: '3 phase voltage',
-        required: true,
-    },
-    {
-        id: 'step-15',
-        label: 'Site supervisor contact email',
-        type: 'email',
-        dataType: 'Email',
-        required: false,
-    },
-    {
-        id: 'step-16',
-        label: 'Detailed maintenance remarks & logs',
-        type: 'textarea',
-        dataType: 'Long text',
-        required: false,
-    },
-    {
-        id: 'step-17',
-        label: 'Safety equipment checks completed',
-        type: 'checkbox',
-        dataType: 'Checkbox',
-        required: true,
-        options: ['Earthing line ok', 'Insulation gloves used', 'Danger sign placed', 'Fire extinguisher present'],
-    },
-];
-
 const instructionLabel = (content: string) => {
     const trimmed = content.trim();
     return /^instruction:/i.test(trimmed) ? trimmed : `Instruction: ${trimmed}`;
@@ -253,6 +137,45 @@ const yesNoRadio = (id: string, label: string, showWhenFieldId?: string): Checkl
     options: ['Yes', 'No'],
     ...(showWhenFieldId ? { showWhenFieldId, showWhenEquals: 'Yes' } : {}),
 });
+
+const section = (id: string, label: string): ChecklistTemplateItem => ({ id, label, type: 'section_header', required: false });
+const checklist = (id: string, label: string): ChecklistTemplateItem => ({ id, label, type: 'checklist_header', required: false });
+
+export const REACTIVE_FAULT_CHECKLIST: ChecklistTemplateItem[] = [
+    section('react-sec-1', 'Reactive Fault & Diagnostics'),
+    checklist('react-t1-instruction', 'Initial Fault & Alarm Inspection'),
+    yesNoRadio('react-t1-visual', 'Visual Check'),
+    instructionRow('react-t1-remarks', 'Remarks: Inspect HMI screen, warning LEDs, and physical enclosure for visible damage.'),
+    { id: 'react-t1-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of fault area', 'Close-up of error screen', 'Surrounding area'] },
+
+    checklist('react-t2-instruction', 'Connector & Cable Diagnostics'),
+    yesNoRadio('react-t2-visual', 'Visual Check'),
+    instructionRow('react-t2-remarks', 'Remarks: Inspect charging cable, connector latch, and pins for damage or burn marks.'),
+    { id: 'react-t2-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Connector pins', 'Cable sleeve', 'Lock mechanism'] },
+
+    section('react-sec-2', 'Electrical & Earthing Diagnostics'),
+    checklist('react-t3-instruction', 'Electrical & Earthing Measurement'),
+    yesNoRadio('react-t3-visual', 'Visual Check'),
+    instructionRow('react-t3-remarks', 'Remarks: Verify input supply voltage and Neutral-Earth voltage (< 3V).'),
+    { id: 'react-t3-voltage', label: 'Three-phase input voltage measurements', type: 'three_phase_voltage', dataType: '3 phase voltage', required: true },
+
+    section('react-sec-3', 'Component Repair & Verification'),
+    checklist('react-t4-instruction', 'Component Repair / Replacement Verification'),
+    yesNoRadio('react-t4-visual', 'Visual Check'),
+    instructionRow('react-t4-remarks', 'Remarks: Replace blown fuse, damaged gun latch, or loose terminal connections as required.'),
+
+    checklist('react-t5-instruction', 'Post-Repair Test & Operational Sign-off'),
+    yesNoRadio('react-t5-visual', 'Visual Check'),
+    instructionRow('react-t5-remarks', 'Remarks: Initiate 5-minute test charging session and confirm normal operation.'),
+    { id: 'react-t5-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Active charging HMI screen', 'Restored charger enclosure', 'Site area cleared'] },
+];
+
+export const REACTIVE_FAULT_QUESTION_COUNT = REACTIVE_FAULT_CHECKLIST.filter(
+    (item) => item.type !== 'section_header' && item.type !== 'checklist_header' && !item.isReadOnly
+).length;
+
+export const CHECKLIST_TEMPLATE: ChecklistTemplateItem[] = REACTIVE_FAULT_CHECKLIST;
+
 
 const THREE_PHOTO_REMARKS = ['Photo 1', 'Photo 2', 'Photo 3'];
 
@@ -290,8 +213,6 @@ const evidenceRow = (
     };
 };
 
-const section = (id: string, label: string): ChecklistTemplateItem => ({ id, label, type: 'section_header', required: false });
-const checklist = (id: string, label: string): ChecklistTemplateItem => ({ id, label, type: 'checklist_header', required: false });
 
 const pmChecklist = (
     sno: string,
@@ -649,8 +570,8 @@ export const WORK_ORDER_TEMPLATES = [
     {
         id: 'standard-fault',
         name: 'Standard Reactive Fault Checklist',
-        items: CHECKLIST_TEMPLATE,
-        total: 5,
+        items: REACTIVE_FAULT_CHECKLIST,
+        total: REACTIVE_FAULT_QUESTION_COUNT,
     },
 ];
 
@@ -894,8 +815,9 @@ export let WORK_ORDERS: WorkOrder[] = [
         dueWindow: 'Today, 13:00 - 16:00',
         eta: 'Starts in 20 min',
         distance: '1.6 km',
-        checklistCompleted: 5,
-        checklistTotal: 8,
+        checklistCompleted: 0,
+        checklistTotal: REACTIVE_FAULT_QUESTION_COUNT,
+        checklistItems: REACTIVE_FAULT_CHECKLIST,
         tools: ['Clamp meter', 'Laptop'],
         parts: ['Connector latch', 'Fuse set'],
         technicians: ['Tim'],
@@ -922,7 +844,8 @@ export let WORK_ORDERS: WorkOrder[] = [
         eta: 'Cached for offline',
         distance: '2.4 km',
         checklistCompleted: 0,
-        checklistTotal: 6,
+        checklistTotal: PREVENTIVE_EV_CHARGER_QUESTION_COUNT,
+        checklistItems: PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST,
         tools: ['Cleaning kit', 'Thermal camera'],
         parts: ['Air filter'],
         technicians: ['Tim', 'Neha'],
@@ -946,8 +869,9 @@ export let WORK_ORDERS: WorkOrder[] = [
         dueWindow: 'Completed on 22 Mar',
         eta: 'Signed off',
         distance: '5.1 km',
-        checklistCompleted: 8,
-        checklistTotal: 8,
+        checklistCompleted: REACTIVE_FAULT_QUESTION_COUNT,
+        checklistTotal: REACTIVE_FAULT_QUESTION_COUNT,
+        checklistItems: REACTIVE_FAULT_CHECKLIST,
         tools: ['Crimping tool', 'Insulation meter'],
         parts: ['Output cable'],
         technicians: ['Tim'],

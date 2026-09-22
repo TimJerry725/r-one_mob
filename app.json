@@ -14,6 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.timjerry725.rone",
       "config": {
         "googleMapsApiKey": "AIzaSyAOcbvs0MtHhAiHevyu63o1kkp7OXHfVRY"
       }
@@ -43,7 +44,15 @@
         {
           "locationWhenInUsePermission": "Allow r-one to use your location to confirm you are at the work site."
         }
-      ]
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow r-one to access your camera to scan asset QR codes."
+        }
+      ],
+      "expo-splash-screen",
+      "expo-status-bar"
     ],
     "extra": {
       "eas": {
