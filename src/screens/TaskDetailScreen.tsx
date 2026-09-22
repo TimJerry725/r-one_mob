@@ -401,10 +401,13 @@ export const TaskDetailScreen = () => {
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const [workStatus, setWorkStatus] = useState(workOrder.status);
     // Geofencing / location-based access control enabled for Pune station only
-    const isGeoFenceStation = (workOrder.siteName || '').toLowerCase().includes('pune');
-    const [isNearSite, setIsNearSite] = useState<boolean | null>(() => (isGeoFenceStation ? null : true));
+    const isGeoFenceStation = 
+        (workOrder.siteName || '').toLowerCase().includes('pune') ||
+        (workOrder.address || '').toLowerCase().includes('pune') ||
+        (workOrder.title || '').toLowerCase().includes('pune');
+    const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
-    const isOffSite = isGeoFenceStation ? isNearSite === false : false;
+    const isOffSite = isGeoFenceStation && !isNearSite;
     const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite;
     const isGeoFenceWarningVisible = isOffSite;
     const isPreventiveOrService = ['preventive', 'service', 'reactive'].includes((workOrder.type || '').toLowerCase());
@@ -741,20 +744,30 @@ export const TaskDetailScreen = () => {
                     if (!cancelled) setIsNearSite(false);
                     return;
                 }
+
+                // Check last known position for instant evaluation
+                const lastKnown = await Location.getLastKnownPositionAsync({}).catch(() => null);
+                if (lastKnown?.coords && !cancelled) {
+                    const meters = distanceMeters(
+                        { latitude: lastKnown.coords.latitude, longitude: lastKnown.coords.longitude },
+                        { latitude: siteLat, longitude: siteLon }
+                    );
+                    setIsNearSite(meters <= SITE_RADIUS_METERS);
+                }
+
+                // Fetch fresh current position with 5s timeout
                 const current = await Promise.race([
                     Location.getCurrentPositionAsync({
                         accuracy: Location.Accuracy.Balanced,
                     }),
-                    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+                    new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
                 ]);
-                if (current && typeof current === 'object' && 'coords' in current) {
+                if (current && typeof current === 'object' && 'coords' in current && !cancelled) {
                     const meters = distanceMeters(
                         { latitude: current.coords.latitude, longitude: current.coords.longitude },
                         { latitude: siteLat, longitude: siteLon }
                     );
-                    if (!cancelled) setIsNearSite(meters <= SITE_RADIUS_METERS);
-                } else {
-                    if (!cancelled) setIsNearSite(false);
+                    setIsNearSite(meters <= SITE_RADIUS_METERS);
                 }
             } catch {
                 if (!cancelled) setIsNearSite(false);
