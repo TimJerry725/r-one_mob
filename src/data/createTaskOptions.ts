@@ -73,7 +73,7 @@ export const getSelectorOptions = (selectorType: SelectorSheetType): { title: st
     }
 
     if (selectorType === 'assignees') {
-        const workers = ['Timothy', 'Arjun', 'Sarah', 'Alex'];
+        const workers = ['Marcus Aurelius', 'Andrea Meuschke', 'Timothy', 'Arjun', 'Sarah', 'Alex'];
         return {
             title: 'Select Assignees',
             isMulti: true,

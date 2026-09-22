@@ -1095,7 +1095,18 @@ export const TaskDetailScreen = () => {
                             )}
                         </View>
 
-                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Approvals & Assignees</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Approvals & Assignees</Text>
+                            {!isEditingDetails && (
+                                <TouchableOpacity 
+                                    onPress={() => setIsEditingDetails(true)} 
+                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 6, backgroundColor: colors.primary + '15' }}
+                                >
+                                    <Ionicons name="pencil" size={12} color={colors.primary} />
+                                    <Text style={[FONTS.caption, { color: colors.primary, fontWeight: '600' }]}>Edit</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
 
                         {isEditingDetails ? (
                             <View style={{ zIndex: 1000, gap: 12 }}>
@@ -1166,12 +1177,16 @@ export const TaskDetailScreen = () => {
                             <View style={{ gap: 10, marginTop: 6 }}>
                                 {/* Approvers First in View Mode */}
                                 <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
-                                    <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
-                                        Primary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}</Text>
-                                    </Text>
-                                    <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
-                                        Secondary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.secondaryApprover || 'Andrea Meuschke'}</Text>
-                                    </Text>
+                                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setIsEditingDetails(true)} activeOpacity={0.7}>
+                                        <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>
+                                            Primary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{editedPrimaryApprover || workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}</Text>
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setIsEditingDetails(true)} activeOpacity={0.7}>
+                                        <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>
+                                            Secondary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{editedSecondaryApprover || workOrder.secondaryApprover || 'Andrea Meuschke'}</Text>
+                                        </Text>
+                                    </TouchableOpacity>
                                 </View>
 
                                 {/* Assignee chips */}
@@ -2370,7 +2385,13 @@ export const TaskDetailScreen = () => {
                             </ScrollView>
 
                             <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 8 }]}>
-                                Please complete all required tasks or mark them as <Text style={{ fontWeight: '700', color: colors.text }}>Not Applicable (N/A)</Text> before submitting.
+                                {isAllowNotApplicable ? (
+                                    <>
+                                        Please complete all required tasks or mark them as <Text style={{ fontWeight: '700', color: colors.text }}>Not Applicable (N/A)</Text> before submitting.
+                                    </>
+                                ) : (
+                                    'Please complete all required tasks before submitting.'
+                                )}
                             </Text>
 
                             <TouchableOpacity
