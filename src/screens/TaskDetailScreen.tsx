@@ -1095,18 +1095,7 @@ export const TaskDetailScreen = () => {
                             )}
                         </View>
 
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Approvals & Assignees</Text>
-                            {!isEditingDetails && (
-                                <TouchableOpacity 
-                                    onPress={() => setIsEditingDetails(true)} 
-                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 6, backgroundColor: colors.primary + '15' }}
-                                >
-                                    <Ionicons name="pencil" size={12} color={colors.primary} />
-                                    <Text style={[FONTS.caption, { color: colors.primary, fontWeight: '600' }]}>Edit</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
+                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Approvals & Assignees</Text>
 
                         {isEditingDetails ? (
                             <View style={{ zIndex: 1000, gap: 12 }}>
