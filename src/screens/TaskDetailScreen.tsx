@@ -1524,9 +1524,6 @@ export const TaskDetailScreen = () => {
                                                                         </Text>
                                                                     </View>
                                                                 ) : null}
-                                                                {isCompleted && !isNA && (
-                                                                    <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                                                                )}
                                                                 {!isChecklistDisabled && (
                                                                     <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 120 : 1 }}>
                                                                         <TouchableOpacity
