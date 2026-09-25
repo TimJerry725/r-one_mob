@@ -439,11 +439,9 @@ export const TaskDetailScreen = () => {
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const [workStatus, setWorkStatus] = useState(workOrder.status);
-    // Geofencing / location-based access control enabled for stations with location coordinates
-    const siteLatitude = Number(workOrder.latitude);
-    const siteLongitude = Number(workOrder.longitude);
-    const hasCoordinates = Number.isFinite(siteLatitude) && Number.isFinite(siteLongitude) && (Math.abs(siteLatitude) > 0.01 || Math.abs(siteLongitude) > 0.01);
-    const isGeoFenceStation = hasCoordinates;
+    // Geofencing / location-based access control enabled ONLY for Pune Central Station
+    const siteNameLower = (workOrder.siteName || '').toLowerCase();
+    const isGeoFenceStation = siteNameLower.includes('pune central');
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
     const isOffSite = isGeoFenceStation && !isNearSite;
