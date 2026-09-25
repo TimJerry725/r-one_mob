@@ -4181,17 +4181,9 @@ export const TaskDetailScreen = () => {
 
                                             {/* 3. Approvals & Assignees */}
                                             <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                                        <Ionicons name="people" size={17} color={colors.primary} />
-                                                        <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Approvals & Assignees</Text>
-                                                    </View>
-                                                    {!isOffSite && (
-                                                        <TouchableOpacity onPress={() => setIsEditingDetails(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                                            <Ionicons name="pencil" size={13} color={colors.primary} />
-                                                            <Text style={[FONTS.caption, { color: colors.primary, fontWeight: '600' }]}>Edit</Text>
-                                                        </TouchableOpacity>
-                                                    )}
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                    <Ionicons name="people" size={17} color={colors.primary} />
+                                                    <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Approvals & Assignees</Text>
                                                 </View>
 
                                                 {/* Approvers */}
