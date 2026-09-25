@@ -4156,7 +4156,7 @@ export const TaskDetailScreen = () => {
                                                     <View style={[styles.heroChip, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
                                                         <Text style={[styles.heroChipText, { color: typeColors.tintText }]}>{workOrder.type}</Text>
                                                     </View>
-                                                    {workOrder.stage ? (
+                                                    {workOrder.type === 'Installation' && workOrder.stage && workOrder.stage !== 'Monthly Inspection' ? (
                                                         <View style={[styles.heroChip, { backgroundColor: (isDark ? colors.primaryLight : colors.primary) + '15', borderColor: isDark ? colors.primaryLight : colors.primary }]}>
                                                             <Text style={[styles.heroChipText, { color: isDark ? colors.primaryLight : colors.primary }]}>{workOrder.stage}</Text>
                                                         </View>
