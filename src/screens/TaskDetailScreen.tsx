@@ -729,9 +729,75 @@ export const TaskDetailScreen = () => {
 
     const [addTaskModalVisible, setAddTaskModalVisible] = useState(false);
     const [newTaskLabel, setNewTaskLabel] = useState('');
+    const [newTaskSectionId, setNewTaskSectionId] = useState('');
+    const [newTaskChecklistId, setNewTaskChecklistId] = useState('');
     const [newDataType, setNewDataType] = useState<typeof DATA_TYPES[number]>('Short text');
     const [newTaskOptions, setNewTaskOptions] = useState<string[]>([]);
     const [addNewTaskOptionInput, setAddNewTaskOptionInput] = useState('');
+
+    const sectionDropdownOptions = useMemo(() => {
+        const validSections = nestedFillTree.filter(
+            (s) => s.section.id !== '__root__' && Boolean(s.section.label)
+        );
+        return [
+            { label: 'None (Optional)', value: '' },
+            ...validSections.map((s) => ({
+                label: s.section.label,
+                value: s.section.id,
+            })),
+        ];
+    }, [nestedFillTree]);
+
+    const checklistDropdownOptions = useMemo(() => {
+        if (newTaskSectionId) {
+            const chosenSec = nestedFillTree.find((s) => s.section.id === newTaskSectionId);
+            const checklists = chosenSec
+                ? chosenSec.checklists.filter((c) => c.checklist.id !== '__root__' && Boolean(c.checklist.label))
+                : [];
+            return [
+                { label: 'None (Optional)', value: '' },
+                ...checklists.map((c) => ({
+                    label: c.checklist.label,
+                    value: c.checklist.id,
+                })),
+            ];
+        }
+
+        const allChecklists: { label: string; value: string }[] = [];
+        const seenIds = new Set<string>();
+        nestedFillTree.forEach((s) => {
+            s.checklists.forEach((c) => {
+                if (c.checklist.id !== '__root__' && Boolean(c.checklist.label) && !seenIds.has(c.checklist.id)) {
+                    seenIds.add(c.checklist.id);
+                    allChecklists.push({
+                        label: c.checklist.label,
+                        value: c.checklist.id,
+                    });
+                }
+            });
+        });
+
+        return [
+            { label: 'None (Optional)', value: '' },
+            ...allChecklists,
+        ];
+    }, [nestedFillTree, newTaskSectionId]);
+
+    const handleSelectNewTaskSection = (val: string | string[]) => {
+        const secId = String(val);
+        setNewTaskSectionId(secId);
+        if (secId && newTaskChecklistId) {
+            const sec = nestedFillTree.find((s) => s.section.id === secId);
+            const exists = sec?.checklists.some((c) => c.checklist.id === newTaskChecklistId);
+            if (!exists) {
+                setNewTaskChecklistId('');
+            }
+        }
+    };
+
+    const handleSelectNewTaskChecklist = (val: string | string[]) => {
+        setNewTaskChecklistId(String(val));
+    };
 
     const handleAddNewTask = () => {
         if (!newTaskLabel.trim()) return;
@@ -746,8 +812,56 @@ export const TaskDetailScreen = () => {
             options: isChoiceType ? [...newTaskOptions] : undefined,
             value: isChoiceType ? [] : '',
         };
-        setItems([...items, newItem]);
+
+        if (newTaskChecklistId) {
+            const chIndex = items.findIndex((it) => it.id === newTaskChecklistId);
+            if (chIndex !== -1) {
+                let insertIndex = items.length;
+                for (let i = chIndex + 1; i < items.length; i++) {
+                    if (items[i].type === 'checklist_header' || items[i].type === 'section_header') {
+                        insertIndex = i;
+                        break;
+                    }
+                }
+                const updated = [...items];
+                updated.splice(insertIndex, 0, newItem);
+                setItems(updated);
+            } else {
+                setItems([...items, newItem]);
+            }
+            setExpandedChecklistIds((prev) => new Set([...prev, newTaskChecklistId]));
+            for (const s of nestedFillTree) {
+                if (s.checklists.some((c) => c.checklist.id === newTaskChecklistId)) {
+                    if (s.section.id !== '__root__') {
+                        setExpandedSectionIds((prev) => new Set([...prev, s.section.id]));
+                    }
+                    break;
+                }
+            }
+        } else if (newTaskSectionId) {
+            const secIndex = items.findIndex((it) => it.id === newTaskSectionId);
+            if (secIndex !== -1) {
+                let insertIndex = items.length;
+                for (let i = secIndex + 1; i < items.length; i++) {
+                    if (items[i].type === 'section_header') {
+                        insertIndex = i;
+                        break;
+                    }
+                }
+                const updated = [...items];
+                updated.splice(insertIndex, 0, newItem);
+                setItems(updated);
+            } else {
+                setItems([...items, newItem]);
+            }
+            setExpandedSectionIds((prev) => new Set([...prev, newTaskSectionId]));
+        } else {
+            setItems([...items, newItem]);
+        }
+
         setNewTaskLabel('');
+        setNewTaskSectionId('');
+        setNewTaskChecklistId('');
         setNewDataType('Short text');
         setNewTaskOptions([]);
         setAddTaskModalVisible(false);
@@ -2884,6 +2998,8 @@ export const TaskDetailScreen = () => {
                         activeOpacity={0.85}
                         onPress={() => {
                             setNewTaskLabel('');
+                            setNewTaskSectionId('');
+                            setNewTaskChecklistId('');
                             setNewDataType('Short text');
                             setNewTaskOptions([]);
                             setAddTaskModalVisible(true);
@@ -3692,6 +3808,28 @@ export const TaskDetailScreen = () => {
                                             placeholderTextColor={colors.textSecondary}
                                             value={newTaskLabel}
                                             onChangeText={setNewTaskLabel}
+                                        />
+                                    </View>
+
+                                    <View style={{ gap: 6, zIndex: 1200 }}>
+                                        <PopoverDropdown
+                                            label="Section (Optional)"
+                                            placeholder="Select section (optional)..."
+                                            options={sectionDropdownOptions}
+                                            value={newTaskSectionId}
+                                            onSelect={handleSelectNewTaskSection}
+                                            placement="bottom"
+                                        />
+                                    </View>
+
+                                    <View style={{ gap: 6, zIndex: 1100 }}>
+                                        <PopoverDropdown
+                                            label="Checklist (Optional)"
+                                            placeholder="Select checklist (optional)..."
+                                            options={checklistDropdownOptions}
+                                            value={newTaskChecklistId}
+                                            onSelect={handleSelectNewTaskChecklist}
+                                            placement="bottom"
                                         />
                                     </View>
 
