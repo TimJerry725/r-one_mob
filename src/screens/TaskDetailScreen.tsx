@@ -642,6 +642,9 @@ export const TaskDetailScreen = () => {
     const [mediaModalVisible, setMediaModalVisible] = useState(false);
     const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
     const [actionModalVisible, setActionModalVisible] = useState(false);
+    const [forwardModalVisible, setForwardModalVisible] = useState(false);
+    const [forwardAssignee, setForwardAssignee] = useState<string>('');
+    const [forwardComments, setForwardComments] = useState<string>('');
     const [editingTask, setEditingTask] = useState<ChecklistStateItem | null>(null);
     const [editTaskLabel, setEditTaskLabel] = useState('');
     const [editTaskModalVisible, setEditTaskModalVisible] = useState(false);
@@ -1074,6 +1077,48 @@ export const TaskDetailScreen = () => {
         Alert.alert(
             'Rejected',
             'The work order has been sent back for correction.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+    };
+
+    const handleForwardWork = () => {
+        if (isOffSite) {
+            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
+        const assigneeOptions = getSelectorOptions('assignees').options;
+        if (!forwardAssignee && assigneeOptions.length > 0) {
+            setForwardAssignee(assigneeOptions[0].value);
+        }
+        setForwardModalVisible(true);
+    };
+
+    const handleConfirmForward = () => {
+        if (!forwardAssignee) {
+            Alert.alert('Assignee Required', 'Please select a team member to forward this work order to.');
+            return;
+        }
+
+        const note = forwardComments.trim();
+        const newAct = {
+            id: Date.now().toString(),
+            title: 'Timothy Field (You)',
+            time: 'Just now',
+            type: 'comment' as const,
+            detail: note 
+                ? `Work forwarded to ${forwardAssignee}: ${note}`
+                : `Work forwarded to ${forwardAssignee}`,
+        };
+
+        setActivities([newAct, ...activities]);
+        setAssignees([forwardAssignee]);
+        workOrder.technicians = [forwardAssignee];
+        setForwardModalVisible(false);
+        setForwardComments('');
+
+        Alert.alert(
+            'Work Forwarded',
+            `This work order has been forwarded to ${forwardAssignee}.`,
             [{ text: 'OK', onPress: () => navigation.goBack() }]
         );
     };
@@ -2665,61 +2710,121 @@ export const TaskDetailScreen = () => {
                     ) : null}
                 </ScrollView>
 
-                {activeTab === 'Tasks' && isAssignedPending && !isOffSite && (
+                {activeTab !== 'Activities' && (
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
                     >
-                        <TouchableOpacity
-                            onPress={handleRejectWork}
-                            style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger, borderWidth: 1 }]}
-                        >
-                            <Text style={[styles.footerButtonText, { color: colors.danger, ...FONTS.bodyStrong }]}>Reject</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={handleAcceptAssignedWork}
-                            style={[
-                                styles.footerButton,
-                                {
-                                    backgroundColor: colors.primary,
-                                    borderColor: colors.primary,
-                                    opacity: 1,
-                                },
-                            ]}
-                        >
-                            <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
-                                Accept
-                            </Text>
-                        </TouchableOpacity>
-                    </KeyboardAvoidingView>
-                )}
-
-                {activeTab === 'Tasks' && isUnderReview && !isOffSite && (
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                        style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
-                    >
-                        <TouchableOpacity
-                            onPress={handleRejectWork}
-                            style={[styles.footerButton, { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger, borderWidth: 1 }]}
-                        >
-                            <Text style={[styles.footerButtonText, { color: colors.danger, ...FONTS.bodyStrong }]}>Reject</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={handleApproveWork}
-                            style={[
-                                styles.footerButton,
-                                {
-                                    backgroundColor: colors.success,
-                                    borderColor: colors.success,
-                                    opacity: 1,
-                                },
-                            ]}
-                        >
-                            <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
-                                Approve
-                            </Text>
-                        </TouchableOpacity>
+                        {workStatus === 'Completed' ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 20, backgroundColor: colors.success + '15', borderRadius: 16, borderWidth: 1, borderColor: colors.success + '40', width: '100%' }}>
+                                <Ionicons name="checkmark-circle" size={20} color={colors.success} style={{ marginRight: 8 }} />
+                                <Text style={{ ...FONTS.bodyStrong, color: colors.success, fontSize: 15 }}>Work Order Completed</Text>
+                            </View>
+                        ) : isAssignedPending ? (
+                            <>
+                                <TouchableOpacity
+                                    onPress={handleRejectWork}
+                                    style={[styles.footerButton, { flex: 1, backgroundColor: colors.surfaceHighlight, borderColor: colors.danger, borderWidth: 1 }]}
+                                >
+                                    <Text style={[styles.footerButtonText, { color: colors.danger, ...FONTS.bodyStrong }]}>Reject</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleForwardWork}
+                                    style={[styles.footerButton, { flex: 1, backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderWidth: 1 }]}
+                                >
+                                    <Text style={[styles.footerButtonText, { color: colors.text, ...FONTS.bodyStrong }]}>Forward</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleAcceptAssignedWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            flex: 1.2,
+                                            backgroundColor: colors.primary,
+                                            borderColor: colors.primary,
+                                            opacity: 1,
+                                        },
+                                    ]}
+                                >
+                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
+                                        Accept
+                                    </Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : isUnderReview ? (
+                            <>
+                                <TouchableOpacity
+                                    onPress={handleRejectWork}
+                                    style={[styles.footerButton, { flex: 1, backgroundColor: colors.surfaceHighlight, borderColor: colors.danger, borderWidth: 1 }]}
+                                >
+                                    <Text style={[styles.footerButtonText, { color: colors.danger, ...FONTS.bodyStrong }]}>Reject</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleForwardWork}
+                                    style={[styles.footerButton, { flex: 1, backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderWidth: 1 }]}
+                                >
+                                    <Text style={[styles.footerButtonText, { color: colors.text, ...FONTS.bodyStrong }]}>Forward</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleApproveWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            flex: 1.2,
+                                            backgroundColor: colors.success,
+                                            borderColor: colors.success,
+                                            opacity: 1,
+                                        },
+                                    ]}
+                                >
+                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
+                                        Approve
+                                    </Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <>
+                                <TouchableOpacity
+                                    onPress={handleForwardWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            flex: 1,
+                                            backgroundColor: colors.surfaceHighlight,
+                                            borderColor: colors.border,
+                                            borderWidth: 1,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 6,
+                                        },
+                                    ]}
+                                >
+                                    <Ionicons name="arrow-redo-outline" size={18} color={colors.text} />
+                                    <Text style={[styles.footerButtonText, { color: colors.text, ...FONTS.bodyStrong }]}>Forward</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleCompleteAction}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            flex: 1.5,
+                                            backgroundColor: colors.primary,
+                                            borderColor: colors.primary,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 6,
+                                        },
+                                    ]}
+                                >
+                                    <Ionicons name="checkmark-circle-outline" size={18} color={colors.white} />
+                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
+                                        Submit for Review
+                                    </Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </KeyboardAvoidingView>
                 )}
 
@@ -2850,6 +2955,10 @@ export const TaskDetailScreen = () => {
                                         <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
                                         <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Accept</Text>
                                     </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleForwardWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                                        <Ionicons name="arrow-redo-outline" size={26} color={colors.primary} style={{ marginRight: 14 }} />
+                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Forward</Text>
+                                    </TouchableOpacity>
                                     <TouchableOpacity onPress={() => { setActionModalVisible(false); handleRejectWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
                                         <Ionicons name="close-circle-outline" size={26} color={colors.danger} style={{ marginRight: 14 }} />
                                         <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Reject</Text>
@@ -2861,6 +2970,10 @@ export const TaskDetailScreen = () => {
                                         <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
                                         <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Approve</Text>
                                     </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleForwardWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                                        <Ionicons name="arrow-redo-outline" size={26} color={colors.primary} style={{ marginRight: 14 }} />
+                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Forward</Text>
+                                    </TouchableOpacity>
                                     <TouchableOpacity onPress={() => { setActionModalVisible(false); handleRejectWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
                                         <Ionicons name="close-circle-outline" size={26} color={colors.danger} style={{ marginRight: 14 }} />
                                         <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Reject</Text>
@@ -2868,9 +2981,13 @@ export const TaskDetailScreen = () => {
                                 </>
                             ) : (
                                 <>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
+                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                                         <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>{completeActionLabel}</Text>
+                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Submit for Review</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleForwardWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
+                                        <Ionicons name="arrow-redo-outline" size={26} color={colors.primary} style={{ marginRight: 14 }} />
+                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Forward</Text>
                                     </TouchableOpacity>
                                 </>
                             )}
@@ -3277,6 +3394,100 @@ export const TaskDetailScreen = () => {
                                     onPress={handleConfirmReject}
                                 >
                                     <Text style={[styles.footerBtnText, { color: colors.white }]}>Confirm Reject</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                <Modal visible={forwardModalVisible} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setForwardModalVisible(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setForwardModalVisible(false)} />
+                        <View style={[styles.modalSheet, { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
+                            <View style={styles.modalHeader}>
+                                <View>
+                                    <Text style={[styles.modalTitle, { color: colors.text }]}>Forward Work</Text>
+                                    <Text style={[styles.modalSub, { color: colors.textSecondary, marginTop: 2 }]}>Reassign or forward this work order</Text>
+                                </View>
+                                <TouchableOpacity onPress={() => setForwardModalVisible(false)} style={styles.modalClose}>
+                                    <Ionicons name="close" size={24} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                                <View style={{ gap: 16, paddingBottom: 24 }}>
+                                    <View style={{ gap: 8 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                            <Text style={{ color: colors.danger }}>* </Text>Forward To
+                                        </Text>
+                                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                            {getSelectorOptions('assignees').options.map((option) => {
+                                                const isSelected = forwardAssignee === option.value;
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={option.key}
+                                                        onPress={() => setForwardAssignee(option.value)}
+                                                        style={[
+                                                            {
+                                                                paddingVertical: 10,
+                                                                paddingHorizontal: 16,
+                                                                borderRadius: 20,
+                                                                borderWidth: 1,
+                                                                borderColor: isSelected ? colors.primary : colors.border,
+                                                                backgroundColor: isSelected ? colors.primary + '18' : colors.surfaceHighlight,
+                                                                flexDirection: 'row',
+                                                                alignItems: 'center',
+                                                                gap: 6,
+                                                            }
+                                                        ]}
+                                                    >
+                                                        {isSelected && <Ionicons name="checkmark-circle" size={16} color={colors.primary} />}
+                                                        <Text style={{ ...FONTS.body, color: isSelected ? colors.primary : colors.text, fontWeight: isSelected ? '700' : '500' }}>
+                                                            {option.label}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                        </View>
+                                    </View>
+
+                                    <View style={{ gap: 4 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                                            Instructions / Reason (Optional)
+                                        </Text>
+                                        <TextInput
+                                            value={forwardComments}
+                                            onChangeText={setForwardComments}
+                                            style={[
+                                                styles.commentInput, 
+                                                getInputShellStyle(colors), 
+                                                { 
+                                                    color: colors.text, 
+                                                    minHeight: 90, 
+                                                    textAlignVertical: 'top',
+                                                    paddingTop: 12,
+                                                }
+                                            ]}
+                                            placeholder="Add notes for the assigned technician..."
+                                            placeholderTextColor={colors.textSecondary}
+                                            multiline
+                                        />
+                                    </View>
+                                </View>
+                            </ScrollView>
+
+                            <View style={styles.modalFooterRow}>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderWidth: 1 }]}
+                                    onPress={() => setForwardModalVisible(false)}
+                                >
+                                    <Text style={[styles.footerBtnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: colors.primary }]}
+                                    onPress={handleConfirmForward}
+                                >
+                                    <Text style={[styles.footerBtnText, { color: colors.white }]}>Forward Work</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -4486,17 +4697,21 @@ const styles = StyleSheet.create({
     },
     footerButton: {
         flex: 1,
-        minHeight: 68,
-        borderRadius: 16,
+        minHeight: 52,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderRadius: 14,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },
     footerButtonText: {
         ...FONTS.bodyStrong,
+        fontSize: 15,
     },
     footerPrimaryText: {
         ...FONTS.bodyStrong,
+        fontSize: 15,
     },
     fab: {
         position: 'absolute',
