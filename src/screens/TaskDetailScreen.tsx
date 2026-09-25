@@ -2285,26 +2285,8 @@ export const TaskDetailScreen = () => {
                                                                             </View>
                                                                         </TouchableOpacity>
 
-                                                                        {/* Right: progress badge + chevron + kebab — all as a plain View */}
+                                                                        {/* Right: chevron + kebab — all as a plain View */}
                                                                         <View style={styles.formSectionHeaderRight}>
-                                                                            <View
-                                                                                style={[
-                                                                                    styles.formSectionProgressBadge,
-                                                                                    {
-                                                                                        backgroundColor: isAllDone ? colors.success + '15' : colors.primary + '15',
-                                                                                        borderColor: isAllDone ? colors.success + '40' : colors.primary + '40',
-                                                                                    },
-                                                                                ]}
-                                                                            >
-                                                                                <Text
-                                                                                    style={[
-                                                                                        styles.formSectionProgressText,
-                                                                                        { color: isAllDone ? colors.success : colors.primary },
-                                                                                    ]}
-                                                                                >
-                                                                                    {completedCount}/{totalCount}
-                                                                                </Text>
-                                                                            </View>
                                                                             <TouchableOpacity onPress={() => toggleSectionExpanded(sectionId)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}>
                                                                                 <Ionicons
                                                                                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
@@ -2360,7 +2342,7 @@ export const TaskDetailScreen = () => {
                                                                     style={[styles.formSectionSummaryRow, { backgroundColor: colors.surfaceHighlight + '40' }]}
                                                                 >
                                                                     <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
-                                                                        {totalCount} {totalCount === 1 ? 'task' : 'tasks'} ({completedCount} completed)
+                                                                        Tap to view tasks
                                                                     </Text>
                                                                     <Text style={[FONTS.caption, { color: colors.primary, fontWeight: '600' }]}>
                                                                         Tap to view
@@ -2403,30 +2385,6 @@ export const TaskDetailScreen = () => {
                                                                                             </View>
                                                                                         </TouchableOpacity>
                                                                                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                                                                            <View
-                                                                                                style={[
-                                                                                                    styles.formGroupCountBadge,
-                                                                                                    {
-                                                                                                        backgroundColor: blockCompleted === blockTasks.length && blockTasks.length > 0 ? colors.success + '15' : colors.surface,
-                                                                                                        borderColor: blockCompleted === blockTasks.length && blockTasks.length > 0 ? colors.success + '35' : colors.border,
-                                                                                                    },
-                                                                                                ]}
-                                                                                            >
-                                                                                                {blockCompleted === blockTasks.length && blockTasks.length > 0 && (
-                                                                                                    <Ionicons name="checkmark" size={11} color={colors.success} style={{ marginRight: 3 }} />
-                                                                                                )}
-                                                                                                <Text
-                                                                                                    style={[
-                                                                                                        styles.formGroupCountText,
-                                                                                                        {
-                                                                                                            color: blockCompleted === blockTasks.length && blockTasks.length > 0 ? colors.success : colors.textSecondary,
-                                                                                                            fontWeight: '600',
-                                                                                                        },
-                                                                                                    ]}
-                                                                                                >
-                                                                                                    {blockCompleted}/{blockTasks.length}
-                                                                                                </Text>
-                                                                                            </View>
                                                                                             <TouchableOpacity
                                                                                                 onPress={() => toggleChecklistExpanded(block.checklist.id)}
                                                                                                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
@@ -2510,9 +2468,7 @@ export const TaskDetailScreen = () => {
                                                             </Text>
                                                             {isFillOnlyChecklist && (
                                                                 <View style={styles.sectionHeaderMeta}>
-                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
-                                                                        ({taskCount} {hasChecklistHeaders ? (taskCount === 1 ? 'checklist' : 'checklists') : (taskCount === 1 ? 'task' : 'tasks')})
-                                                                    </Text>
+
                                                                     <Ionicons
                                                                         name={isExpanded ? 'chevron-up' : 'chevron-down'}
                                                                         size={18}
