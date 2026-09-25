@@ -388,7 +388,7 @@ const MultiResponseEntryItem: React.FC<{
                     editable={!isUnderReview}
                     placeholder={isDate ? 'YYYY-MM-DD' : (isNum ? 'Enter number' : 'Enter text...')}
                     placeholderTextColor={colors.textSecondary}
-                    style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, backgroundColor: colors.surfaceHighlight }]}
+                    style={[styles.formInputSingle, { color: colors.text, backgroundColor: colors.surfaceHighlight, borderColor: responses[0] ? colors.primary : colors.border }]}
                     value={responses[0] || ''}
                     onChangeText={(val) => updateResponseAt(0, val)}
                 />
@@ -416,7 +416,7 @@ const MultiResponseEntryItem: React.FC<{
                                 editable={!isUnderReview}
                                 placeholder={isDate ? 'YYYY-MM-DD' : (isNum ? 'Value' : 'Response')}
                                 placeholderTextColor={colors.textSecondary}
-                                style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text, backgroundColor: colors.surfaceHighlight }]}
+                                style={[styles.formInputSingle, { flex: 1, color: colors.text, backgroundColor: colors.surfaceHighlight, borderColor: resVal ? colors.primary : colors.border }]}
                                 value={resVal}
                                 onChangeText={(val) => updateResponseAt(idx, val)}
                             />
@@ -425,7 +425,7 @@ const MultiResponseEntryItem: React.FC<{
                                     editable={!isUnderReview}
                                     placeholder={`Remarks ${idx + 1}`}
                                     placeholderTextColor={colors.textSecondary}
-                                    style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text, backgroundColor: colors.surfaceHighlight }]}
+                                    style={[styles.formInputSingle, { flex: 1, color: colors.text, backgroundColor: colors.surfaceHighlight, borderColor: remVal ? colors.primary : colors.border }]}
                                     value={remVal}
                                     onChangeText={(val) => updateRemarkAt(idx, val)}
                                 />
@@ -1256,7 +1256,10 @@ export const TaskDetailScreen = () => {
                 <ScrollView
                     ref={scrollViewRef}
                     style={styles.scrollView}
-                    contentContainerStyle={styles.content}
+                    contentContainerStyle={[
+                        styles.content,
+                        { paddingBottom: Math.max(insets.bottom, 16) + 120 },
+                    ]}
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: 10 }]}>
@@ -1476,7 +1479,6 @@ export const TaskDetailScreen = () => {
                                                                 backgroundColor: isHighlighted ? colors.primary + '20' : (isNA ? colors.surfaceHighlight + '40' : 'transparent'),
                                                                 zIndex: openMenuId === item.id ? 100 : 1,
                                                                 borderRadius: isHighlighted ? 8 : 0,
-                                                                paddingHorizontal: isHighlighted ? 8 : 0,
                                                             },
                                                         ]}
                                                     >
