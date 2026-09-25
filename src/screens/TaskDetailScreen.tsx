@@ -827,6 +827,8 @@ export const TaskDetailScreen = () => {
     const [rejectModalVisible, setRejectModalVisible] = useState(false);
     const [rejectComments, setRejectComments] = useState('');
     const scrollViewRef = useRef<ScrollView>(null);
+    const taskRefs = useRef<Map<string, View>>(new Map());
+    const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!isGeoFenceStation) {
@@ -946,6 +948,82 @@ export const TaskDetailScreen = () => {
     const updateItem = (id: string, value: any) => {
         if (isOffSite) return;
         setItems((current) => current.map((item) => (item.id === id ? { ...item, value } : item)));
+    };
+
+    const getTaskLocationInfo = (taskId: string) => {
+        for (const sec of nestedFillTree) {
+            for (const ch of sec.checklists) {
+                if (ch.tasks.some((task) => task.id === taskId)) {
+                    return {
+                        section: sec.section.id !== '__root__' ? sec.section.label : null,
+                        checklist: ch.checklist.id !== '__root__' ? ch.checklist.label : null,
+                    };
+                }
+            }
+            if (sec.looseTasks.some((task) => task.id === taskId)) {
+                return {
+                    section: sec.section.id !== '__root__' ? sec.section.label : null,
+                    checklist: null,
+                };
+            }
+        }
+        return { section: null, checklist: null };
+    };
+
+    const navigateToTask = (targetTaskId: string) => {
+        setMandatoryErrorModalVisible(false);
+
+        if (activeTab !== 'Tasks') {
+            setActiveTab('Tasks');
+        }
+
+        let targetSectionId: string | null = null;
+        let targetChecklistId: string | null = null;
+
+        for (const sec of nestedFillTree) {
+            for (const ch of sec.checklists) {
+                if (ch.tasks.some((t) => t.id === targetTaskId)) {
+                    targetSectionId = sec.section.id;
+                    targetChecklistId = ch.checklist.id;
+                    break;
+                }
+            }
+            if (targetSectionId) break;
+            if (sec.looseTasks.some((t) => t.id === targetTaskId)) {
+                targetSectionId = sec.section.id;
+                break;
+            }
+        }
+
+        if (targetSectionId && targetSectionId !== '__root__') {
+            setExpandedSectionIds(new Set([targetSectionId]));
+        }
+        if (targetChecklistId && targetChecklistId !== '__root__') {
+            setExpandedChecklistIds((prev) => new Set([...prev, targetChecklistId]));
+        }
+
+        setHighlightedTaskId(targetTaskId);
+        setTimeout(() => {
+            setHighlightedTaskId((curr) => (curr === targetTaskId ? null : curr));
+        }, 4000);
+
+        const scrollToTarget = (delay: number) => {
+            setTimeout(() => {
+                const node = taskRefs.current.get(targetTaskId);
+                if (node && scrollViewRef.current) {
+                    node.measureLayout(
+                        scrollViewRef.current as any,
+                        (_x, y) => {
+                            scrollViewRef.current?.scrollTo({ y: Math.max(0, y - 40), animated: true });
+                        },
+                        () => {}
+                    );
+                }
+            }, delay);
+        };
+
+        scrollToTarget(100);
+        scrollToTarget(300);
     };
 
     const handleCompleteAction = () => {
@@ -1381,16 +1459,24 @@ export const TaskDetailScreen = () => {
                                                 const isDropdownOpen = openDropdownId === item.id;
                                                 const isFieldRequired = Boolean(item.required);
 
+                                                const isHighlighted = highlightedTaskId === item.id;
+
                                                 return (
                                                     <View
                                                         key={item.id}
+                                                        ref={(el) => {
+                                                            if (el) taskRefs.current.set(item.id, el);
+                                                            else taskRefs.current.delete(item.id);
+                                                        }}
                                                         style={[
                                                             styles.formFieldRow,
                                                             {
-                                                                borderBottomColor: colors.border,
-                                                                borderBottomWidth: StyleSheet.hairlineWidth,
-                                                                backgroundColor: isNA ? colors.surfaceHighlight + '40' : 'transparent',
+                                                                borderBottomColor: isHighlighted ? colors.primary : colors.border,
+                                                                borderBottomWidth: isHighlighted ? 2 : StyleSheet.hairlineWidth,
+                                                                backgroundColor: isHighlighted ? colors.primary + '20' : (isNA ? colors.surfaceHighlight + '40' : 'transparent'),
                                                                 zIndex: openMenuId === item.id ? 100 : 1,
+                                                                borderRadius: isHighlighted ? 8 : 0,
+                                                                paddingHorizontal: isHighlighted ? 8 : 0,
                                                             },
                                                         ]}
                                                     >
@@ -1804,14 +1890,20 @@ export const TaskDetailScreen = () => {
                                             }
 
                                             const hideStepIcon = isFillOnlyChecklist;
+                                            const isHighlighted = highlightedTaskId === item.id;
                                             return (
                                                 <View
                                                     key={item.id}
+                                                    ref={(el) => {
+                                                        if (el) taskRefs.current.set(item.id, el);
+                                                        else taskRefs.current.delete(item.id);
+                                                    }}
                                                     style={[
                                                         isFillOnlyChecklist ? styles.taskContainer : styles.stepCard,
                                                         {
-                                                            backgroundColor: colors.surface,
-                                                            borderColor: colors.border,
+                                                            backgroundColor: isHighlighted ? colors.primary + '15' : colors.surface,
+                                                            borderColor: isHighlighted ? colors.primary : colors.border,
+                                                            borderWidth: isHighlighted ? 2 : 1,
                                                             shadowColor: isFillOnlyChecklist ? 'transparent' : colors.shadow,
                                                             zIndex: openMenuId === item.id ? 100 : 1,
                                                             opacity: isNA ? 0.6 : 1,
@@ -2775,7 +2867,7 @@ export const TaskDetailScreen = () => {
                         >
                             <Ionicons name="checkmark-circle-outline" size={18} color={colors.white} />
                             <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
-                                Submit
+                                Mark as Complete
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -2944,7 +3036,7 @@ export const TaskDetailScreen = () => {
                                 <>
                                     <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                                         <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Submit for Review</Text>
+                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Mark as Complete</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={() => { setActionModalVisible(false); handleForwardWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
                                         <Ionicons name="arrow-redo-outline" size={26} color={colors.primary} style={{ marginRight: 14 }} />
@@ -2980,7 +3072,7 @@ export const TaskDetailScreen = () => {
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={[styles.confirmTitle, { color: colors.danger, fontSize: 18, marginBottom: 2, textAlign: 'left' }]}>
-                                        Cannot Submit for Review
+                                        Cannot Mark as Complete
                                     </Text>
                                     <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
                                         Mandatory task(s) incomplete
@@ -2994,32 +3086,86 @@ export const TaskDetailScreen = () => {
                             <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 4 }} />
 
                             <Text style={[FONTS.body, { color: colors.text, lineHeight: 20 }]}>
-                                The work order cannot be moved to <Text style={{ fontWeight: '700', color: colors.warning }}>Under Review</Text> because mandatory task(s) have not been completed:
+                                Please complete all required tasks below before marking as complete. Tap any task to navigate directly to it:
                             </Text>
 
-                            <ScrollView style={{ maxHeight: 220, marginVertical: 4 }} showsVerticalScrollIndicator={true}>
-                                {incompleteMandatoryTasks.map((t, idx) => (
-                                    <View key={t.id || idx} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: colors.danger + '30' }}>
-                                        <Ionicons name="alert-circle-outline" size={20} color={colors.danger} style={{ marginTop: 2 }} />
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 14 }]}>
-                                                {t.label || (t as any).title || 'Mandatory Task'}
-                                            </Text>
-                                            <Text style={[FONTS.caption, { color: colors.danger, marginTop: 2 }]}>
-                                                * Required field missing
-                                            </Text>
-                                        </View>
-                                    </View>
-                                ))}
+                            <ScrollView style={{ maxHeight: 260, marginVertical: 4 }} showsVerticalScrollIndicator={true}>
+                                {incompleteMandatoryTasks.map((t, idx) => {
+                                    const loc = getTaskLocationInfo(t.id);
+                                    const locText = [loc.section, loc.checklist].filter(Boolean).join(' › ');
+                                    const taskNum = taskNumbers.get(t.id);
+
+                                    return (
+                                        <TouchableOpacity
+                                            key={t.id || idx}
+                                            activeOpacity={0.7}
+                                            onPress={() => navigateToTask(t.id)}
+                                            style={{
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                gap: 12,
+                                                backgroundColor: colors.surfaceHighlight,
+                                                padding: 12,
+                                                borderRadius: 10,
+                                                marginBottom: 8,
+                                                borderWidth: 1,
+                                                borderColor: colors.danger + '35',
+                                            }}
+                                        >
+                                            <View
+                                                style={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    borderRadius: 16,
+                                                    backgroundColor: colors.danger + '18',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >
+                                                <Ionicons name="alert-circle" size={20} color={colors.danger} />
+                                            </View>
+                                            <View style={{ flex: 1 }}>
+                                                {locText ? (
+                                                    <Text
+                                                        style={[FONTS.caption, { color: colors.textSecondary, marginBottom: 2, fontSize: 11 }]}
+                                                        numberOfLines={1}
+                                                    >
+                                                        {locText}
+                                                    </Text>
+                                                ) : null}
+                                                <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 14 }]} numberOfLines={2}>
+                                                    {taskNum ? `${taskNum}. ` : ''}{t.label || (t as any).title || 'Mandatory Task'}
+                                                </Text>
+                                                <Text style={[FONTS.caption, { color: colors.danger, marginTop: 2, fontSize: 11 }]}>
+                                                    * Required field incomplete — tap to go to task
+                                                </Text>
+                                            </View>
+                                            <View
+                                                style={{
+                                                    backgroundColor: colors.primary + '15',
+                                                    paddingHorizontal: 8,
+                                                    paddingVertical: 5,
+                                                    borderRadius: 6,
+                                                    flexDirection: 'row',
+                                                    alignItems: 'center',
+                                                    gap: 3,
+                                                }}
+                                            >
+                                                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600' }}>Go</Text>
+                                                <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </ScrollView>
 
                             <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 8 }]}>
                                 {isAllowNotApplicable ? (
                                     <>
-                                        Please complete all required tasks or mark them as <Text style={{ fontWeight: '700', color: colors.text }}>Not Applicable (N/A)</Text> before submitting.
+                                        Please complete all required tasks or mark them as <Text style={{ fontWeight: '700', color: colors.text }}>Not Applicable (N/A)</Text> before marking as complete.
                                     </>
                                 ) : (
-                                    'Please complete all required tasks before submitting.'
+                                    'Please complete all required tasks before marking as complete.'
                                 )}
                             </Text>
 
