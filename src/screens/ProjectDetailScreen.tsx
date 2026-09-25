@@ -80,11 +80,10 @@ export const OrderCard = ({
 
     const isPreventive = item.type === 'Preventive';
     const isService = item.type === 'Service' || item.type === 'Reactive';
-    const isPreventiveOrService = isPreventive || isService;
     const isCurrentlyRequested = cardRequested || cardStatus === 'Requested' || item.isRequested;
 
     const actionConfig = (() => {
-        if (isPreventiveOrService && cardStatus === 'Assigned') {
+        if (cardStatus === 'Assigned') {
             return { secondaryLabel: 'Reject', primaryLabel: 'Accept', isAcceptReject: true as const };
         }
         if (isPreventive) {

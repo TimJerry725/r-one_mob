@@ -478,10 +478,10 @@ export const TaskDetailScreen = () => {
     const isOffSite = isGeoFenceStation && !isNearSite;
     const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite;
     const isGeoFenceWarningVisible = isOffSite;
-    const isPreventiveOrService = ['preventive', 'service', 'reactive'].includes((workOrder.type || '').toLowerCase());
-    const isAssignedPending = isPreventiveOrService && workStatus === 'Assigned';
-    const isFillOnlyChecklist = isPreventiveOrService;
-    const isAllowNotApplicable = !isPreventiveOrService;
+    const isPreventiveOrService = true;
+    const isAssignedPending = workStatus === 'Assigned';
+    const isFillOnlyChecklist = true;
+    const isAllowNotApplicable = true;
     const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
     const [items, setItems] = useState<ChecklistStateItem[]>(() => buildChecklistState(checklistTemplate, isUnderReview));
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
