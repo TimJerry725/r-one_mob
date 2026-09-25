@@ -120,13 +120,14 @@ const instructionLabel = (content: string) => {
     return /^instruction:/i.test(trimmed) ? trimmed : `Instruction: ${trimmed}`;
 };
 
-const instructionRow = (id: string, content: string): ChecklistTemplateItem => ({
+const instructionRow = (id: string, content: string, showWhenFieldId?: string): ChecklistTemplateItem => ({
     id,
     label: instructionLabel(content),
     type: 'none',
     dataType: 'None',
     required: false,
     isReadOnly: true,
+    ...(showWhenFieldId ? { showWhenFieldId, showWhenEquals: 'Yes' } : {}),
 });
 
 const yesNoRadio = (id: string, label: string, showWhenFieldId?: string): ChecklistTemplateItem => ({

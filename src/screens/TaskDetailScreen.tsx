@@ -160,8 +160,10 @@ const getCompletedChecklistValue = (item: ChecklistTemplateItem): any => {
     }
 };
 
-const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete: boolean): ChecklistStateItem[] =>
-    template.map((item) => {
+const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete: boolean): ChecklistStateItem[] => {
+    let lastQuestionId: string | null = null;
+
+    return template.map((item) => {
         const rawType = item.type || (item.dataType ? mapDataTypeToType(item.dataType) : 'text');
         const itemType = (rawType || '').toLowerCase();
         const dataType = (item.dataType || '').toLowerCase();
@@ -185,27 +187,56 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
 
         const isChoiceNone = !item.isReadOnly && itemType !== 'none' && (dataType === 'none' || itemType === 'toggle' || item.dataType === 'None');
 
+        const resolvedOptions = (() => {
+            if (isChoiceNone && (!item.options || item.options.length === 0)) return ['Yes', 'No'];
+            if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
+                const seed = getPmDemoPhotoSeed(Math.max(item.options?.length || 0, 3));
+                const existing = item.options || [];
+                if (existing.length > 1 && existing.some((o) => String(o || '').trim())) return existing;
+                return seed.options;
+            }
+            return item.options;
+        })();
+
+        if (rawType === 'section_header' || rawType === 'checklist_header') {
+            lastQuestionId = null;
+        }
+
+        const isYesNoQuestion =
+            (resolvedOptions && (resolvedOptions.includes('Yes') || resolvedOptions.includes('No'))) ||
+            isChoiceNone ||
+            itemType === 'radio' ||
+            itemType === 'toggle' ||
+            dataType === 'yes_no' ||
+            dataType === 'toggle';
+
+        let showWhenFieldId = item.showWhenFieldId;
+        let showWhenEquals = item.showWhenEquals;
+
+        if (!showWhenFieldId && rawType !== 'section_header' && rawType !== 'checklist_header') {
+            if (!isYesNoQuestion && lastQuestionId) {
+                showWhenFieldId = lastQuestionId;
+                showWhenEquals = 'Yes';
+            }
+        }
+
+        if (isYesNoQuestion && rawType !== 'section_header' && rawType !== 'checklist_header') {
+            lastQuestionId = item.id;
+        }
+
         return {
             ...item,
             type: rawType,
             dataType: item.dataType || getDataTypeLabel({ ...item, type: rawType, value: initialVal }),
-            options: (() => {
-                if (isChoiceNone && (!item.options || item.options.length === 0)) return ['Yes', 'No'];
-                if (itemType === 'photo' || itemType === 'media' || dataType === 'media') {
-                    const seed = getPmDemoPhotoSeed(Math.max(item.options?.length || 0, 3));
-                    const existing = item.options || [];
-                    if (existing.length > 1 && existing.some((o) => String(o || '').trim())) return existing;
-                    return seed.options;
-                }
-                return item.options;
-            })(),
+            options: resolvedOptions,
             value: rawType === 'section_header' || rawType === 'checklist_header' ? '' : initialVal,
-            showWhenFieldId: item.showWhenFieldId,
-            showWhenEquals: item.showWhenEquals,
+            showWhenFieldId,
+            showWhenEquals,
             defaultValue: item.defaultValue,
             isReadOnly: item.isReadOnly,
         };
     });
+};
 
 const isComplete = (item: ChecklistStateItem) => {
     if (item.type === 'section_header' || item.type === 'checklist_header') return true;
@@ -465,6 +496,16 @@ export const TaskDetailScreen = () => {
         () => new Set(sectionIds.slice(0, 1))
     );
     const hasChecklistHeaders = items.some((item) => item.type === 'checklist_header');
+
+    const isItemVisible = (item: ChecklistStateItem): boolean => {
+        if (!item.showWhenFieldId || !item.showWhenEquals) return true;
+        const parentItem = items.find((i) => i.id === item.showWhenFieldId);
+        if (!parentItem) return true;
+        if (!isItemVisible(parentItem)) return false;
+        const parentValue = Array.isArray(parentItem?.value) ? parentItem?.value[0] : parentItem?.value;
+        return parentValue === item.showWhenEquals;
+    };
+
     const taskNumbers = useMemo(() => {
         const numbers = new Map<string, string>();
         let n = 0;
@@ -478,11 +519,7 @@ export const TaskDetailScreen = () => {
             } else if (item.type === 'checklist_header') {
                 return;
             }
-            if (item.showWhenFieldId && item.showWhenEquals) {
-                const parentItem = items.find((i) => i.id === item.showWhenFieldId);
-                const parentValue = Array.isArray(parentItem?.value) ? parentItem?.value[0] : parentItem?.value;
-                if (parentValue !== item.showWhenEquals) return;
-            }
+            if (!isItemVisible(item)) return;
             n += 1;
             numbers.set(item.id, String(n));
         });
@@ -501,11 +538,7 @@ export const TaskDetailScreen = () => {
                 if (item.type !== 'checklist_header') return;
             } else {
                 if (item.type === 'checklist_header') return;
-                if (item.showWhenFieldId && item.showWhenEquals) {
-                    const parentItem = items.find((i) => i.id === item.showWhenFieldId);
-                    const parentValue = Array.isArray(parentItem?.value) ? parentItem?.value[0] : parentItem?.value;
-                    if (parentValue !== item.showWhenEquals) return;
-                }
+                if (!isItemVisible(item)) return;
             }
             if (current) counts.set(current, (counts.get(current) || 0) + 1);
         });
@@ -572,11 +605,12 @@ export const TaskDetailScreen = () => {
         const counts = new Map<string, number>();
         nestedFillTree.forEach((section) => {
             section.checklists.forEach((block) => {
-                counts.set(block.checklist.id, block.tasks.length);
+                const count = block.tasks.filter(isItemVisible).length;
+                counts.set(block.checklist.id, count);
             });
         });
         return counts;
-    }, [nestedFillTree]);
+    }, [nestedFillTree, items]);
 
     const [expandedChecklistIds, setExpandedChecklistIds] = useState<Set<string>>(() => {
         // By default, open all checklists inside sections
@@ -857,13 +891,6 @@ export const TaskDetailScreen = () => {
             return () => clearTimeout(timer);
         }
     }, [isUnderReview]);
-
-    const isItemVisible = (item: ChecklistStateItem) => {
-        if (!item.showWhenFieldId || !item.showWhenEquals) return true;
-        const parentItem = items.find((i) => i.id === item.showWhenFieldId);
-        const parentValue = Array.isArray(parentItem?.value) ? parentItem?.value[0] : parentItem?.value;
-        return parentValue === item.showWhenEquals;
-    };
     const visibleItems = items.filter(isItemVisible);
     const requiredItems = visibleItems.filter((item) => item.required && item.type !== 'section_header' && item.type !== 'checklist_header');
     const completedRequired = requiredItems.filter(isComplete).length;
@@ -1328,14 +1355,8 @@ export const TaskDetailScreen = () => {
                                     <View style={[styles.listColumn, isFillOnlyChecklist && styles.listColumnCompact]}>
                                         {(() => {
                                             const renderTaskCard = (item: ChecklistStateItem) => {
-                                            // Conditional visibility: hide if parent visual-check !== 'Yes'
-                                            if (item.showWhenFieldId && item.showWhenEquals) {
-                                                const parentItem = items.find(i => i.id === item.showWhenFieldId);
-                                                const parentValue = Array.isArray(parentItem?.value)
-                                                    ? parentItem?.value[0]
-                                                    : parentItem?.value;
-                                                if (parentValue !== item.showWhenEquals) return null;
-                                            }
+                                            // Conditional visibility: hide if dependent condition not met
+                                            if (!isItemVisible(item)) return null;
 
                                             const isNA = item.type === 'not_applicable' || item.isNotApplicable;
 
@@ -2127,7 +2148,7 @@ export const TaskDetailScreen = () => {
                                                     const allTasksInSection = [
                                                         ...sectionBlock.checklists.flatMap((b) => b.tasks),
                                                         ...sectionBlock.looseTasks,
-                                                    ];
+                                                    ].filter(isItemVisible);
                                                     const totalCount = allTasksInSection.length;
                                                     const completedCount = allTasksInSection.filter((t) => isComplete(t) || t.type === 'not_applicable' || t.isNotApplicable).length;
                                                     const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
@@ -2262,7 +2283,7 @@ export const TaskDetailScreen = () => {
                                                                     {sectionBlock.checklists.map((block) => {
                                                                         const isRootChecklist = block.checklist.id === '__root__';
                                                                         const num = taskNumbers.get(block.checklist.id);
-                                                                        const blockTasks = block.tasks;
+                                                                        const blockTasks = block.tasks.filter(isItemVisible);
                                                                         const blockCompleted = blockTasks.filter(
                                                                             (t) => isComplete(t) || t.type === 'not_applicable' || t.isNotApplicable
                                                                         ).length;
