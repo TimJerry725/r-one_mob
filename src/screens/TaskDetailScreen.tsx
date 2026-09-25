@@ -3719,7 +3719,81 @@ export const TaskDetailScreen = () => {
                                         </View>
                                     ) : (
                                         <>
-                                            {/* 1. Approvals & Assignees (Prominently at the Top) */}
+                                            {/* 1. Station & Charge Points (Top) */}
+                                            <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Station & Assets</Text>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Station Name</Text>
+                                                    <Text style={[styles.infoValue, { color: colors.text, fontWeight: '700' }]}>{workOrder.siteName}</Text>
+                                                </View>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Address</Text>
+                                                    <View style={{ flex: 1, alignItems: 'flex-end', gap: 4 }}>
+                                                        <Text style={[styles.infoValue, { color: colors.text, textAlign: 'right' }]}>{workOrder.address}</Text>
+                                                        <TouchableOpacity
+                                                            onPress={() => {
+                                                                const lat = workOrder.latitude;
+                                                                const lon = workOrder.longitude;
+                                                                if (!lat || !lon) return;
+                                                                const url = Platform.select({
+                                                                    ios: `maps:?daddr=${lat},${lon}`,
+                                                                    default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,
+                                                                });
+                                                                if (url) Linking.openURL(url);
+                                                            }}
+                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                                                        >
+                                                            <Ionicons name="navigate-outline" size={13} color={colors.primary} />
+                                                            <Text style={[FONTS.caption, { color: colors.primary, fontWeight: '600' }]}>Open in Maps</Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Charge Points (CPID)</Text>
+                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end', flex: 1 }}>
+                                                        {(workOrder.assetIds || [workOrder.assetId]).map((cp) => (
+                                                            <View key={cp} style={[styles.heroChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                                                <Text style={[styles.heroChipText, { color: colors.text }]}>{cp}</Text>
+                                                            </View>
+                                                        ))}
+                                                    </View>
+                                                </View>
+                                            </View>
+
+                                            {/* 2. Overview Card */}
+                                            <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                <Text style={[styles.infoSectionTitle, { color: colors.text }]}>{workOrder.title}</Text>
+                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                                    <View style={[styles.heroChip, { backgroundColor: getStatusColor(workStatus, colors, isDark) + '15', borderColor: getStatusColor(workStatus, colors, isDark) }]}>
+                                                        <Text style={[styles.heroChipText, { color: getStatusColor(workStatus, colors, isDark) }]}>{workStatus}</Text>
+                                                    </View>
+                                                    <View style={[styles.heroChip, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
+                                                        <Text style={[styles.heroChipText, { color: typeColors.tintText }]}>{workOrder.type}</Text>
+                                                    </View>
+                                                    {workOrder.stage ? (
+                                                        <View style={[styles.heroChip, { backgroundColor: (isDark ? colors.primaryLight : colors.primary) + '15', borderColor: isDark ? colors.primaryLight : colors.primary }]}>
+                                                            <Text style={[styles.heroChipText, { color: isDark ? colors.primaryLight : colors.primary }]}>{workOrder.stage}</Text>
+                                                        </View>
+                                                    ) : null}
+                                                    {workOrder.priority ? (
+                                                        <View style={[styles.heroChip, { backgroundColor: (workOrder.priority === 'High' ? colors.danger : workOrder.priority === 'Medium' ? colors.warning : colors.secondary) + '15', borderColor: workOrder.priority === 'High' ? colors.danger : workOrder.priority === 'Medium' ? colors.warning : colors.secondary }]}>
+                                                            <Text style={[styles.heroChipText, { color: workOrder.priority === 'High' ? colors.danger : workOrder.priority === 'Medium' ? colors.warning : colors.secondary }]}>
+                                                                {workOrder.priority} Priority
+                                                            </Text>
+                                                        </View>
+                                                    ) : null}
+                                                </View>
+
+                                                {/* Description inside Overview */}
+                                                <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8, gap: 4 }}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Description</Text>
+                                                    <Text style={[{ color: colors.text, lineHeight: 20 }, FONTS.body]}>
+                                                        {workOrder.notes || 'No description provided for this work order.'}
+                                                    </Text>
+                                                </View>
+                                            </View>
+
+                                            {/* 3. Approvals & Assignees */}
                                             <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -3827,80 +3901,6 @@ export const TaskDetailScreen = () => {
                                                 </View>
                                             </View>
 
-                                            {/* 2. Overview Card */}
-                                            <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                                <Text style={[styles.infoSectionTitle, { color: colors.text }]}>{workOrder.title}</Text>
-                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                                                    <View style={[styles.heroChip, { backgroundColor: getStatusColor(workStatus, colors, isDark) + '15', borderColor: getStatusColor(workStatus, colors, isDark) }]}>
-                                                        <Text style={[styles.heroChipText, { color: getStatusColor(workStatus, colors, isDark) }]}>{workStatus}</Text>
-                                                    </View>
-                                                    <View style={[styles.heroChip, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
-                                                        <Text style={[styles.heroChipText, { color: typeColors.tintText }]}>{workOrder.type}</Text>
-                                                    </View>
-                                                    {workOrder.stage ? (
-                                                        <View style={[styles.heroChip, { backgroundColor: (isDark ? colors.primaryLight : colors.primary) + '15', borderColor: isDark ? colors.primaryLight : colors.primary }]}>
-                                                            <Text style={[styles.heroChipText, { color: isDark ? colors.primaryLight : colors.primary }]}>{workOrder.stage}</Text>
-                                                        </View>
-                                                    ) : null}
-                                                    {workOrder.priority ? (
-                                                        <View style={[styles.heroChip, { backgroundColor: (workOrder.priority === 'High' ? colors.danger : workOrder.priority === 'Medium' ? colors.warning : colors.secondary) + '15', borderColor: workOrder.priority === 'High' ? colors.danger : workOrder.priority === 'Medium' ? colors.warning : colors.secondary }]}>
-                                                            <Text style={[styles.heroChipText, { color: workOrder.priority === 'High' ? colors.danger : workOrder.priority === 'Medium' ? colors.warning : colors.secondary }]}>
-                                                                {workOrder.priority} Priority
-                                                            </Text>
-                                                        </View>
-                                                    ) : null}
-                                                </View>
-
-                                                {/* Description inside Overview */}
-                                                <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8, gap: 4 }}>
-                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Description</Text>
-                                                    <Text style={[{ color: colors.text, lineHeight: 20 }, FONTS.body]}>
-                                                        {workOrder.notes || 'No description provided for this work order.'}
-                                                    </Text>
-                                                </View>
-                                            </View>
-
-                                            {/* 3. Station & Charge Points */}
-                                            <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                                <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Station & Assets</Text>
-                                                <View style={styles.infoRow}>
-                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Station Name</Text>
-                                                    <Text style={[styles.infoValue, { color: colors.text, fontWeight: '600' }]}>{workOrder.siteName}</Text>
-                                                </View>
-                                                <View style={styles.infoRow}>
-                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Address</Text>
-                                                    <View style={{ flex: 1, alignItems: 'flex-end', gap: 4 }}>
-                                                        <Text style={[styles.infoValue, { color: colors.text, textAlign: 'right' }]}>{workOrder.address}</Text>
-                                                        <TouchableOpacity
-                                                            onPress={() => {
-                                                                const lat = workOrder.latitude;
-                                                                const lon = workOrder.longitude;
-                                                                if (!lat || !lon) return;
-                                                                const url = Platform.select({
-                                                                    ios: `maps:?daddr=${lat},${lon}`,
-                                                                    default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,
-                                                                });
-                                                                if (url) Linking.openURL(url);
-                                                            }}
-                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                                                        >
-                                                            <Ionicons name="navigate-outline" size={13} color={colors.primary} />
-                                                            <Text style={[FONTS.caption, { color: colors.primary, fontWeight: '600' }]}>Open in Maps</Text>
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                </View>
-                                                <View style={styles.infoRow}>
-                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Charge Points (CPID)</Text>
-                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end', flex: 1 }}>
-                                                        {(workOrder.assetIds || [workOrder.assetId]).map((cp) => (
-                                                            <View key={cp} style={[styles.heroChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                                                <Text style={[styles.heroChipText, { color: colors.text }]}>{cp}</Text>
-                                                            </View>
-                                                        ))}
-                                                    </View>
-                                                </View>
-                                            </View>
-
                                             {/* 4. Schedule */}
                                             <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
                                                 <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Schedule</Text>
@@ -3923,34 +3923,6 @@ export const TaskDetailScreen = () => {
                                                     </View>
                                                 ) : null}
                                             </View>
-
-                                            {/* 5. Tools Required */}
-                                            {workOrder.tools && workOrder.tools.length > 0 && (
-                                                <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                                    <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Required Tools</Text>
-                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                                                        {workOrder.tools.map((tool) => (
-                                                            <View key={tool} style={[styles.heroChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                                                <Text style={[styles.heroChipText, { color: colors.text }]}>{tool}</Text>
-                                                            </View>
-                                                        ))}
-                                                    </View>
-                                                </View>
-                                            )}
-
-                                            {/* 6. Parts Required */}
-                                            {workOrder.parts && workOrder.parts.length > 0 && (
-                                                <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                                    <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Required Parts</Text>
-                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                                                        {workOrder.parts.map((part) => (
-                                                            <View key={part} style={[styles.heroChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                                                <Text style={[styles.heroChipText, { color: colors.text }]}>{part}</Text>
-                                                            </View>
-                                                        ))}
-                                                    </View>
-                                                </View>
-                                            )}
                                         </>
                                     )}
                                 </ScrollView>
