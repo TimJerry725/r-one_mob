@@ -24,7 +24,7 @@
       "package": "com.timjerry725.rone",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#C12A45"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
