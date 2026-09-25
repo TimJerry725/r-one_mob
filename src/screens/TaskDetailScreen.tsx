@@ -1148,7 +1148,12 @@ export const TaskDetailScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView ref={scrollViewRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                <ScrollView
+                    ref={scrollViewRef}
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+                >
                     <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: 10 }]}>
                         <View style={styles.heroTopRow}>
                             <View style={styles.heroTitleWrap}>
@@ -2711,121 +2716,48 @@ export const TaskDetailScreen = () => {
                 </ScrollView>
 
                 {activeTab !== 'Activities' && (
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                        style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}
+                    <View
+                        style={[
+                            styles.footer,
+                            {
+                                backgroundColor: colors.surface,
+                                borderTopColor: colors.border,
+                                paddingBottom: Math.max(insets.bottom, 16),
+                            },
+                        ]}
                     >
-                        {workStatus === 'Completed' ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 20, backgroundColor: colors.success + '15', borderRadius: 16, borderWidth: 1, borderColor: colors.success + '40', width: '100%' }}>
-                                <Ionicons name="checkmark-circle" size={20} color={colors.success} style={{ marginRight: 8 }} />
-                                <Text style={{ ...FONTS.bodyStrong, color: colors.success, fontSize: 15 }}>Work Order Completed</Text>
-                            </View>
-                        ) : isAssignedPending ? (
-                            <>
-                                <TouchableOpacity
-                                    onPress={handleRejectWork}
-                                    style={[styles.footerButton, { flex: 1, backgroundColor: colors.surfaceHighlight, borderColor: colors.danger, borderWidth: 1 }]}
-                                >
-                                    <Text style={[styles.footerButtonText, { color: colors.danger, ...FONTS.bodyStrong }]}>Reject</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleForwardWork}
-                                    style={[styles.footerButton, { flex: 1, backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderWidth: 1 }]}
-                                >
-                                    <Text style={[styles.footerButtonText, { color: colors.text, ...FONTS.bodyStrong }]}>Forward</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleAcceptAssignedWork}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            flex: 1.2,
-                                            backgroundColor: colors.primary,
-                                            borderColor: colors.primary,
-                                            opacity: 1,
-                                        },
-                                    ]}
-                                >
-                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
-                                        Accept
-                                    </Text>
-                                </TouchableOpacity>
-                            </>
-                        ) : isUnderReview ? (
-                            <>
-                                <TouchableOpacity
-                                    onPress={handleRejectWork}
-                                    style={[styles.footerButton, { flex: 1, backgroundColor: colors.surfaceHighlight, borderColor: colors.danger, borderWidth: 1 }]}
-                                >
-                                    <Text style={[styles.footerButtonText, { color: colors.danger, ...FONTS.bodyStrong }]}>Reject</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleForwardWork}
-                                    style={[styles.footerButton, { flex: 1, backgroundColor: colors.surfaceHighlight, borderColor: colors.border, borderWidth: 1 }]}
-                                >
-                                    <Text style={[styles.footerButtonText, { color: colors.text, ...FONTS.bodyStrong }]}>Forward</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleApproveWork}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            flex: 1.2,
-                                            backgroundColor: colors.success,
-                                            borderColor: colors.success,
-                                            opacity: 1,
-                                        },
-                                    ]}
-                                >
-                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
-                                        Approve
-                                    </Text>
-                                </TouchableOpacity>
-                            </>
-                        ) : (
-                            <>
-                                <TouchableOpacity
-                                    onPress={handleForwardWork}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            flex: 1,
-                                            backgroundColor: colors.surfaceHighlight,
-                                            borderColor: colors.border,
-                                            borderWidth: 1,
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: 6,
-                                        },
-                                    ]}
-                                >
-                                    <Ionicons name="arrow-redo-outline" size={18} color={colors.text} />
-                                    <Text style={[styles.footerButtonText, { color: colors.text, ...FONTS.bodyStrong }]}>Forward</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleCompleteAction}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            flex: 1.5,
-                                            backgroundColor: colors.primary,
-                                            borderColor: colors.primary,
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: 6,
-                                        },
-                                    ]}
-                                >
-                                    <Ionicons name="checkmark-circle-outline" size={18} color={colors.white} />
-                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
-                                        Submit for Review
-                                    </Text>
-                                </TouchableOpacity>
-                            </>
-                        )}
-                    </KeyboardAvoidingView>
+                        <TouchableOpacity
+                            onPress={handleForwardWork}
+                            style={[
+                                styles.footerButton,
+                                {
+                                    backgroundColor: colors.surfaceHighlight,
+                                    borderColor: colors.border,
+                                },
+                            ]}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="arrow-redo-outline" size={18} color={colors.text} />
+                            <Text style={[styles.footerButtonText, { color: colors.text }]}>Forward</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={handleCompleteAction}
+                            style={[
+                                styles.footerButton,
+                                {
+                                    backgroundColor: colors.primary,
+                                    borderColor: colors.primary,
+                                },
+                            ]}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="checkmark-circle-outline" size={18} color={colors.white} />
+                            <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
+                                Submit
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
 
                 {activeTab === 'Activities' && !isOffSite && (
@@ -2897,7 +2829,15 @@ export const TaskDetailScreen = () => {
 
                 {activeTab === 'Tasks' && !isChecklistDisabled && (
                     <TouchableOpacity
-                        style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000', zIndex: 90 }]}
+                        style={[
+                            styles.fab, 
+                            { 
+                                backgroundColor: colors.primary, 
+                                shadowColor: '#000', 
+                                zIndex: 90,
+                                bottom: Math.max(insets.bottom, 16) + 68,
+                            }
+                        ]}
                         activeOpacity={0.9}
                         onPress={() => {
                             setNewTaskLabel('');
@@ -4212,9 +4152,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    scrollView: {
+        flex: 1,
+    },
     content: {
         padding: 12,
-        paddingBottom: 24,
+        paddingBottom: 36,
     },
     heroCard: {
         borderRadius: 18,
@@ -4691,19 +4634,20 @@ const styles = StyleSheet.create({
     },
     footer: {
         flexDirection: 'row',
-        gap: 10,
-        padding: 16,
+        gap: 12,
+        paddingHorizontal: 16,
+        paddingTop: 12,
         borderTopWidth: 1,
     },
     footerButton: {
         flex: 1,
-        minHeight: 52,
-        paddingVertical: 12,
-        paddingHorizontal: 12,
+        height: 50,
         borderRadius: 14,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 8,
     },
     footerButtonText: {
         ...FONTS.bodyStrong,
