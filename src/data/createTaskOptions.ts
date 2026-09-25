@@ -35,7 +35,6 @@ export type TaskDraftResult = {
 };
 
 export const STATION_PROJECT_OPTIONS: StationProjectOption[] = [
-    { siteName: 'Steam a station CBE', projectId: 'PJ001' },
     { siteName: 'Pune Central Station', projectId: 'PJ001' },
     { siteName: 'Pune Central Station', projectId: 'PJ011' },
     { siteName: 'Mumbai Highway Point', projectId: 'PJ002' },

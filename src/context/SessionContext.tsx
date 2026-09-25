@@ -4,6 +4,7 @@ type SessionState = {
     displayName: string;
     email: string;
     dutyStatus: 'working' | 'away';
+    role: 'field' | 'admin';
 };
 
 type SessionContextType = SessionState & {
@@ -16,6 +17,7 @@ const DEFAULT_SESSION: SessionState = {
     displayName: 'Technician',
     email: '',
     dutyStatus: 'working',
+    role: 'field',
 };
 
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
+import { useSession } from '../context/SessionContext';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { getServiceTypeColors } from '../styles/workTypeColors';
 import { WORK_ORDERS, WorkOrder, WorkOrderStatus, STATION_BUSINESS_IMPACT } from '../data/fieldDemo';
@@ -281,6 +282,9 @@ export const ProjectDetailScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const { colors, isDark } = useTheme();
+    const { role } = useSession();
+    const isAdmin = Boolean(route.params?.isAdmin || role === 'admin');
+
     const [selectedStatuses, setSelectedStatuses] = useState<WorkOrderStatus[]>([]);
     const [selectedTypes, setSelectedTypes] = useState<string[]>(route.params?.typeFilter ? [route.params.typeFilter] : []);
     const [selectedSite, setSelectedSite] = useState<string | null>(route.params?.stationFilter ?? null);
@@ -290,6 +294,15 @@ export const ProjectDetailScreen = () => {
     const [showFilterMenu, setShowFilterMenu] = useState(false);
     const [tempSelectedStatuses, setTempSelectedStatuses] = useState<WorkOrderStatus[]>([]);
     const [tempSelectedTypes, setTempSelectedTypes] = useState<string[]>([]);
+
+    const baseWorkOrders = useMemo(() => {
+        return WORK_ORDERS.filter((item) => {
+            if (!isAdmin && (item.siteName === 'Steam a station CBE' || item.id === 'wo-steam-cbe-01')) {
+                return false;
+            }
+            return true;
+        });
+    }, [isAdmin]);
 
     useEffect(() => {
         if (route.params?.stationFilter !== undefined) {
@@ -304,7 +317,7 @@ export const ProjectDetailScreen = () => {
     }, [route.params?.stationFilter, route.params?.typeFilter, route.params?.projectFilter]);
 
     const calculateSmartRouteScore = (item: WorkOrder): number => {
-        if (item.id === 'wo-steam-cbe-01') return 2000000;
+        if (isAdmin && item.id === 'wo-steam-cbe-01') return 2000000;
         if (item.id === 'wo-pm-infra-01') return 1000000;
         if (item.id === 'wo-pm-ht-yard-01') return 999000;
         let score = 0;
@@ -331,7 +344,7 @@ export const ProjectDetailScreen = () => {
 
     const visibleOrders = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
-        const filtered = WORK_ORDERS.filter((item) => {
+        const filtered = baseWorkOrders.filter((item) => {
             const matchesStatus = selectedStatuses.length === 0 ? true : selectedStatuses.includes(item.status);
             const matchesType = selectedTypes.length === 0 ? true : selectedTypes.includes(item.type);
             const matchesSite = selectedSite ? item.siteName === selectedSite : true;
@@ -344,7 +357,7 @@ export const ProjectDetailScreen = () => {
         return filtered.sort((a, b) => {
             return calculateSmartRouteScore(b) - calculateSmartRouteScore(a);
         });
-    }, [searchQuery, selectedSite, selectedStatuses, selectedTypes]);
+    }, [baseWorkOrders, searchQuery, selectedSite, selectedStatuses, selectedTypes, selectedProject, isAdmin]);
 
     const toggleStatus = (status: WorkOrderStatus) => {
         setTempSelectedStatuses((current) =>
@@ -430,7 +443,7 @@ export const ProjectDetailScreen = () => {
             'Unassigned': 0, 'Assigned': 0, 'Accepted': 0, 'Working': 0, 'Under Review': 0, 'Completed': 0,
             'Installation': 0, 'Service': 0, 'Reactive': 0, 'Preventive': 0
         };
-        WORK_ORDERS.forEach((item) => {
+        baseWorkOrders.forEach((item) => {
             const matchesStatus = selectedStatuses.length === 0 ? true : selectedStatuses.includes(item.status);
             const matchesType = selectedTypes.length === 0 ? true : selectedTypes.includes(item.type);
             const matchesSite = selectedSite ? item.siteName === selectedSite : true;
@@ -446,7 +459,7 @@ export const ProjectDetailScreen = () => {
             }
         });
         return counts;
-    }, [selectedTypes, selectedStatuses, selectedSite, selectedProject]);
+    }, [baseWorkOrders, selectedTypes, selectedStatuses, selectedSite, selectedProject]);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>

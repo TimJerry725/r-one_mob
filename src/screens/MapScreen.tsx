@@ -115,16 +115,32 @@ export const MapScreen = () => {
     const [locationState, setLocationState] = useState<'loading' | 'granted' | 'denied'>('loading');
     const [mapReady, setMapReady] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedOrderId, setSelectedOrderId] = useState(WORK_ORDERS[0].id);
-    const [mapMode, setMapMode] = useState<'work' | 'live' | 'both'>('work');
-    const { dutyStatus, setSession } = useSession();
+    const { dutyStatus, setSession, role } = useSession();
+    const isAdmin = Boolean(route.params?.isAdmin || role === 'admin');
 
-    const filteredOrders = WORK_ORDERS.filter((item) => {
-        const haystack = `${item.title} ${item.siteName} ${item.address}`.toLowerCase();
-        return haystack.includes(searchQuery.trim().toLowerCase());
+    const availableOrders = useMemo(() => {
+        return WORK_ORDERS.filter((item) => {
+            if (!isAdmin && (item.siteName === 'Steam a station CBE' || item.id === 'wo-steam-cbe-01')) {
+                return false;
+            }
+            return true;
+        });
+    }, [isAdmin]);
+
+    const [selectedOrderId, setSelectedOrderId] = useState<string>(() => {
+        const initialList = WORK_ORDERS.filter((item) => item.siteName !== 'Steam a station CBE');
+        return initialList[0]?.id ?? WORK_ORDERS[0].id;
     });
+    const [mapMode, setMapMode] = useState<'work' | 'live' | 'both'>('work');
 
-    const activeStationName = WORK_ORDERS.find((item) => item.id === selectedOrderId)?.siteName ?? null;
+    const filteredOrders = useMemo(() => {
+        return availableOrders.filter((item) => {
+            const haystack = `${item.title} ${item.siteName} ${item.address}`.toLowerCase();
+            return haystack.includes(searchQuery.trim().toLowerCase());
+        });
+    }, [availableOrders, searchQuery]);
+
+    const activeStationName = availableOrders.find((item) => item.id === selectedOrderId)?.siteName ?? null;
 
     const stationCards = useMemo<StationMapCard[]>(() => {
         const grouped = new Map<string, StationMapCard>();
@@ -245,7 +261,7 @@ export const MapScreen = () => {
         const station =
             stationCards.find((item) => item.siteName === siteName) ??
             (() => {
-                const fallback = WORK_ORDERS.find((item) => item.siteName === siteName);
+                const fallback = availableOrders.find((item) => item.siteName === siteName);
                 if (!fallback) {
                     return null;
                 }
@@ -261,7 +277,7 @@ export const MapScreen = () => {
 
         const nextOrder =
             filteredOrders.find((item) => item.siteName === siteName) ??
-            WORK_ORDERS.find((item) => item.siteName === siteName);
+            availableOrders.find((item) => item.siteName === siteName);
 
         if (!station || !nextOrder) {
             return;
@@ -303,8 +319,8 @@ export const MapScreen = () => {
     const openStationWork = (siteName: string, orderId?: string) => {
         const nextOrder =
             orderId
-                ? WORK_ORDERS.find((item) => item.id === orderId)
-                : filteredOrders.find((item) => item.siteName === siteName) ?? WORK_ORDERS.find((item) => item.siteName === siteName);
+                ? availableOrders.find((item) => item.id === orderId)
+                : filteredOrders.find((item) => item.siteName === siteName) ?? availableOrders.find((item) => item.siteName === siteName);
 
         if (nextOrder) {
             setSelectedOrderId(nextOrder.id);

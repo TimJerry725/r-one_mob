@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+import { useSession } from '../context/SessionContext';
 import { WORK_ORDERS, ASSETS } from '../data/fieldDemo';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
 
@@ -11,11 +12,13 @@ export const ProjectListScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const { colors } = useTheme();
+    const { role } = useSession();
+    const isAdmin = Boolean(route.params?.isAdmin || role === 'admin');
     const [query, setQuery] = useState('');
 
     const projects = useMemo(() => {
         const uniqueProjects = new Map();
-        WORK_ORDERS.forEach(item => {
+        WORK_ORDERS.filter(item => isAdmin || (item.siteName !== 'Steam a station CBE' && item.id !== 'wo-steam-cbe-01')).forEach(item => {
             if (!uniqueProjects.has(item.projectId)) {
                 uniqueProjects.set(item.projectId, {
                     id: item.projectId,

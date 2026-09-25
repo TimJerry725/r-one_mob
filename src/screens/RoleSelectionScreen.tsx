@@ -5,10 +5,12 @@ import { useNavigation } from '@react-navigation/native';
 import { NeonButton } from '../components/NeonButton';
 import { Logo } from '../components/Logo';
 import { useTheme } from '../context/ThemeContext';
+import { useSession } from '../context/SessionContext';
 
 export const RoleSelectionScreen = () => {
     const navigation = useNavigation<any>();
     const { colors } = useTheme();
+    const { setSession } = useSession();
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -22,12 +24,18 @@ export const RoleSelectionScreen = () => {
                         <View style={styles.buttonContainer}>
                             <NeonButton
                                 title="Field Team"
-                                onPress={() => navigation.navigate('MainTabs')}
+                                onPress={() => {
+                                    setSession({ role: 'field' });
+                                    navigation.navigate('MainTabs');
+                                }}
                                 style={styles.button}
                             />
                             <NeonButton
                                 title="Admin/Central Team"
-                                onPress={() => navigation.navigate('AdminTeam')}
+                                onPress={() => {
+                                    setSession({ role: 'admin' });
+                                    navigation.navigate('AdminTeam');
+                                }}
                                 style={styles.button}
                             />
                         </View>
