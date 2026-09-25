@@ -103,7 +103,7 @@ export type ChecklistTemplateItem = {
     /** For radio visual-check tasks: show Remarks only when this field's value equals this */
     showWhenFieldId?: string;
     showWhenEquals?: string;
-    defaultValue?: string;
+    defaultValue?: any;
     isReadOnly?: boolean;
 };
 
@@ -548,7 +548,163 @@ export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
     yesNoRadio('htpm-t22-visual', 'Visual Check'),
 ];
 
+export const STEAM_A_CBE_CHECKLIST: ChecklistTemplateItem[] = [
+    // 1. Section Header (data type: Section Header)
+    {
+        id: 'steam-sec-1',
+        label: '1. Site Information & Contact Verification',
+        type: 'section_header',
+        dataType: 'Section Header',
+        required: false,
+    },
+    // 2. Checklist Header (data type: Checklist Header)
+    {
+        id: 'steam-chk-1',
+        label: 'Station Identification & Basic Parameters',
+        type: 'checklist_header',
+        dataType: 'Checklist Header',
+        required: false,
+    },
+    // 3. Short text (data type: Short text)
+    {
+        id: 'steam-t-short-text',
+        label: 'Station Supervisor Name',
+        type: 'text',
+        dataType: 'Short text',
+        required: true,
+        defaultValue: 'Rajesh Kumar',
+    },
+    // 4. Email (data type: Email)
+    {
+        id: 'steam-t-email',
+        label: 'Station Official Contact Email',
+        type: 'email',
+        dataType: 'Email',
+        required: true,
+        defaultValue: 'rajesh.cbe@steama.com',
+    },
+    // 5. Number (data type: Number)
+    {
+        id: 'steam-t-number',
+        label: 'Sanctioned Transformer Load (kVA)',
+        type: 'number',
+        dataType: 'Number',
+        required: true,
+        defaultValue: '250',
+    },
+    // 6. Date (data type: Date)
+    {
+        id: 'steam-t-date',
+        label: 'Commissioning & Inspection Date',
+        type: 'date',
+        dataType: 'Date',
+        required: true,
+        defaultValue: '2026-10-15',
+    },
+    // 7. Long text (data type: Long text)
+    {
+        id: 'steam-t-long-text',
+        label: 'Site Access Instructions & Environmental Remarks',
+        type: 'textarea',
+        dataType: 'Long text',
+        required: false,
+        defaultValue: 'Substation bay is shaded, well-ventilated, with 24/7 security access.',
+    },
+
+    // 8. Section Header (data type: Section Header)
+    {
+        id: 'steam-sec-2',
+        label: '2. Electrical Diagnostics & Hardware Checks',
+        type: 'section_header',
+        dataType: 'Section Header',
+        required: false,
+    },
+    // 9. Checklist Header (data type: Checklist Header)
+    {
+        id: 'steam-chk-2',
+        label: 'Three Phase Power & Safety Switchgear',
+        type: 'checklist_header',
+        dataType: 'Checklist Header',
+        required: false,
+    },
+    // 10. 3 phase voltage (data type: 3 phase voltage)
+    {
+        id: 'steam-t-3phase',
+        label: 'Three Phase Grid Input Voltage Measurements',
+        type: 'three_phase_voltage',
+        dataType: '3 phase voltage',
+        required: true,
+    },
+    // 11. Radio button (data type: Radio button)
+    {
+        id: 'steam-t-radio',
+        label: 'Surge Protection Device (SPD) Status',
+        type: 'radio',
+        dataType: 'Radio button',
+        required: true,
+        options: ['Healthy (Green)', 'Tripped (Red)', 'Maintenance Required'],
+        defaultValue: 'Healthy (Green)',
+    },
+    // 12. Dropdown (data type: Dropdown)
+    {
+        id: 'steam-t-dropdown',
+        label: 'Primary Transformer Configuration',
+        type: 'dropdown',
+        dataType: 'Dropdown',
+        required: true,
+        options: ['Dry Type Cast Resin (11kV / 415V)', 'Oil Immersed ONAN', 'Step Down Isolation Unit', 'Pad Mounted Substation'],
+        defaultValue: 'Dry Type Cast Resin (11kV / 415V)',
+    },
+    // 13. Multiple Choice (data type: Multiple Choice)
+    {
+        id: 'steam-t-multiselect',
+        label: 'Protective Relays & Interlocks Verified',
+        type: 'multiselect',
+        dataType: 'Multiple Choice',
+        required: true,
+        options: ['Over-Voltage Protection', 'Under-Voltage Protection', 'Earth Fault Relay (51N)', 'RCD / Ground Leakage Monitor'],
+        defaultValue: ['Over-Voltage Protection', 'Earth Fault Relay (51N)'],
+    },
+    // 14. Checkbox (data type: Checkbox)
+    {
+        id: 'steam-t-checkbox',
+        label: 'Personal Protective Equipment (PPE) Compliance',
+        type: 'checkbox',
+        dataType: 'Checkbox',
+        required: true,
+        options: ['Insulated Gloves (10kV)', 'Safety Helmet & Visor', 'Dielectric Safety Boots', 'Arc Flash Shield'],
+        defaultValue: ['Insulated Gloves (10kV)', 'Dielectric Safety Boots'],
+    },
+    // 15. Media (data type: Media)
+    {
+        id: 'steam-t-media',
+        label: 'Upload Evidence Photos (Panel, Earthing & Enclosure)',
+        type: 'media',
+        dataType: 'Media',
+        required: true,
+        options: ['Main Distribution Incomer', 'Earth Pit Resistance Link', 'Station Overview & Safety Signage'],
+    },
+    // 16. None (data type: None)
+    {
+        id: 'steam-t-none',
+        label: 'Emergency Stop Mechanical Lockout Verified',
+        type: 'checkbox',
+        dataType: 'None',
+        required: false,
+        options: ['Verified and Latched'],
+        defaultValue: ['Verified and Latched'],
+    },
+];
+
+export const STEAM_A_CBE_QUESTION_COUNT = 12;
+
 export const WORK_ORDER_TEMPLATES = [
+    {
+        id: 'steam-a-cbe-all-types',
+        name: 'Steam a Station CBE Complete Diagnostics Checklist',
+        items: STEAM_A_CBE_CHECKLIST,
+        total: STEAM_A_CBE_QUESTION_COUNT,
+    },
     {
         id: 'ev-infra-monthly',
         name: 'EV Infrastructure Monthly Maintenance Checklist',
@@ -576,6 +732,39 @@ export const WORK_ORDER_TEMPLATES = [
 ];
 
 export let WORK_ORDERS: WorkOrder[] = [
+    {
+        id: 'wo-steam-cbe-01',
+        projectId: 'PJ001',
+        title: 'Steam a station CBE',
+        siteName: 'Steam a station CBE',
+        address: 'Avinashi Road, Peelamedu, Coimbatore (CBE), Tamil Nadu 641004',
+        type: 'Preventive',
+        stage: 'Monthly Inspection',
+        status: 'Working',
+        dueWindow: 'Today, 10:00 - 18:00',
+        eta: 'Ready on Site',
+        distance: '0.2 km',
+        checklistCompleted: 0,
+        checklistTotal: STEAM_A_CBE_QUESTION_COUNT,
+        tools: ['Multimeter', 'Insulation Meter', 'Torque Wrench', 'Phase Rotation Tester'],
+        parts: ['Surge Protection Device', 'Insulation Mats', 'Terminal Lugs'],
+        technicians: ['Tim', 'Arjun', 'Neha'],
+        assetId: 'CP-STEAM-01',
+        assetIds: ['CP-STEAM-01', 'CP-STEAM-02'],
+        checklistItems: STEAM_A_CBE_CHECKLIST,
+        offlineReady: true,
+        notes: 'Comprehensive multi-datatype work order for Steam a station CBE covering all supported input and checklist types.',
+        latitude: 11.0168,
+        longitude: 76.9558,
+        priority: 'High',
+        targetTime: Date.now() + 6 * 60 * 60 * 1000,
+        assignedBy: 'Marcus Aurelius',
+        approver: 'Marcus Aurelius',
+        primaryApprover: 'Marcus Aurelius',
+        secondaryApprover: 'Andrea Meuschke',
+        createdBy: 'Andrea Meuschke',
+        requestedBy: 'Operations Lead CBE',
+    },
     {
         id: 'wo-pm-infra-01',
         projectId: 'PJ001',
@@ -990,6 +1179,7 @@ export let WORK_ORDERS: WorkOrder[] = [
 ];
 
 export const STATION_BUSINESS_IMPACT: Record<string, 'High' | 'Medium' | 'Low'> = {
+    'Steam a station CBE': 'High',
     'Pune Central Station': 'High',
     'Mumbai Highway Point': 'High',
     'Skyline Mall Parking': 'Medium',
@@ -999,6 +1189,19 @@ export const STATION_BUSINESS_IMPACT: Record<string, 'High' | 'Medium' | 'Low'> 
 };
 
 export const ASSETS: AssetRecord[] = [
+    {
+        id: 'asset-steam-01',
+        cpid: 'CP-STEAM-01',
+        serial: 'RONE-883190',
+        model: 'ABB Terra 360 Fast DC',
+        status: 'Healthy',
+        location: 'Steam a station CBE',
+        lastService: '24 Sep 2026',
+        firmware: 'v5.1.0',
+        linkedWorkOrderId: 'wo-steam-cbe-01',
+        pmAssignee: 'Tim',
+        pmDurationMonths: 3,
+    },
     {
         id: 'asset-1',
         cpid: 'CP-100239',

@@ -305,6 +305,7 @@ export const ProjectDetailScreen = () => {
     }, [route.params?.stationFilter, route.params?.typeFilter, route.params?.projectFilter]);
 
     const calculateSmartRouteScore = (item: WorkOrder): number => {
+        if (item.id === 'wo-steam-cbe-01') return 2000000;
         if (item.id === 'wo-pm-infra-01') return 1000000;
         if (item.id === 'wo-pm-ht-yard-01') return 999000;
         let score = 0;

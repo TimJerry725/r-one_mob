@@ -16,7 +16,7 @@ import {
     Linking,
 } from 'react-native';
 import * as Location from 'expo-location';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
@@ -209,10 +209,16 @@ const buildChecklistState = (template: ChecklistTemplateItem[], prefillComplete:
 
 const isComplete = (item: ChecklistStateItem) => {
     if (item.type === 'section_header' || item.type === 'checklist_header') return true;
-    if (item.isReadOnly || item.type === 'none') return true;
     if (item.isNa) return true;
     const itemType = (item.type || '').toLowerCase();
     const dataType = (item.dataType || '').toLowerCase();
+
+    if (item.isReadOnly && (!item.options || item.options.length === 0)) return true;
+    if (itemType === 'none' || dataType === 'none') {
+        if (!item.options || item.options.length === 0) return true;
+        if (Array.isArray(item.value)) return item.value.length > 0;
+        return Boolean(item.value);
+    }
 
     if (itemType === 'remarks_response') {
         const val = item.value as string[][];
@@ -341,34 +347,64 @@ const MultiResponseEntryItem: React.FC<{
         } : i));
     };
 
+    const hasMultipleOptions = Boolean(item.options && item.options.length > 1);
+
+    if (!hasMultipleOptions && maxEntries === 1) {
+        return (
+            <View style={{ marginTop: 4 }}>
+                <TextInput
+                    keyboardType={isNum ? 'numeric' : 'default'}
+                    editable={!isUnderReview}
+                    placeholder={isDate ? 'YYYY-MM-DD' : (isNum ? 'Enter number' : 'Enter text...')}
+                    placeholderTextColor={colors.textSecondary}
+                    style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text, backgroundColor: colors.surfaceHighlight }]}
+                    value={responses[0] || ''}
+                    onChangeText={(val) => updateResponseAt(0, val)}
+                />
+            </View>
+        );
+    }
+
     return (
         <View style={{ gap: 8, marginTop: 4 }}>
             {Array.from({ length: maxEntries }).map((_, idx) => {
                 const resVal = responses[idx] || '';
                 const remVal = remarks[idx] || '';
+                const optionLabel = (item.options && item.options[idx]) ? item.options[idx] : null;
 
                 return (
-                    <View key={`entry-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <TextInput
-                            keyboardType={isNum ? 'numeric' : 'default'}
-                            placeholder={isDate ? 'YYYY-MM-DD' : 'Response'}
-                            placeholderTextColor={colors.textSecondary}
-                            style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
-                            value={resVal}
-                            onChangeText={(val) => updateResponseAt(idx, val)}
-                        />
-                        <TextInput
-                            placeholder={`Remarks ${idx + 1}`}
-                            placeholderTextColor={colors.textSecondary}
-                            style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
-                            value={remVal}
-                            onChangeText={(val) => updateRemarkAt(idx, val)}
-                        />
-                        {maxEntries > 1 && !isUnderReview && (
-                            <TouchableOpacity onPress={() => removeSlot(idx)} style={{ padding: 4 }}>
-                                <FontAwesome name="trash-o" size={18} color={colors.danger} />
-                            </TouchableOpacity>
-                        )}
+                    <View key={`entry-${idx}`} style={{ gap: 4 }}>
+                        {optionLabel ? (
+                            <Text style={[FONTS.caption, { color: colors.textSecondary, fontWeight: '600' }]}>
+                                {optionLabel}
+                            </Text>
+                        ) : null}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <TextInput
+                                keyboardType={isNum ? 'numeric' : 'default'}
+                                editable={!isUnderReview}
+                                placeholder={isDate ? 'YYYY-MM-DD' : (isNum ? 'Value' : 'Response')}
+                                placeholderTextColor={colors.textSecondary}
+                                style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text, backgroundColor: colors.surfaceHighlight }]}
+                                value={resVal}
+                                onChangeText={(val) => updateResponseAt(idx, val)}
+                            />
+                            {!optionLabel && (
+                                <TextInput
+                                    editable={!isUnderReview}
+                                    placeholder={`Remarks ${idx + 1}`}
+                                    placeholderTextColor={colors.textSecondary}
+                                    style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text, backgroundColor: colors.surfaceHighlight }]}
+                                    value={remVal}
+                                    onChangeText={(val) => updateRemarkAt(idx, val)}
+                                />
+                            )}
+                            {maxEntries > 1 && !isUnderReview && (
+                                <TouchableOpacity onPress={() => removeSlot(idx)} style={{ padding: 4 }}>
+                                    <FontAwesome name="trash-o" size={18} color={colors.danger} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
                 );
             })}
@@ -377,7 +413,9 @@ const MultiResponseEntryItem: React.FC<{
                 <TouchableOpacity
                     onPress={addAnotherSlot}
                     style={{
-                        backgroundColor: 'rgba(226, 49, 81, 0.08)',
+                        backgroundColor: colors.primary + '12',
+                        borderWidth: 1,
+                        borderColor: colors.primary + '30',
                         paddingVertical: 10,
                         borderRadius: 8,
                         alignItems: 'center',
@@ -385,7 +423,7 @@ const MultiResponseEntryItem: React.FC<{
                         marginTop: 4,
                     }}
                 >
-                    <Text style={[FONTS.bodyStrong, { color: colors.primary, fontSize: 13 }]}>+ Add Another</Text>
+                    <Text style={[FONTS.bodyStrong, { color: colors.primary, fontSize: 13 }]}>+ Add Another Slot</Text>
                 </TouchableOpacity>
             )}
         </View>
@@ -395,16 +433,17 @@ const MultiResponseEntryItem: React.FC<{
 export const TaskDetailScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
+    const insets = useSafeAreaInsets();
     const { colors, isDark } = useTheme();
     const { dutyStatus } = useSession();
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const [workStatus, setWorkStatus] = useState(workOrder.status);
-    // Geofencing / location-based access control enabled for Pune station only
-    const isGeoFenceStation = 
-        (workOrder.siteName || '').toLowerCase().includes('pune') ||
-        (workOrder.address || '').toLowerCase().includes('pune') ||
-        (workOrder.title || '').toLowerCase().includes('pune');
+    // Geofencing / location-based access control enabled for stations with location coordinates
+    const siteLatitude = Number(workOrder.latitude);
+    const siteLongitude = Number(workOrder.longitude);
+    const hasCoordinates = Number.isFinite(siteLatitude) && Number.isFinite(siteLongitude) && (Math.abs(siteLatitude) > 0.01 || Math.abs(siteLongitude) > 0.01);
+    const isGeoFenceStation = hasCoordinates;
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
     const isOffSite = isGeoFenceStation && !isNearSite;
@@ -416,8 +455,12 @@ export const TaskDetailScreen = () => {
     const isAllowNotApplicable = !isPreventiveOrService;
     const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
     const [items, setItems] = useState<ChecklistStateItem[]>(() => buildChecklistState(checklistTemplate, isUnderReview));
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const sectionIds = useMemo(
-        () => items.filter((item) => item.type === 'section_header').map((item) => item.id),
+        () => {
+            const ids = items.filter((item) => item.type === 'section_header').map((item) => item.id);
+            return ids.length > 0 ? ids : ['__root__'];
+        },
         [items]
     );
     const [expandedSectionIds, setExpandedSectionIds] = useState<Set<string>>(
@@ -475,7 +518,6 @@ export const TaskDetailScreen = () => {
     type NestedSectionBlock = { section: ChecklistStateItem; checklists: NestedChecklistBlock[]; looseTasks: ChecklistStateItem[] };
 
     const nestedFillTree = useMemo((): NestedSectionBlock[] => {
-        if (!hasChecklistHeaders) return [];
         const tree: NestedSectionBlock[] = [];
         let currentSection: NestedSectionBlock | null = null;
         let currentChecklist: NestedChecklistBlock | null = null;
@@ -516,11 +558,17 @@ export const TaskDetailScreen = () => {
                 currentChecklist.tasks.push(item);
             } else if (currentSection) {
                 currentSection.looseTasks.push(item);
+            } else {
+                currentSection = {
+                    section: { id: '__root__', label: 'Tasks', type: 'section_header', required: false, value: '' },
+                    checklists: [],
+                    looseTasks: [item],
+                };
             }
         });
         pushSection();
         return tree;
-    }, [items, hasChecklistHeaders]);
+    }, [items]);
 
     const checklistTaskCounts = useMemo(() => {
         const counts = new Map<string, number>();
@@ -532,17 +580,37 @@ export const TaskDetailScreen = () => {
         return counts;
     }, [nestedFillTree]);
 
+    const [expandedChecklistIds, setExpandedChecklistIds] = useState<Set<string>>(() => {
+        // By default, open all checklists inside sections
+        const allChecklistIds: string[] = [];
+        for (const s of nestedFillTree) {
+            for (const c of s.checklists) {
+                allChecklistIds.push(c.checklist.id);
+            }
+        }
+        return new Set(allChecklistIds);
+    });
+
     const toggleSectionExpanded = (sectionId: string) => {
         setExpandedSectionIds((prev) => {
-            const isOpen = prev.has(sectionId);
-            if (!isOpen) {
-                return new Set([sectionId]);
+            // Accordion for top-level sections: if already open → close it; if closed → open it and close all other sections
+            if (prev.has(sectionId)) {
+                return new Set<string>();
             }
-            const currentIndex = sectionIds.indexOf(sectionId);
-            const nextId = sectionIds[currentIndex + 1];
-            if (nextId) return new Set([nextId]);
-            const firstId = sectionIds[0];
-            return firstId && firstId !== sectionId ? new Set([firstId]) : prev;
+            return new Set<string>([sectionId]);
+        });
+    };
+
+    const toggleChecklistExpanded = (checklistId: string) => {
+        setExpandedChecklistIds((prev) => {
+            // Inside the section, checklists can all be open: toggle only this checklist
+            const next = new Set(prev);
+            if (next.has(checklistId)) {
+                next.delete(checklistId);
+            } else {
+                next.add(checklistId);
+            }
+            return next;
         });
     };
 
@@ -590,6 +658,7 @@ export const TaskDetailScreen = () => {
     const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
+    const [workInfoModalVisible, setWorkInfoModalVisible] = useState(false);
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [isEditingAssignees, setIsEditingAssignees] = useState(false);
     const [editedNotes, setEditedNotes] = useState(workOrder.notes || '');
@@ -846,7 +915,7 @@ export const TaskDetailScreen = () => {
         setEditingCommentText(text);
     };
 
-    const updateItem = (id: string, value: string | number | string[] | string[][]) => {
+    const updateItem = (id: string, value: any) => {
         if (isOffSite) return;
         setItems((current) => current.map((item) => (item.id === id ? { ...item, value } : item)));
     };
@@ -1013,7 +1082,7 @@ export const TaskDetailScreen = () => {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <SafeAreaView style={styles.safeArea}>
+            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
                 <View style={[styles.header, { borderBottomColor: colors.border }]}>
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
@@ -1040,9 +1109,9 @@ export const TaskDetailScreen = () => {
                     <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, zIndex: 10 }]}>
                         <View style={styles.heroTopRow}>
                             <View style={styles.heroTitleWrap}>
-                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                                     <Text style={[styles.jobTitle, { color: colors.text, flex: 1 }]}>{workOrder.title}</Text>
-                                    <Text style={[{ color: colors.primary, marginTop: 4 }, FONTS.caption]}>{workOrder.projectId}</Text>
+                                    <Text style={[{ color: colors.primary, marginTop: 2 }, FONTS.caption]}>{workOrder.projectId}</Text>
                                 </View>
                                 <View style={styles.heroTopChipRow}>
                                     <View style={[
@@ -1062,205 +1131,74 @@ export const TaskDetailScreen = () => {
                                             <Text style={[styles.heroChipText, { color: isDark ? colors.primaryLight : colors.primary }]}>{workOrder.stage}</Text>
                                         </View>
                                     ) : null}
+                                    <View style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                        <Text style={[styles.heroChipText, { color: colors.textSecondary }]}>
+                                            {(workOrder.assetIds || [workOrder.assetId]).length > 1
+                                                ? `${(workOrder.assetIds || [workOrder.assetId]).length} CPIDs`
+                                                : `CPID: ${(workOrder.assetIds || [workOrder.assetId])[0]}`}
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                {!isOffSite ? (
+                            <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                                 <TouchableOpacity 
-                                    onPress={() => isEditingDetails ? handleSaveDetails() : setIsEditingDetails(true)}
+                                    onPress={() => {
+                                        setIsEditingDetails(false);
+                                        setWorkInfoModalVisible(true);
+                                    }}
                                     style={[styles.navButton, { backgroundColor: colors.primary + '15', marginTop: 4 }]}
+                                    accessibilityLabel="View full work details"
                                 >
-                                    <Ionicons name={isEditingDetails ? "checkmark" : "pencil"} size={16} color={colors.primary} />
+                                    <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
                                 </TouchableOpacity>
-                                ) : null}
                                 <TouchableOpacity 
                                     onPress={handleShareWork}
                                     style={[styles.navButton, { backgroundColor: colors.primary + '15', marginTop: 4 }]}
+                                    accessibilityLabel="Share work order"
                                 >
                                     <Ionicons name="share-social-outline" size={16} color={colors.primary} />
                                 </TouchableOpacity>
                             </View>
                         </View>
 
-                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Charge Points (CPID)</Text>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                            {(workOrder.assetIds || [workOrder.assetId]).map((cp) => (
-                                <View key={cp} style={[styles.heroChip, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border, flexDirection: 'row', alignItems: 'center' }]}>
-                                    <Text style={[styles.heroChipText, { color: colors.text }]}>{cp}</Text>
-                                </View>
-                            ))}
-                        </View>
-
-                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Station Address</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+                        <View style={styles.compactLocationRow}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                                <Ionicons name="location-outline" size={16} color={colors.primary} />
-                                <Text style={[{ color: colors.text, flex: 1 }, FONTS.body]}>{workOrder.address}</Text>
+                                <Ionicons name="location-outline" size={15} color={colors.primary} />
+                                <Text numberOfLines={1} style={[{ color: colors.text, flex: 1 }, FONTS.caption]}>{workOrder.address}</Text>
                             </View>
-                            <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.primary + '15' }]}>
-                                <Ionicons name="navigate" size={16} color={colors.primary} />
+                            <TouchableOpacity 
+                                onPress={() => {
+                                    const lat = workOrder.latitude;
+                                    const lon = workOrder.longitude;
+                                    if (!lat || !lon) return;
+                                    const url = Platform.select({
+                                        ios: `maps:?daddr=${lat},${lon}`,
+                                        default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,
+                                    });
+                                    if (url) Linking.openURL(url);
+                                }}
+                                style={[styles.compactNavBtn, { backgroundColor: colors.primary + '15' }]}
+                            >
+                                <Ionicons name="navigate" size={13} color={colors.primary} />
                             </TouchableOpacity>
                         </View>
 
-                        {isEditingDetails ? (
-                            <View style={{ marginBottom: 12 }}>
-                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Description</Text>
-                                <TextInput
-                                    style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, padding: 8, minHeight: 60, textAlignVertical: 'top' }, FONTS.body]}
-                                    value={editedNotes}
-                                    onChangeText={setEditedNotes}
-                                    multiline
-                                    placeholder="Enter description"
-                                    placeholderTextColor={colors.textSecondary}
-                                />
+                        <View style={styles.compactMetaRow}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                                <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
+                                <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
+                                    {new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} - {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </Text>
                             </View>
-                        ) : workOrder.notes ? (
-                            <>
-                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Description</Text>
-                                <Text style={[{ color: colors.text, marginBottom: 12, lineHeight: 20 }, FONTS.body]}>
-                                    {workOrder.notes}
-                                </Text>
-                            </>
-                        ) : null}
-
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 }}>
-                            <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-                            {isEditingDetails ? (
-                                <View style={{ flexDirection: 'row', gap: 8, flex: 1 }}>
-                                    <TextInput
-                                        style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flex: 1 }, FONTS.body]}
-                                        value={editedStartTime}
-                                        onChangeText={setEditedStartTime}
-                                        placeholder="Start (YYYY-MM-DD)"
-                                        placeholderTextColor={colors.textSecondary}
-                                    />
-                                    <TextInput
-                                        style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flex: 1 }, FONTS.body]}
-                                        value={editedEndTime}
-                                        onChangeText={setEditedEndTime}
-                                        placeholder="End (YYYY-MM-DD)"
-                                        placeholderTextColor={colors.textSecondary}
-                                    />
+                            {assignees.length > 0 && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                    <Ionicons name="person-outline" size={13} color={colors.textSecondary} />
+                                    <Text numberOfLines={1} style={[FONTS.caption, { color: colors.textSecondary, maxWidth: 140 }]}>
+                                        {assignees[0]}{assignees.length > 1 ? ` +${assignees.length - 1}` : ''}
+                                    </Text>
                                 </View>
-                            ) : (
-                                <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 13 }]}>
-                                    {new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} - {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </Text>
                             )}
                         </View>
-
-                        <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Approvals & Assignees</Text>
-
-                        {isEditingDetails ? (
-                            <View style={{ zIndex: 1000, gap: 12 }}>
-                                {/* Approvers First */}
-                                <View style={{ marginTop: 8, flexDirection: 'row', gap: 12, zIndex: 1010 }}>
-                                    <View style={{ flex: 1, zIndex: 1010 }}>
-                                        <PopoverDropdown
-                                            label="Primary Approver"
-                                            placeholder="Select primary approver..."
-                                            options={getSelectorOptions('assignees').options}
-                                            value={editedPrimaryApprover}
-                                            onSelect={(val) => setEditedPrimaryApprover(val as string)}
-                                            isMulti={false}
-                                        />
-                                    </View>
-                                    <View style={{ flex: 1, zIndex: 1009 }}>
-                                        <PopoverDropdown
-                                            label="Secondary Approver"
-                                            placeholder="Select secondary approver..."
-                                            options={getSelectorOptions('assignees').options}
-                                            value={editedSecondaryApprover}
-                                            onSelect={(val) => setEditedSecondaryApprover(val as string)}
-                                            isMulti={false}
-                                        />
-                                    </View>
-                                </View>
-
-                                {/* Lead & Assignees */}
-                                <View style={{ marginBottom: 4, flexDirection: 'row', gap: 12, zIndex: 1000 }}>
-                                    <View style={{ flex: 1, zIndex: 1000 }}>
-                                        <PopoverDropdown
-                                            label="Lead"
-                                            placeholder="Select lead..."
-                                            options={getSelectorOptions('assignees').options}
-                                            value={assignees.length > 0 ? assignees[0] : ''}
-                                            onSelect={(val) => {
-                                                const newLead = val as string;
-                                                if (newLead) {
-                                                    setAssignees([newLead, ...assignees.slice(1).filter(a => a !== newLead)]);
-                                                } else if (assignees.length > 0) {
-                                                    setAssignees(assignees.slice(1));
-                                                }
-                                            }}
-                                            isMulti={false}
-                                        />
-                                    </View>
-                                    <View style={{ flex: 1, zIndex: 999 }}>
-                                        <PopoverDropdown
-                                            label="Assignees"
-                                            placeholder="Select assignees..."
-                                            options={getSelectorOptions('assignees').options}
-                                            value={assignees.length > 0 ? assignees.slice(1) : []}
-                                            onSelect={(val) => {
-                                                const otherAssignees = val as string[];
-                                                const lead = assignees.length > 0 ? assignees[0] : null;
-                                                if (lead) {
-                                                    setAssignees([lead, ...otherAssignees.filter(a => a !== lead)]);
-                                                } else {
-                                                    setAssignees(otherAssignees);
-                                                }
-                                            }}
-                                            isMulti={true}
-                                        />
-                                    </View>
-                                </View>
-                            </View>
-                        ) : (
-                            <View style={{ gap: 10, marginTop: 6 }}>
-                                {/* Approvers First in View Mode */}
-                                <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
-                                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setIsEditingDetails(true)} activeOpacity={0.7}>
-                                        <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>
-                                            Primary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{editedPrimaryApprover || workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}</Text>
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setIsEditingDetails(true)} activeOpacity={0.7}>
-                                        <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>
-                                            Secondary Approver: <Text style={{ color: colors.text, fontWeight: '600' }}>{editedSecondaryApprover || workOrder.secondaryApprover || 'Andrea Meuschke'}</Text>
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-
-                                {/* Assignee chips */}
-                                {assignees.length > 0 && (
-                                    <View style={[styles.chipRow, { alignItems: 'center' }]}>
-                                        {assignees.map((tech, idx) => {
-                                            const isLead = idx === 0;
-                                            return (
-                                                <View key={tech} style={[styles.heroChip, { backgroundColor: isLead ? colors.primary : colors.primary + '15', borderColor: colors.primary, flexDirection: 'row', alignItems: 'center' }]}>
-                                                    <Text style={[styles.heroChipText, { color: isLead ? colors.white : colors.primary }]}>
-                                                        {isLead ? `Lead: ${tech}` : tech}
-                                                    </Text>
-                                                </View>
-                                            );
-                                        })}
-                                    </View>
-                                )}
-
-                                <View style={{ marginTop: 4, gap: 4 }}>
-                                    <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
-                                        <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
-                                            Created by: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.createdBy || workOrder.assignedBy || 'Andrea Meuschke'}</Text>
-                                        </Text>
-                                        <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
-                                            Requested by: <Text style={{ color: colors.text, fontWeight: '600' }}>{workOrder.requestedBy || 'Timothy Jerry'}</Text>
-                                        </Text>
-                                    </View>
-                                    <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>Assigned by: {workOrder.assignedBy || 'Andrea Meuschke'}</Text>
-                                </View>
-                            </View>
-                        )}
                     </View>
 
                     {isGeoFenceWarningVisible ? (
@@ -1352,6 +1290,450 @@ export const TaskDetailScreen = () => {
                                             }
 
                                             const isNA = item.type === 'not_applicable' || item.isNotApplicable;
+
+                                            if (isFillOnlyChecklist) {
+                                                const isCompleted = isComplete(item);
+                                                const num = taskNumbers.get(item.id);
+                                                const displayType = item.dataType || (
+                                                    item.type === 'photo' || item.type === 'media' ? 'Media' :
+                                                    item.type === 'three_phase_voltage' ? '3 phase voltage' :
+                                                    item.type === 'textarea' ? 'Long text' :
+                                                    item.type === 'radio' ? 'Radio button' :
+                                                    item.type === 'dropdown' ? 'Dropdown' :
+                                                    item.type === 'multiselect' ? 'Multiple Choice' :
+                                                    item.type === 'checkbox' ? 'Checkbox' :
+                                                    item.type === 'number' ? 'Number' :
+                                                    item.type === 'date' ? 'Date' :
+                                                    item.type === 'email' ? 'Email' :
+                                                    item.type === 'text' ? 'Short text' :
+                                                    item.type === 'none' ? 'None' :
+                                                    ''
+                                                );
+                                                const isDropdownOpen = openDropdownId === item.id;
+                                                const isFieldRequired = Boolean(item.required);
+
+                                                return (
+                                                    <View
+                                                        key={item.id}
+                                                        style={[
+                                                            styles.formFieldRow,
+                                                            {
+                                                                borderBottomColor: colors.border,
+                                                                borderBottomWidth: StyleSheet.hairlineWidth,
+                                                                backgroundColor: isNA ? colors.surfaceHighlight + '40' : 'transparent',
+                                                                zIndex: openMenuId === item.id ? 100 : 1,
+                                                            },
+                                                        ]}
+                                                    >
+                                                        {/* Field Header */}
+                                                        <View style={styles.formFieldHeader}>
+                                                            {/* Left: number + label + required star */}
+                                                            <View style={styles.formFieldLabelWrapper}>
+                                                                <View style={styles.formFieldLabelRow}>
+                                                                    {num ? (
+                                                                        <Text style={[styles.formFieldNumber, { color: colors.textSecondary }]}>
+                                                                            {num}.
+                                                                        </Text>
+                                                                    ) : null}
+                                                                    <Text
+                                                                        style={[
+                                                                            styles.formFieldLabel,
+                                                                            {
+                                                                                color: isNA ? colors.textSecondary : colors.text,
+                                                                                textDecorationLine: isNA ? 'line-through' : 'none',
+                                                                            },
+                                                                        ]}
+                                                                    >
+                                                                        {item.label}
+                                                                    </Text>
+                                                                    {isFieldRequired && !isNA && (
+                                                                        <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 13.5 }}>*</Text>
+                                                                    )}
+                                                                </View>
+                                                            </View>
+
+                                                            {/* Right Side: type chip + checkmark + Action Menu */}
+                                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                                                                {isNA ? (
+                                                                    <View style={[styles.formFieldTag, { backgroundColor: colors.border + '33', borderColor: colors.border, marginTop: 0 }]}>
+                                                                        <Text style={[styles.formFieldTagText, { color: colors.textSecondary }]}>
+                                                                            N/A
+                                                                        </Text>
+                                                                    </View>
+                                                                ) : displayType && item.type !== 'none' ? (
+                                                                    <View style={[styles.formFieldTag, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30', marginTop: 0 }]}>
+                                                                        <Text style={[styles.formFieldTagText, { color: colors.primary }]}>
+                                                                            {displayType}
+                                                                        </Text>
+                                                                    </View>
+                                                                ) : null}
+                                                                {isCompleted && !isNA && (
+                                                                    <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+                                                                )}
+                                                                {!isChecklistDisabled && (
+                                                                    <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 120 : 1 }}>
+                                                                        <TouchableOpacity
+                                                                            onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                                                                            style={styles.fieldMenuTrigger}
+                                                                        >
+                                                                            <Ionicons name="ellipsis-vertical" size={17} color={colors.textSecondary} />
+                                                                        </TouchableOpacity>
+                                                                        {openMenuId === item.id && (
+                                                                            <View style={[styles.fieldActionPopover, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                                                <TouchableOpacity
+                                                                                    style={styles.fieldActionPopoverItem}
+                                                                                    onPress={() => {
+                                                                                        setOpenMenuId(null);
+                                                                                        startEditTask(item);
+                                                                                    }}
+                                                                                >
+                                                                                    <FontAwesome name="pencil" size={14} color={colors.primary} />
+                                                                                    <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>Edit</Text>
+                                                                                </TouchableOpacity>
+                                                                                {isAllowNotApplicable && (
+                                                                                    <TouchableOpacity
+                                                                                        style={styles.fieldActionPopoverItem}
+                                                                                        onPress={() => {
+                                                                                            setOpenMenuId(null);
+                                                                                            toggleTaskApplicable(item.id);
+                                                                                        }}
+                                                                                    >
+                                                                                        <FontAwesome
+                                                                                            name={isNA ? 'check-circle-o' : 'ban'}
+                                                                                            size={14}
+                                                                                            color={isNA ? colors.primary : colors.textSecondary}
+                                                                                        />
+                                                                                        <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]} numberOfLines={1}>
+                                                                                            {isNA ? 'Applicable' : 'Not Applicable'}
+                                                                                        </Text>
+                                                                                    </TouchableOpacity>
+                                                                                )}
+                                                                                <TouchableOpacity
+                                                                                    style={styles.fieldActionPopoverItem}
+                                                                                    onPress={() => {
+                                                                                        setOpenMenuId(null);
+                                                                                        deleteTask(item.id);
+                                                                                    }}
+                                                                                >
+                                                                                    <FontAwesome name="trash-o" size={14} color={colors.danger} />
+                                                                                    <Text style={[FONTS.body, { color: colors.danger, fontSize: 13 }]}>Delete</Text>
+                                                                                </TouchableOpacity>
+                                                                            </View>
+                                                                        )}
+                                                                    </View>
+                                                                )}
+                                                            </View>
+                                                        </View>
+
+                                                        {/* Field Control Body */}
+                                                        {isNA ? (
+                                                            <Text style={[FONTS.caption, { color: colors.textSecondary, fontStyle: 'italic', marginTop: 2 }]}>
+                                                                Not Applicable — tap ••• to re-enable
+                                                            </Text>
+                                                        ) : (
+                                                            <>
+                                                                {item.type === 'photo' || item.type === 'media' || item.dataType === 'Media' ? (
+                                                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }} contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
+                                                                        {(item.options?.length ? item.options : ['Photo Evidence']).map((remark, idx) => {
+                                                                            const slotValue = Array.isArray(item.value)
+                                                                                ? String(item.value[idx] ?? '')
+                                                                                : idx === 0
+                                                                                    ? String(item.value && item.value !== 0 ? item.value : '')
+                                                                                    : '';
+                                                                            const demoSource =
+                                                                                resolvePmDemoPhotoSource(slotValue) ||
+                                                                                (idx < PM_DEMO_PHOTOS.length ? PM_DEMO_PHOTOS[idx].source : null);
+                                                                            const isDoc = (item.options || []).some((option) => /certificate|document|SLD|diagram/i.test(option));
+                                                                            const hasPhoto = Boolean(demoSource || slotValue);
+                                                                            return (
+                                                                                <View key={`${item.id}-att-${idx}`} style={{ width: 130 }}>
+                                                                                    <TouchableOpacity
+                                                                                        onPress={() => {
+                                                                                            if (isChecklistDisabled) return;
+                                                                                            setActiveMediaId(item.id);
+                                                                                            setMediaModalVisible(true);
+                                                                                        }}
+                                                                                        activeOpacity={0.8}
+                                                                                        style={[
+                                                                                            styles.formMediaThumbnailCard,
+                                                                                            {
+                                                                                                backgroundColor: colors.surfaceHighlight,
+                                                                                                borderColor: hasPhoto ? colors.primary : colors.border,
+                                                                                            },
+                                                                                        ]}
+                                                                                    >
+                                                                                        {demoSource ? (
+                                                                                            <>
+                                                                                                <Image source={demoSource} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                                                                                                <View style={styles.formMediaCheckBadge}>
+                                                                                                    <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+                                                                                                </View>
+                                                                                            </>
+                                                                                        ) : (
+                                                                                            <View style={{ alignItems: 'center', justifyContent: 'center', padding: 8 }}>
+                                                                                                <Ionicons name={isDoc ? 'document-text-outline' : 'camera-outline'} size={24} color={colors.primary} />
+                                                                                                <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, fontSize: 11, textAlign: 'center' }]} numberOfLines={2}>
+                                                                                                    {slotValue || (isDoc ? 'Upload Doc' : 'Add Photo')}
+                                                                                                </Text>
+                                                                                            </View>
+                                                                                        )}
+                                                                                    </TouchableOpacity>
+                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, fontSize: 11, textAlign: 'center' }]} numberOfLines={1}>
+                                                                                        {remark || `Attachment ${idx + 1}`}
+                                                                                    </Text>
+                                                                                </View>
+                                                                            );
+                                                                        })}
+                                                                    </ScrollView>
+                                                                ) : item.type === 'three_phase_voltage' || item.dataType === '3 phase voltage' ? (
+                                                                    (() => {
+                                                                        const voltVal = (typeof item.value === 'object' && item.value !== null ? item.value : {}) as Record<string, string>;
+                                                                        const phases = [
+                                                                            { key: 'L-N', label: 'Line to Neutral', placeholder: '230' },
+                                                                            { key: 'L-E', label: 'Line to Earth', placeholder: '230' },
+                                                                            { key: 'L-L', label: 'Line to Line', placeholder: '400' },
+                                                                            { key: 'N-E', label: 'Neutral to Earth', placeholder: '2' },
+                                                                        ];
+                                                                        return (
+                                                                            <View style={styles.formVoltageGrid}>
+                                                                                <View style={{ flexDirection: 'row', gap: 10 }}>
+                                                                                    {phases.slice(0, 2).map((phase) => (
+                                                                                        <View key={phase.key} style={[styles.formVoltageCard, { backgroundColor: colors.surfaceHighlight, borderColor: voltVal[phase.key] ? colors.primary : colors.border }]}>
+                                                                                            <Text style={[styles.formVoltageKey, { color: colors.textSecondary }]}>{phase.key} ({phase.label})</Text>
+                                                                                            <View style={styles.formVoltageInputRow}>
+                                                                                                <TextInput
+                                                                                                    keyboardType="numeric"
+                                                                                                    editable={!isChecklistDisabled}
+                                                                                                    placeholder={phase.placeholder}
+                                                                                                    placeholderTextColor={colors.textSecondary + '80'}
+                                                                                                    style={[styles.formVoltageInput, { color: colors.text }]}
+                                                                                                    value={voltVal[phase.key] || ''}
+                                                                                                    onChangeText={(val) => updateItem(item.id, { ...voltVal, [phase.key]: val })}
+                                                                                                />
+                                                                                                <Text style={[styles.formVoltageUnit, { color: colors.textSecondary }]}>V</Text>
+                                                                                            </View>
+                                                                                        </View>
+                                                                                    ))}
+                                                                                </View>
+                                                                                <View style={{ flexDirection: 'row', gap: 10 }}>
+                                                                                    {phases.slice(2, 4).map((phase) => (
+                                                                                        <View key={phase.key} style={[styles.formVoltageCard, { backgroundColor: colors.surfaceHighlight, borderColor: voltVal[phase.key] ? colors.primary : colors.border }]}>
+                                                                                            <Text style={[styles.formVoltageKey, { color: colors.textSecondary }]}>{phase.key} ({phase.label})</Text>
+                                                                                            <View style={styles.formVoltageInputRow}>
+                                                                                                <TextInput
+                                                                                                    keyboardType="numeric"
+                                                                                                    editable={!isChecklistDisabled}
+                                                                                                    placeholder={phase.placeholder}
+                                                                                                    placeholderTextColor={colors.textSecondary + '80'}
+                                                                                                    style={[styles.formVoltageInput, { color: colors.text }]}
+                                                                                                    value={voltVal[phase.key] || ''}
+                                                                                                    onChangeText={(val) => updateItem(item.id, { ...voltVal, [phase.key]: val })}
+                                                                                                />
+                                                                                                <Text style={[styles.formVoltageUnit, { color: colors.textSecondary }]}>V</Text>
+                                                                                            </View>
+                                                                                        </View>
+                                                                                    ))}
+                                                                                </View>
+                                                                            </View>
+                                                                        );
+                                                                    })()
+                                                                ) : item.type === 'email' || item.dataType === 'Email' ? (
+                                                                    <View style={[styles.formInputWithIcon, { backgroundColor: colors.surfaceHighlight, borderColor: item.value ? colors.primary : colors.border }]}>
+                                                                        <Ionicons name="mail-outline" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                                                                        <TextInput
+                                                                            keyboardType="email-address"
+                                                                            autoCapitalize="none"
+                                                                            editable={!isChecklistDisabled}
+                                                                            placeholder="name@example.com"
+                                                                            placeholderTextColor={colors.textSecondary}
+                                                                            style={[styles.formInputInsideIcon, { color: colors.text }]}
+                                                                            value={String(item.value ?? '')}
+                                                                            onChangeText={(value) => updateItem(item.id, value)}
+                                                                        />
+                                                                    </View>
+                                                                ) : item.isReadOnly || item.type === 'textarea' || item.dataType === 'Long text' ? (
+                                                                    item.isReadOnly ? (
+                                                                        <Text style={[FONTS.body, { color: colors.textSecondary, fontSize: 13, lineHeight: 19, fontStyle: 'italic', marginTop: 2 }]}>
+                                                                            {String(item.value ?? item.defaultValue ?? item.label ?? '')}
+                                                                        </Text>
+                                                                    ) : (
+                                                                        <TextInput
+                                                                            multiline
+                                                                            numberOfLines={3}
+                                                                            editable={!isChecklistDisabled}
+                                                                            placeholder="Enter detailed description / remarks..."
+                                                                            placeholderTextColor={colors.textSecondary}
+                                                                            style={[styles.formTextarea, { backgroundColor: colors.surfaceHighlight, borderColor: item.value ? colors.primary : colors.border, color: colors.text }]}
+                                                                            value={String(item.value ?? item.defaultValue ?? '')}
+                                                                            onChangeText={(value) => updateItem(item.id, value)}
+                                                                        />
+                                                                    )
+                                                                ) : item.type === 'dropdown' || item.dataType === 'Dropdown' ? (
+                                                                    (() => {
+                                                                        const options = item.options?.length ? item.options : ['Select Option'];
+                                                                        const selectedValue = String(item.value ?? '');
+                                                                        return (
+                                                                            <View>
+                                                                                <TouchableOpacity
+                                                                                    disabled={isChecklistDisabled}
+                                                                                    onPress={() => setOpenDropdownId(isDropdownOpen ? null : item.id)}
+                                                                                    style={[
+                                                                                        styles.formDropdownSelector,
+                                                                                        {
+                                                                                            backgroundColor: colors.surfaceHighlight,
+                                                                                            borderColor: selectedValue ? colors.primary : colors.border,
+                                                                                        },
+                                                                                    ]}
+                                                                                >
+                                                                                    <Text style={[FONTS.body, { color: selectedValue ? colors.text : colors.textSecondary }]}>
+                                                                                        {selectedValue || 'Select an option...'}
+                                                                                    </Text>
+                                                                                    <Ionicons
+                                                                                        name={isDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                                                                                        size={18}
+                                                                                        color={colors.textSecondary}
+                                                                                    />
+                                                                                </TouchableOpacity>
+                                                                                {isDropdownOpen && (
+                                                                                    <View style={[styles.formDropdownList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                                                                        {options.map((opt) => {
+                                                                                            const isSelected = selectedValue === opt;
+                                                                                            return (
+                                                                                                <TouchableOpacity
+                                                                                                    key={opt}
+                                                                                                    onPress={() => {
+                                                                                                        updateItem(item.id, opt);
+                                                                                                        setOpenDropdownId(null);
+                                                                                                    }}
+                                                                                                    style={[
+                                                                                                        styles.formDropdownItem,
+                                                                                                        {
+                                                                                                            backgroundColor: isSelected ? colors.primary + '12' : 'transparent',
+                                                                                                            borderBottomColor: colors.border,
+                                                                                                        },
+                                                                                                    ]}
+                                                                                                >
+                                                                                                    <Text style={[FONTS.body, { color: isSelected ? colors.primary : colors.text, fontWeight: isSelected ? '600' : '400' }]}>
+                                                                                                        {opt}
+                                                                                                    </Text>
+                                                                                                    {isSelected && <Ionicons name="checkmark" size={16} color={colors.primary} />}
+                                                                                                </TouchableOpacity>
+                                                                                            );
+                                                                                        })}
+                                                                                    </View>
+                                                                                )}
+                                                                            </View>
+                                                                        );
+                                                                    })()
+                                                                ) : item.type === 'radio' || item.dataType === 'Radio button' ? (
+                                                                    <View style={{ gap: 8, marginTop: 2, flexDirection: (item.options || []).length <= 2 ? 'row' : 'column', flexWrap: 'wrap' }}>
+                                                                        {(item.options || ['Yes', 'No']).map((opt) => {
+                                                                            const selected = item.value === opt;
+                                                                            return (
+                                                                                <TouchableOpacity
+                                                                                    key={opt}
+                                                                                    disabled={isChecklistDisabled}
+                                                                                    onPress={() => updateItem(item.id, opt)}
+                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 0 }}
+                                                                                >
+                                                                                    <Ionicons
+                                                                                        name={selected ? 'radio-button-on' : 'radio-button-off'}
+                                                                                        size={18}
+                                                                                        color={selected ? colors.primary : colors.textSecondary}
+                                                                                    />
+                                                                                    <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>{opt}</Text>
+                                                                                </TouchableOpacity>
+                                                                            );
+                                                                        })}
+                                                                    </View>
+                                                                ) : !item.isReadOnly && (item.type === 'multiselect' || item.type === 'checkbox' || item.dataType === 'Multiple Choice' || item.dataType === 'Checkbox') ? (
+                                                                    <View style={{ gap: 6, marginTop: 4 }}>
+                                                                        {(item.options && item.options.length > 0 ? item.options : ['Option 1', 'Option 2']).map((opt) => {
+                                                                            const currentArray = Array.isArray(item.value) ? (item.value as string[]) : (item.value ? [String(item.value)] : []);
+                                                                            const selected = currentArray.includes(opt);
+                                                                            return (
+                                                                                <TouchableOpacity
+                                                                                    key={opt}
+                                                                                    disabled={isChecklistDisabled}
+                                                                                    onPress={() => {
+                                                                                        if (isChecklistDisabled) return;
+                                                                                        const nextArray = selected ? currentArray.filter(i => i !== opt) : [...currentArray, opt];
+                                                                                        updateItem(item.id, nextArray);
+                                                                                    }}
+                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                                >
+                                                                                    <Ionicons
+                                                                                        name={selected ? 'checkbox' : 'square-outline'}
+                                                                                        size={20}
+                                                                                        color={selected ? colors.primary : colors.textSecondary}
+                                                                                    />
+                                                                                    <Text style={[FONTS.body, { color: colors.text, fontWeight: selected ? '600' : '400' }]}>
+                                                                                        {opt}
+                                                                                    </Text>
+                                                                                </TouchableOpacity>
+                                                                            );
+                                                                        })}
+                                                                    </View>
+                                                                ) : (item.type === 'none' || item.dataType === 'None' || (item.dataType && item.dataType.toLowerCase() === 'none')) ? (
+                                                                    (() => {
+                                                                        const hasOpts = Boolean(item.options && item.options.length > 0);
+                                                                        if (!hasOpts) {
+                                                                            return null;
+                                                                        }
+                                                                        return (
+                                                                            <View style={{ gap: 6, marginTop: 4 }}>
+                                                                                {item.options!.map((opt) => {
+                                                                                    const currentArray = Array.isArray(item.value) ? item.value : (item.value ? [String(item.value)] : []);
+                                                                                    const isChecked = currentArray.includes(opt);
+                                                                                    return (
+                                                                                        <TouchableOpacity
+                                                                                            key={opt}
+                                                                                            disabled={isChecklistDisabled}
+                                                                                            onPress={() => {
+                                                                                                if (isChecklistDisabled) return;
+                                                                                                updateItem(item.id, isChecked ? [] : [opt]);
+                                                                                            }}
+                                                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                                        >
+                                                                                            <Ionicons
+                                                                                                name={isChecked ? 'checkbox' : 'square-outline'}
+                                                                                                size={20}
+                                                                                                color={isChecked ? colors.primary : colors.textSecondary}
+                                                                                            />
+                                                                                            <Text style={[FONTS.body, { color: colors.text, fontWeight: isChecked ? '600' : '400', flex: 1 }]}>
+                                                                                                {opt}
+                                                                                            </Text>
+                                                                                        </TouchableOpacity>
+                                                                                    );
+                                                                                })}
+                                                                            </View>
+                                                                        );
+                                                                    })()
+                                                                ) : (item.type === 'text' || item.type === 'number' || item.type === 'date' || item.dataType === 'Short text' || item.dataType === 'Number' || item.dataType === 'Date') ? (
+                                                                    <MultiResponseEntryItem
+                                                                        item={item}
+                                                                        colors={colors}
+                                                                        updateItem={updateItem}
+                                                                        setItems={setItems}
+                                                                        isUnderReview={isChecklistDisabled}
+                                                                    />
+                                                                ) : (
+                                                                    <TextInput
+                                                                        keyboardType="default"
+                                                                        editable={!isChecklistDisabled}
+                                                                        placeholder={getChecklistPlaceholder(item)}
+                                                                        placeholderTextColor={colors.textSecondary}
+                                                                        style={[styles.formInputSingle, { backgroundColor: colors.surfaceHighlight, borderColor: item.value ? colors.primary : colors.border, color: colors.text }]}
+                                                                        value={Array.isArray(item.value) ? item.value.join(', ') : String(item.value ?? '')}
+                                                                        onChangeText={(value) => updateItem(item.id, value)}
+                                                                    />
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </View>
+                                                );
+                                            }
+
                                             const hideStepIcon = isFillOnlyChecklist;
                                             return (
                                                 <View
@@ -1399,7 +1781,7 @@ export const TaskDetailScreen = () => {
                                                                 ) : null}
                                                                 {isNA && (
                                                                      <View style={{ alignSelf: 'flex-start', backgroundColor: colors.border + '33', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 4 }}>
-                                                                         <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>N/A - Not Applicable</Text>
+                                                                         <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>Not Applicable</Text>
                                                                      </View>
                                                                  )}
                                                             </View>
@@ -1464,7 +1846,7 @@ export const TaskDetailScreen = () => {
                                                         isNA ? (
                                                             <View style={{ marginTop: 8, padding: 10, backgroundColor: colors.surfaceHighlight, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
                                                                 <Text style={[FONTS.caption, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                                                                    This step is marked as Not Applicable. Tap action menu (...) to re-enable.
+                                                                    This task is marked as Not Applicable. Tap action menu (...) to re-enable.
                                                                 </Text>
                                                             </View>
                                                         ) : (
@@ -1687,132 +2069,257 @@ export const TaskDetailScreen = () => {
                                             );
                                             };
 
-                                            if (isFillOnlyChecklist && hasChecklistHeaders) {
+                                            if (isFillOnlyChecklist) {
                                                 return nestedFillTree.map((sectionBlock) => {
                                                     const sectionId = sectionBlock.section.id;
-                                                    const isExpanded = !isFillOnlyChecklist || expandedSectionIds.has(sectionId) || sectionId === '__root__';
-                                                    const checklistCount = sectionBlock.checklists.length;
+                                                    const isRootSection = sectionId === '__root__';
+                                                    const isExpanded = expandedSectionIds.has(sectionId) || isRootSection;
+
+                                                    // Calculate tasks inside this section
+                                                    const allTasksInSection = [
+                                                        ...sectionBlock.checklists.flatMap((b) => b.tasks),
+                                                        ...sectionBlock.looseTasks,
+                                                    ];
+                                                    const totalCount = allTasksInSection.length;
+                                                    const completedCount = allTasksInSection.filter((t) => isComplete(t) || t.type === 'not_applicable' || t.isNotApplicable).length;
+                                                    const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+                                                    const isAllDone = totalCount > 0 && completedCount === totalCount;
+
                                                     return (
                                                         <View
                                                             key={sectionId}
-                                                            style={[styles.sectionBlockText, { borderBottomColor: colors.border }]}
+                                                            style={[
+                                                                styles.formSectionCard,
+                                                                {
+                                                                    backgroundColor: colors.surface,
+                                                                    borderColor: colors.border,
+                                                                    shadowColor: colors.shadow,
+                                                                },
+                                                            ]}
                                                         >
-                                                            {sectionId !== '__root__' && (
-                                                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: openMenuId === sectionBlock.section.id ? 100 : 1 }}>
-                                                                    <TouchableOpacity
-                                                                        activeOpacity={0.7}
-                                                                        onPress={() => toggleSectionExpanded(sectionId)}
-                                                                        style={[styles.sectionHeader, { flex: 1 }]}
-                                                                    >
-                                                                        <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
-                                                                            {sectionBlock.section.label}
-                                                                        </Text>
-                                                                        <View style={styles.sectionHeaderMeta}>
-                                                                            <Text style={[FONTS.caption, { color: colors.textSecondary, fontSize: 11 }]}>
-                                                                                ({checklistCount} {checklistCount === 1 ? 'checklist' : 'checklists'})
-                                                                            </Text>
-                                                                            <Ionicons
-                                                                                name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                                                                                size={16}
-                                                                                color={colors.textSecondary}
-                                                                            />
-                                                                        </View>
-                                                                    </TouchableOpacity>
+                                                            {/* Section Header */}
+                                                            {!isRootSection && (
+                                                                <>
 
-                                                                    {!isChecklistDisabled && (
-                                                                        <View style={{ position: 'relative', zIndex: openMenuId === sectionBlock.section.id ? 110 : 1, marginLeft: 8 }}>
-                                                                            <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === sectionBlock.section.id ? null : sectionBlock.section.id)} style={{ padding: 4 }}>
-                                                                                <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
+                                                                    {/* Header row: plain View so nested touches work correctly */}
+                                                                    <View
+                                                                        style={[
+                                                                            styles.formSectionHeaderTouchable,
+                                                                            {
+                                                                                backgroundColor: isAllDone ? colors.success + '08' : colors.primary + '08',
+                                                                                borderBottomColor: isExpanded ? colors.border : 'transparent',
+                                                                                borderBottomWidth: isExpanded ? StyleSheet.hairlineWidth : 0,
+                                                                            },
+                                                                        ]}
+                                                                    >
+                                                                        {/* Left: tappable expand area */}
+                                                                        <TouchableOpacity
+                                                                            activeOpacity={0.7}
+                                                                            onPress={() => toggleSectionExpanded(sectionId)}
+                                                                            style={styles.formSectionHeaderLeft}
+                                                                        >
+                                                                            <View style={{ flex: 1 }}>
+                                                                                <Text style={[styles.formSectionTitle, { color: isAllDone ? colors.success : colors.text }]} numberOfLines={2}>
+                                                                                    {sectionBlock.section.label}
+                                                                                </Text>
+                                                                            </View>
+                                                                        </TouchableOpacity>
+
+                                                                        {/* Right: progress badge + chevron + kebab — all as a plain View */}
+                                                                        <View style={styles.formSectionHeaderRight}>
+                                                                            <View
+                                                                                style={[
+                                                                                    styles.formSectionProgressBadge,
+                                                                                    {
+                                                                                        backgroundColor: isAllDone ? colors.success + '15' : colors.primary + '15',
+                                                                                        borderColor: isAllDone ? colors.success + '40' : colors.primary + '40',
+                                                                                    },
+                                                                                ]}
+                                                                            >
+                                                                                <Text
+                                                                                    style={[
+                                                                                        styles.formSectionProgressText,
+                                                                                        { color: isAllDone ? colors.success : colors.primary },
+                                                                                    ]}
+                                                                                >
+                                                                                    {completedCount}/{totalCount}
+                                                                                </Text>
+                                                                            </View>
+                                                                            <TouchableOpacity onPress={() => toggleSectionExpanded(sectionId)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}>
+                                                                                <Ionicons
+                                                                                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                                                                    size={18}
+                                                                                    color={colors.textSecondary}
+                                                                                />
                                                                             </TouchableOpacity>
-                                                                            {openMenuId === sectionBlock.section.id && (
-                                                                                <View style={{
-                                                                                    position: 'absolute',
-                                                                                    top: 30,
-                                                                                    right: 0,
-                                                                                    backgroundColor: colors.surfaceHighlight,
-                                                                                    borderRadius: 8,
-                                                                                    paddingVertical: 8,
-                                                                                    paddingHorizontal: 12,
-                                                                                    width: 140,
-                                                                                    shadowColor: '#000',
-                                                                                    shadowOffset: { width: 0, height: 2 },
-                                                                                    shadowOpacity: 0.15,
-                                                                                    shadowRadius: 4,
-                                                                                    elevation: 4,
-                                                                                    zIndex: 120
-                                                                                }}>
-                                                                                    <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(sectionBlock.section); }}>
-                                                                                        <FontAwesome name="pencil" size={16} color={colors.primary} />
-                                                                                        <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                            {!isChecklistDisabled && (
+                                                                                <View style={{ position: 'relative', zIndex: openMenuId === sectionBlock.section.id ? 110 : 1 }}>
+                                                                                    <TouchableOpacity
+                                                                                        onPress={() => setOpenMenuId(openMenuId === sectionBlock.section.id ? null : sectionBlock.section.id)}
+                                                                                        style={{ padding: 4 }}
+                                                                                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+                                                                                    >
+                                                                                        <Ionicons name="ellipsis-vertical" size={17} color={colors.textSecondary} />
                                                                                     </TouchableOpacity>
-                                                                                    <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(sectionBlock.section.id); }}>
-                                                                                        <FontAwesome name="trash-o" size={16} color={colors.danger} />
-                                                                                        <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
-                                                                                    </TouchableOpacity>
-                                                                                </View>
+                                                                                    {openMenuId === sectionBlock.section.id && (
+                                                                                        <View style={[styles.fieldActionPopover, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                                                        <TouchableOpacity
+                                                                                            style={styles.fieldActionPopoverItem}
+                                                                                            onPress={() => {
+                                                                                                setOpenMenuId(null);
+                                                                                                startEditTask(sectionBlock.section);
+                                                                                            }}
+                                                                                        >
+                                                                                            <FontAwesome name="pencil" size={14} color={colors.primary} />
+                                                                                            <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>Edit Section</Text>
+                                                                                        </TouchableOpacity>
+                                                                                        <TouchableOpacity
+                                                                                            style={styles.fieldActionPopoverItem}
+                                                                                            onPress={() => {
+                                                                                                setOpenMenuId(null);
+                                                                                                deleteTask(sectionBlock.section.id);
+                                                                                            }}
+                                                                                        >
+                                                                                            <FontAwesome name="trash-o" size={14} color={colors.danger} />
+                                                                                            <Text style={[FONTS.body, { color: colors.danger, fontSize: 13 }]}>Delete</Text>
+                                                                                        </TouchableOpacity>
+                                                                                    </View>
+                                                                                )}
+                                                                            </View>
                                                                             )}
                                                                         </View>
-                                                                    )}
-                                                                </View>
+                                                                    </View>
+                                                                </>
                                                             )}
-                                                            {isExpanded && (
-                                                                <>
-                                                                    {sectionBlock.checklists.map((block) => {
-                                                                        const num = taskNumbers.get(block.checklist.id);
-                                                                        const nestCount = checklistTaskCounts.get(block.checklist.id) || block.tasks.length;
-                                                                        return (
-                                                                            <View key={block.checklist.id} style={styles.checklistBlockText}>
-                                                                                <View style={[styles.checklistCardHeader, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: openMenuId === block.checklist.id ? 100 : 1 }]}>
-                                                                                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                                                                                        <Text style={[styles.checklistHeaderText, { color: colors.text, flex: 1 }]} numberOfLines={3}>
-                                                                                            {num ? `${num}. ` : ''}{block.checklist.label}
-                                                                                        </Text>
-                                                                                        <Text style={[FONTS.caption, { color: colors.textSecondary, fontSize: 11, marginLeft: 6 }]}>
-                                                                                            ({nestCount} {nestCount === 1 ? 'task' : 'tasks'})
-                                                                                        </Text>
-                                                                                    </View>
 
-                                                                                    {!isChecklistDisabled && (
-                                                                                        <View style={{ position: 'relative', zIndex: openMenuId === block.checklist.id ? 110 : 1, marginLeft: 8 }}>
-                                                                                            <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === block.checklist.id ? null : block.checklist.id)} style={{ padding: 4 }}>
-                                                                                                <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
+                                                            {/* Collapsed summary teaser */}
+                                                            {!isExpanded && !isRootSection && (
+                                                                <TouchableOpacity
+                                                                    activeOpacity={0.7}
+                                                                    onPress={() => toggleSectionExpanded(sectionId)}
+                                                                    style={[styles.formSectionSummaryRow, { backgroundColor: colors.surfaceHighlight + '40' }]}
+                                                                >
+                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
+                                                                        {totalCount} {totalCount === 1 ? 'task' : 'tasks'} ({completedCount} completed)
+                                                                    </Text>
+                                                                    <Text style={[FONTS.caption, { color: colors.primary, fontWeight: '600' }]}>
+                                                                        Tap to view
+                                                                    </Text>
+                                                                </TouchableOpacity>
+                                                            )}
+
+                                                            {/* Expanded section contents */}
+                                                            {isExpanded && (
+                                                                <View>
+                                                                    {sectionBlock.checklists.map((block) => {
+                                                                        const isRootChecklist = block.checklist.id === '__root__';
+                                                                        const num = taskNumbers.get(block.checklist.id);
+                                                                        const blockTasks = block.tasks;
+                                                                        const blockCompleted = blockTasks.filter(
+                                                                            (t) => isComplete(t) || t.type === 'not_applicable' || t.isNotApplicable
+                                                                        ).length;
+
+                                                                        const isChecklistOpen = isRootChecklist || expandedChecklistIds.has(block.checklist.id);
+                                                                        return (
+                                                                            <View key={block.checklist.id}>
+                                                                                {!isRootChecklist && (
+                                                                                    <View
+                                                                                        style={[
+                                                                                            styles.formGroupBanner,
+                                                                                            {
+                                                                                                backgroundColor: colors.surfaceHighlight + '75',
+                                                                                            },
+                                                                                        ]}
+                                                                                    >
+                                                                                        <TouchableOpacity
+                                                                                            activeOpacity={0.7}
+                                                                                            onPress={() => toggleChecklistExpanded(block.checklist.id)}
+                                                                                            style={styles.formGroupBannerLeft}
+                                                                                        >
+                                                                                            <View style={{ flex: 1 }}>
+                                                                                                <Text style={[styles.formGroupTitle, { color: colors.text }]} numberOfLines={2}>
+                                                                                                    {block.checklist.label}
+                                                                                                </Text>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                                                            <View
+                                                                                                style={[
+                                                                                                    styles.formGroupCountBadge,
+                                                                                                    {
+                                                                                                        backgroundColor: blockCompleted === blockTasks.length && blockTasks.length > 0 ? colors.success + '15' : colors.surface,
+                                                                                                        borderColor: blockCompleted === blockTasks.length && blockTasks.length > 0 ? colors.success + '35' : colors.border,
+                                                                                                    },
+                                                                                                ]}
+                                                                                            >
+                                                                                                {blockCompleted === blockTasks.length && blockTasks.length > 0 && (
+                                                                                                    <Ionicons name="checkmark" size={11} color={colors.success} style={{ marginRight: 3 }} />
+                                                                                                )}
+                                                                                                <Text
+                                                                                                    style={[
+                                                                                                        styles.formGroupCountText,
+                                                                                                        {
+                                                                                                            color: blockCompleted === blockTasks.length && blockTasks.length > 0 ? colors.success : colors.textSecondary,
+                                                                                                            fontWeight: '600',
+                                                                                                        },
+                                                                                                    ]}
+                                                                                                >
+                                                                                                    {blockCompleted}/{blockTasks.length}
+                                                                                                </Text>
+                                                                                            </View>
+                                                                                            <TouchableOpacity
+                                                                                                onPress={() => toggleChecklistExpanded(block.checklist.id)}
+                                                                                                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                                                                                            >
+                                                                                                <Ionicons
+                                                                                                    name={isChecklistOpen ? 'chevron-up' : 'chevron-down'}
+                                                                                                    size={16}
+                                                                                                    color={colors.textSecondary}
+                                                                                                />
                                                                                             </TouchableOpacity>
-                                                                                            {openMenuId === block.checklist.id && (
-                                                                                                <View style={{
-                                                                                                    position: 'absolute',
-                                                                                                    top: 30,
-                                                                                                    right: 0,
-                                                                                                    backgroundColor: colors.surfaceHighlight,
-                                                                                                    borderRadius: 8,
-                                                                                                    paddingVertical: 8,
-                                                                                                    paddingHorizontal: 12,
-                                                                                                    width: 140,
-                                                                                                    shadowColor: '#000',
-                                                                                                    shadowOffset: { width: 0, height: 2 },
-                                                                                                    shadowOpacity: 0.15,
-                                                                                                    shadowRadius: 4,
-                                                                                                    elevation: 4,
-                                                                                                    zIndex: 120
-                                                                                                }}>
-                                                                                                    <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(block.checklist); }}>
-                                                                                                        <FontAwesome name="pencil" size={16} color={colors.primary} />
-                                                                                                        <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                                            {!isChecklistDisabled && (
+                                                                                                <View style={{ position: 'relative', zIndex: openMenuId === block.checklist.id ? 110 : 1 }}>
+                                                                                                    <TouchableOpacity
+                                                                                                        onPress={() => setOpenMenuId(openMenuId === block.checklist.id ? null : block.checklist.id)}
+                                                                                                        style={{ padding: 4 }}
+                                                                                                    >
+                                                                                                        <Ionicons name="ellipsis-vertical" size={16} color={colors.textSecondary} />
                                                                                                     </TouchableOpacity>
-                                                                                                    <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(block.checklist.id); }}>
-                                                                                                        <FontAwesome name="trash-o" size={16} color={colors.danger} />
-                                                                                                        <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
-                                                                                                    </TouchableOpacity>
+                                                                                                    {openMenuId === block.checklist.id && (
+                                                                                                        <View style={[styles.fieldActionPopover, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                                                                            <TouchableOpacity
+                                                                                                                style={styles.fieldActionPopoverItem}
+                                                                                                                onPress={() => {
+                                                                                                                    setOpenMenuId(null);
+                                                                                                                    startEditTask(block.checklist);
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                <FontAwesome name="pencil" size={14} color={colors.primary} />
+                                                                                                                <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>Edit</Text>
+                                                                                                            </TouchableOpacity>
+                                                                                                            <TouchableOpacity
+                                                                                                                style={styles.fieldActionPopoverItem}
+                                                                                                                onPress={() => {
+                                                                                                                    setOpenMenuId(null);
+                                                                                                                    deleteTask(block.checklist.id);
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                <FontAwesome name="trash-o" size={14} color={colors.danger} />
+                                                                                                                <Text style={[FONTS.body, { color: colors.danger, fontSize: 13 }]}>Delete</Text>
+                                                                                                            </TouchableOpacity>
+                                                                                                        </View>
+                                                                                                    )}
                                                                                                 </View>
                                                                                             )}
                                                                                         </View>
-                                                                                    )}
-                                                                                </View>
-                                                                                {block.tasks.map((taskItem) => renderTaskCard(taskItem))}
+                                                                                    </View>
+                                                                                )}
+                                                                                {isChecklistOpen && block.tasks.map((taskItem) => renderTaskCard(taskItem))}
                                                                             </View>
                                                                         );
                                                                     })}
                                                                     {sectionBlock.looseTasks.map((taskItem) => renderTaskCard(taskItem))}
-                                                                </>
+                                                                </View>
                                                             )}
                                                         </View>
                                                     );
@@ -1980,7 +2487,7 @@ export const TaskDetailScreen = () => {
                                             </View>
                                         </View>
                                     )}
-                                    {!isUnderReview && (
+                                    {!isChecklistDisabled && (
                                         <TouchableOpacity
                                             onPress={() => {
                                                 setNewTaskLabel('');
@@ -1993,9 +2500,8 @@ export const TaskDetailScreen = () => {
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 backgroundColor: colors.surfaceHighlight,
-                                                borderWidth: 1.5,
+                                                borderWidth: 1,
                                                 borderColor: colors.border,
-                                                borderStyle: 'dashed',
                                                 borderRadius: 12,
                                                 paddingVertical: 14,
                                                 marginTop: 12,
@@ -2003,7 +2509,7 @@ export const TaskDetailScreen = () => {
                                             }}
                                         >
                                             <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-                                            <Text style={[FONTS.bodyStrong, { color: colors.primary }]}>+ Add Task / Step</Text>
+                                            <Text style={[FONTS.bodyStrong, { color: colors.primary }]}>+ Add Task</Text>
                                         </TouchableOpacity>
                                     )}
                                 </>
@@ -2286,7 +2792,7 @@ export const TaskDetailScreen = () => {
                     </KeyboardAvoidingView>
                 )}
 
-                {activeTab === 'Tasks' && !isUnderReview && (
+                {activeTab === 'Tasks' && !isChecklistDisabled && (
                     <TouchableOpacity
                         style={[styles.fab, { backgroundColor: colors.primary, shadowColor: '#000', zIndex: 90 }]}
                         activeOpacity={0.9}
@@ -2300,9 +2806,12 @@ export const TaskDetailScreen = () => {
                         <Ionicons name="add" size={32} color={colors.white} />
                     </TouchableOpacity>
                 )}
-                <Modal visible={mediaModalVisible} transparent animationType="fade">
+            </SafeAreaView>
+
+                <Modal visible={mediaModalVisible} transparent animationType="fade" statusBarTranslucent>
                     <View style={styles.modalOverlay}>
-                        <View style={[styles.bottomSheetInner, { backgroundColor: colors.background, paddingBottom: 40 }]}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setMediaModalVisible(false)} />
+                        <View style={[styles.bottomSheetInner, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom + 20, 36), width: '100%' }]}>
                             <Text style={[styles.sheetTitle, { color: colors.textSecondary }]}>Add Attachment</Text>
 
                             <TouchableOpacity style={[styles.sheetOption, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={() => { setMediaModalVisible(false); if (activeMediaId) updateItem(activeMediaId, Number(items.find(i => i.id === activeMediaId)?.value || 0) + 1); }}>
@@ -2370,19 +2879,20 @@ export const TaskDetailScreen = () => {
                         </View>
                     </TouchableOpacity>
                 </Modal>
-                <Modal visible={mandatoryErrorModalVisible} transparent animationType="slide" onRequestClose={() => setMandatoryErrorModalVisible(false)}>
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
-                        onPress={() => setMandatoryErrorModalVisible(false)}
-                    >
-                        <TouchableOpacity
-                            activeOpacity={1}
+                <Modal visible={mandatoryErrorModalVisible} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setMandatoryErrorModalVisible(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setMandatoryErrorModalVisible(false)} />
+                        <View
                             style={{
+                                width: '100%',
                                 backgroundColor: colors.surface,
                                 borderTopLeftRadius: 24,
                                 borderTopRightRadius: 24,
-                                padding: 20,
+                                borderBottomLeftRadius: 0,
+                                borderBottomRightRadius: 0,
+                                paddingHorizontal: 20,
+                                paddingTop: 20,
+                                paddingBottom: Math.max(insets.bottom + 16, 24),
                                 maxHeight: '85%',
                                 gap: 14,
                             }}
@@ -2443,23 +2953,24 @@ export const TaskDetailScreen = () => {
                             >
                                 <Text style={[styles.confirmBtnText, { color: colors.white, fontSize: 16, fontWeight: '700' }]}>Got it, complete tasks</Text>
                             </TouchableOpacity>
-                        </TouchableOpacity>
-                    </TouchableOpacity>
+                        </View>
+                    </View>
                 </Modal>
 
-                <Modal visible={confirmationModalVisible} transparent animationType="slide" onRequestClose={() => setConfirmationModalVisible(false)}>
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
-                        onPress={() => setConfirmationModalVisible(false)}
-                    >
-                        <TouchableOpacity
-                            activeOpacity={1}
+                <Modal visible={confirmationModalVisible} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setConfirmationModalVisible(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setConfirmationModalVisible(false)} />
+                        <View
                             style={{
+                                width: '100%',
                                 backgroundColor: colors.surface,
                                 borderTopLeftRadius: 24,
                                 borderTopRightRadius: 24,
-                                padding: 20,
+                                borderBottomLeftRadius: 0,
+                                borderBottomRightRadius: 0,
+                                paddingHorizontal: 20,
+                                paddingTop: 20,
+                                paddingBottom: Math.max(insets.bottom + 16, 24),
                                 gap: 16,
                             }}
                         >
@@ -2497,8 +3008,8 @@ export const TaskDetailScreen = () => {
                                     <Text style={[styles.confirmBtnText, { color: colors.white }]}>Move to Review</Text>
                                 </TouchableOpacity>
                             </View>
-                        </TouchableOpacity>
-                    </TouchableOpacity>
+                        </View>
+                    </View>
                 </Modal>
 
                 <Modal visible={naConfirmModalVisible} transparent animationType="fade">
@@ -2573,10 +3084,10 @@ export const TaskDetailScreen = () => {
                     </View>
                 </Modal>
 
-                <Modal visible={completionModalVisible} transparent animationType="slide">
+                <Modal visible={completionModalVisible} transparent animationType="slide" statusBarTranslucent>
                     <View style={styles.modalOverlay}>
                         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setCompletionModalVisible(false)} />
-                        <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+                        <View style={[styles.modalSheet, { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
                             <View style={styles.modalHeader}>
                                 <View>
                                     <Text style={[styles.modalTitle, { color: colors.text }]}>Complete Work Details</Text>
@@ -2656,10 +3167,10 @@ export const TaskDetailScreen = () => {
                     </View>
                 </Modal>
 
-                <Modal visible={approveModalVisible} transparent animationType="slide">
+                <Modal visible={approveModalVisible} transparent animationType="slide" statusBarTranslucent>
                     <View style={styles.modalOverlay}>
                         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setApproveModalVisible(false)} />
-                        <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+                        <View style={[styles.modalSheet, { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
                             <View style={styles.modalHeader}>
                                 <View>
                                     <Text style={[styles.modalTitle, { color: colors.text }]}>Approve Work Comments</Text>
@@ -2715,10 +3226,10 @@ export const TaskDetailScreen = () => {
                     </View>
                 </Modal>
 
-                <Modal visible={rejectModalVisible} transparent animationType="slide">
+                <Modal visible={rejectModalVisible} transparent animationType="slide" statusBarTranslucent>
                     <View style={styles.modalOverlay}>
                         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setRejectModalVisible(false)} />
-                        <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+                        <View style={[styles.modalSheet, { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
                             <View style={styles.modalHeader}>
                                 <View>
                                     <Text style={[styles.modalTitle, { color: colors.text }]}>Reject Work</Text>
@@ -2778,24 +3289,26 @@ export const TaskDetailScreen = () => {
                     visible={editTaskModalVisible}
                     transparent
                     animationType="slide"
+                    statusBarTranslucent
                     onRequestClose={() => setEditTaskModalVisible(false)}
                 >
-                    <TouchableOpacity
-                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
-                        activeOpacity={1}
-                        onPress={() => setEditTaskModalVisible(false)}
-                    >
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setEditTaskModalVisible(false)} />
                         <KeyboardAvoidingView
                             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                            style={{ width: '100%' }}
+                            style={{ width: '100%', justifyContent: 'flex-end' }}
                         >
-                            <TouchableOpacity
-                                activeOpacity={1}
+                            <View
                                 style={{
+                                    width: '100%',
                                     backgroundColor: colors.surface,
                                     borderTopLeftRadius: 24,
                                     borderTopRightRadius: 24,
-                                    padding: 20,
+                                    borderBottomLeftRadius: 0,
+                                    borderBottomRightRadius: 0,
+                                    paddingHorizontal: 20,
+                                    paddingTop: 20,
+                                    paddingBottom: Math.max(insets.bottom + 16, 24),
                                     maxHeight: 620,
                                     gap: 16,
                                 }}
@@ -2885,9 +3398,9 @@ export const TaskDetailScreen = () => {
                                         <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Save Changes</Text>
                                     </TouchableOpacity>
                                 </View>
-                            </TouchableOpacity>
+                            </View>
                         </KeyboardAvoidingView>
-                    </TouchableOpacity>
+                    </View>
                 </Modal>
 
                 {/* Add New Task Modal (BottomSheet) */}
@@ -2895,21 +3408,23 @@ export const TaskDetailScreen = () => {
                     visible={addTaskModalVisible}
                     transparent
                     animationType="slide"
+                    statusBarTranslucent
                     onRequestClose={() => setAddTaskModalVisible(false)}
                 >
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
-                        onPress={() => setAddTaskModalVisible(false)}
-                    >
-                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%' }}>
-                            <TouchableOpacity
-                                activeOpacity={1}
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setAddTaskModalVisible(false)} />
+                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%', justifyContent: 'flex-end' }}>
+                            <View
                                 style={{
+                                    width: '100%',
                                     backgroundColor: colors.surface,
                                     borderTopLeftRadius: 24,
                                     borderTopRightRadius: 24,
-                                    padding: 20,
+                                    borderBottomLeftRadius: 0,
+                                    borderBottomRightRadius: 0,
+                                    paddingHorizontal: 20,
+                                    paddingTop: 20,
+                                    paddingBottom: Math.max(insets.bottom + 16, 24),
                                     maxHeight: 650,
                                     gap: 16,
                                 }}
@@ -3000,11 +3515,451 @@ export const TaskDetailScreen = () => {
                                         <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Add Task</Text>
                                     </TouchableOpacity>
                                 </View>
-                            </TouchableOpacity>
+                            </View>
                         </KeyboardAvoidingView>
-                    </TouchableOpacity>
+                    </View>
                 </Modal>
-            </SafeAreaView>
+
+                {/* Work Details Info Modal */}
+                <Modal
+                    visible={workInfoModalVisible}
+                    transparent
+                    animationType="slide"
+                    statusBarTranslucent
+                    onRequestClose={() => {
+                        setIsEditingDetails(false);
+                        setWorkInfoModalVisible(false);
+                    }}
+                >
+                    <View style={styles.infoModalOverlay}>
+                        <TouchableOpacity
+                            style={StyleSheet.absoluteFill}
+                            activeOpacity={1}
+                            onPress={() => {
+                                setIsEditingDetails(false);
+                                setWorkInfoModalVisible(false);
+                            }}
+                        />
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                            style={{ width: '100%', justifyContent: 'flex-end' }}
+                        >
+                            <View
+                                style={[
+                                    styles.infoModalContent,
+                                    {
+                                        backgroundColor: colors.surface,
+                                        paddingBottom: Math.max(insets.bottom + 16, 24),
+                                    }
+                                ]}
+                            >
+                                <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 6 }} />
+                                <View style={[styles.infoModalHeader, { borderBottomColor: colors.border }]}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                                        <View style={[styles.infoModalHeaderIcon, { backgroundColor: colors.primary + '15' }]}>
+                                            <Ionicons name="information-circle" size={22} color={colors.primary} />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text numberOfLines={1} style={[FONTS.h3, { color: colors.text }]}>
+                                                {isEditingDetails ? 'Edit Work Details' : 'Work Details'}
+                                            </Text>
+                                            <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
+                                                {workOrder.id} • {workOrder.projectId}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                        {!isOffSite && !isEditingDetails && (
+                                            <TouchableOpacity
+                                                onPress={() => setIsEditingDetails(true)}
+                                                style={[styles.infoModalBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                                accessibilityLabel="Edit work details"
+                                            >
+                                                <Ionicons name="pencil" size={15} color={colors.primary} />
+                                            </TouchableOpacity>
+                                        )}
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setIsEditingDetails(false);
+                                                setWorkInfoModalVisible(false);
+                                            }}
+                                            style={[styles.infoModalBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                            accessibilityLabel="Close"
+                                        >
+                                            <Ionicons name="close" size={18} color={colors.text} />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                <ScrollView
+                                    style={{ maxHeight: 540 }}
+                                    contentContainerStyle={{ gap: 14, paddingBottom: 28 }}
+                                    showsVerticalScrollIndicator={true}
+                                >
+                                    {isEditingDetails ? (
+                                        <View style={{ gap: 14, zIndex: 1000 }}>
+                                            {/* Approvers Dropdowns */}
+                                            <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Approvals</Text>
+                                            <View style={{ flexDirection: 'row', gap: 10, zIndex: 1010 }}>
+                                                <View style={{ flex: 1, zIndex: 1010 }}>
+                                                    <PopoverDropdown
+                                                        label="Primary Approver"
+                                                        placeholder="Select primary approver..."
+                                                        options={getSelectorOptions('assignees').options}
+                                                        value={editedPrimaryApprover}
+                                                        onSelect={(val) => setEditedPrimaryApprover(val as string)}
+                                                        isMulti={false}
+                                                    />
+                                                </View>
+                                                <View style={{ flex: 1, zIndex: 1009 }}>
+                                                    <PopoverDropdown
+                                                        label="Secondary Approver"
+                                                        placeholder="Select secondary approver..."
+                                                        options={getSelectorOptions('assignees').options}
+                                                        value={editedSecondaryApprover}
+                                                        onSelect={(val) => setEditedSecondaryApprover(val as string)}
+                                                        isMulti={false}
+                                                    />
+                                                </View>
+                                            </View>
+
+                                            {/* Lead & Assignees Dropdowns */}
+                                            <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Lead</Text>
+                                            <View style={{ flexDirection: 'row', gap: 10, zIndex: 1000 }}>
+                                                <View style={{ flex: 1, zIndex: 1000 }}>
+                                                    <PopoverDropdown
+                                                        label="Lead"
+                                                        placeholder="Select lead..."
+                                                        options={getSelectorOptions('assignees').options}
+                                                        value={assignees.length > 0 ? assignees[0] : ''}
+                                                        onSelect={(val) => {
+                                                            const newLead = val as string;
+                                                            if (newLead) {
+                                                                setAssignees([newLead, ...assignees.slice(1).filter(a => a !== newLead)]);
+                                                            } else if (assignees.length > 0) {
+                                                                setAssignees(assignees.slice(1));
+                                                            }
+                                                        }}
+                                                        isMulti={false}
+                                                    />
+                                                </View>
+                                                <View style={{ flex: 1, zIndex: 999 }}>
+                                                    <PopoverDropdown
+                                                        label="Assignees"
+                                                        placeholder="Select assignees..."
+                                                        options={getSelectorOptions('assignees').options}
+                                                        value={assignees.length > 0 ? assignees.slice(1) : []}
+                                                        onSelect={(val) => {
+                                                            const otherAssignees = val as string[];
+                                                            const lead = assignees.length > 0 ? assignees[0] : null;
+                                                            if (lead) {
+                                                                setAssignees([lead, ...otherAssignees.filter(a => a !== lead)]);
+                                                            } else {
+                                                                setAssignees(otherAssignees);
+                                                            }
+                                                        }}
+                                                        isMulti={true}
+                                                    />
+                                                </View>
+                                            </View>
+
+                                            {/* Description Input */}
+                                            <View style={{ gap: 6 }}>
+                                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Description</Text>
+                                                <TextInput
+                                                    style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, padding: 10, minHeight: 70, textAlignVertical: 'top' }, FONTS.body]}
+                                                    value={editedNotes}
+                                                    onChangeText={setEditedNotes}
+                                                    multiline
+                                                    placeholder="Enter work description..."
+                                                    placeholderTextColor={colors.textSecondary}
+                                                />
+                                            </View>
+
+                                            {/* Date Inputs */}
+                                            <View style={{ gap: 6 }}>
+                                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Target Dates (YYYY-MM-DD)</Text>
+                                                <View style={{ flexDirection: 'row', gap: 10 }}>
+                                                    <View style={{ flex: 1, gap: 4 }}>
+                                                        <Text style={[FONTS.caption, { color: colors.textSecondary }]}>Start Date</Text>
+                                                        <TextInput
+                                                            style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 }, FONTS.body]}
+                                                            value={editedStartTime}
+                                                            onChangeText={setEditedStartTime}
+                                                            placeholder="YYYY-MM-DD"
+                                                            placeholderTextColor={colors.textSecondary}
+                                                        />
+                                                    </View>
+                                                    <View style={{ flex: 1, gap: 4 }}>
+                                                        <Text style={[FONTS.caption, { color: colors.textSecondary }]}>End Date</Text>
+                                                        <TextInput
+                                                            style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 }, FONTS.body]}
+                                                            value={editedEndTime}
+                                                            onChangeText={setEditedEndTime}
+                                                            placeholder="YYYY-MM-DD"
+                                                            placeholderTextColor={colors.textSecondary}
+                                                        />
+                                                    </View>
+                                                </View>
+                                            </View>
+
+                                            {/* Save & Cancel Buttons */}
+                                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+                                                <TouchableOpacity
+                                                    onPress={() => setIsEditingDetails(false)}
+                                                    style={{ flex: 1, height: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    <Text style={[FONTS.bodyStrong, { color: colors.text }]}>Cancel</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    onPress={handleSaveDetails}
+                                                    style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Save Changes</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ) : (
+                                        <>
+                                            {/* 1. Approvals & Assignees (Prominently at the Top) */}
+                                            <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                        <Ionicons name="people" size={17} color={colors.primary} />
+                                                        <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Approvals & Assignees</Text>
+                                                    </View>
+                                                    {!isOffSite && (
+                                                        <TouchableOpacity onPress={() => setIsEditingDetails(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                            <Ionicons name="pencil" size={13} color={colors.primary} />
+                                                            <Text style={[FONTS.caption, { color: colors.primary, fontWeight: '600' }]}>Edit</Text>
+                                                        </TouchableOpacity>
+                                                    )}
+                                                </View>
+
+                                                {/* Approvers */}
+                                                <View style={{ gap: 8, paddingTop: 4 }}>
+                                                    <View style={styles.infoRow}>
+                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                            <Ionicons name="shield-checkmark" size={14} color={colors.primary} />
+                                                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Primary Approver</Text>
+                                                        </View>
+                                                        <Text style={[styles.infoValue, { color: colors.text, fontWeight: '700' }]}>
+                                                            {editedPrimaryApprover || workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={styles.infoRow}>
+                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                            <Ionicons name="shield-checkmark-outline" size={14} color={colors.textSecondary} />
+                                                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Secondary Approver</Text>
+                                                        </View>
+                                                        <Text style={[styles.infoValue, { color: colors.text, fontWeight: '600' }]}>
+                                                            {editedSecondaryApprover || workOrder.secondaryApprover || 'Andrea Meuschke'}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+
+                                                {/* Assignees */}
+                                                <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10, gap: 8 }}>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                            <Ionicons name="person" size={14} color={colors.primary} />
+                                                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Assignees</Text>
+                                                        </View>
+                                                        <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
+                                                            {assignees.length > 0 ? `${assignees.length} technician${assignees.length === 1 ? '' : 's'}` : 'Unassigned'}
+                                                        </Text>
+                                                    </View>
+
+                                                    {/* Assignee Chips */}
+                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                                        {assignees.length > 0 ? (
+                                                            assignees.map((tech, idx) => {
+                                                                const isLead = idx === 0;
+                                                                return (
+                                                                    <View
+                                                                        key={tech}
+                                                                        style={[
+                                                                            styles.heroChip,
+                                                                            {
+                                                                                backgroundColor: isLead ? colors.primary : colors.surface,
+                                                                                borderColor: isLead ? colors.primary : colors.border,
+                                                                                flexDirection: 'row',
+                                                                                alignItems: 'center',
+                                                                                gap: 5,
+                                                                                paddingHorizontal: 10,
+                                                                            }
+                                                                        ]}
+                                                                    >
+                                                                        <Ionicons name={isLead ? "star" : "person"} size={12} color={isLead ? colors.white : colors.primary} />
+                                                                        <Text style={[styles.heroChipText, { color: isLead ? colors.white : colors.text, fontWeight: '600' }]}>
+                                                                            {isLead ? `Lead: ${tech}` : tech}
+                                                                        </Text>
+                                                                    </View>
+                                                                );
+                                                            })
+                                                        ) : (
+                                                            <View style={[styles.heroChip, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 5 }]}>
+                                                                <Ionicons name="alert-circle-outline" size={13} color={colors.warning} />
+                                                                <Text style={[styles.heroChipText, { color: colors.textSecondary }]}>No technician assigned</Text>
+                                                            </View>
+                                                        )}
+                                                    </View>
+                                                </View>
+
+                                                {/* Stakeholders info */}
+                                                <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8, gap: 6 }}>
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Created by</Text>
+                                                        <Text style={[styles.infoValue, { color: colors.text }]}>
+                                                            {workOrder.createdBy || workOrder.assignedBy || 'Andrea Meuschke'}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Requested by</Text>
+                                                        <Text style={[styles.infoValue, { color: colors.text }]}>
+                                                            {workOrder.requestedBy || 'Timothy Jerry'}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Assigned by</Text>
+                                                        <Text style={[styles.infoValue, { color: colors.text }]}>
+                                                            {workOrder.assignedBy || 'Andrea Meuschke'}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+
+                                            {/* 2. Overview Card */}
+                                            <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                <Text style={[styles.infoSectionTitle, { color: colors.text }]}>{workOrder.title}</Text>
+                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                                    <View style={[styles.heroChip, { backgroundColor: getStatusColor(workStatus, colors, isDark) + '15', borderColor: getStatusColor(workStatus, colors, isDark) }]}>
+                                                        <Text style={[styles.heroChipText, { color: getStatusColor(workStatus, colors, isDark) }]}>{workStatus}</Text>
+                                                    </View>
+                                                    <View style={[styles.heroChip, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
+                                                        <Text style={[styles.heroChipText, { color: typeColors.tintText }]}>{workOrder.type}</Text>
+                                                    </View>
+                                                    {workOrder.stage ? (
+                                                        <View style={[styles.heroChip, { backgroundColor: (isDark ? colors.primaryLight : colors.primary) + '15', borderColor: isDark ? colors.primaryLight : colors.primary }]}>
+                                                            <Text style={[styles.heroChipText, { color: isDark ? colors.primaryLight : colors.primary }]}>{workOrder.stage}</Text>
+                                                        </View>
+                                                    ) : null}
+                                                    {workOrder.priority ? (
+                                                        <View style={[styles.heroChip, { backgroundColor: (workOrder.priority === 'High' ? colors.danger : workOrder.priority === 'Medium' ? colors.warning : colors.secondary) + '15', borderColor: workOrder.priority === 'High' ? colors.danger : workOrder.priority === 'Medium' ? colors.warning : colors.secondary }]}>
+                                                            <Text style={[styles.heroChipText, { color: workOrder.priority === 'High' ? colors.danger : workOrder.priority === 'Medium' ? colors.warning : colors.secondary }]}>
+                                                                {workOrder.priority} Priority
+                                                            </Text>
+                                                        </View>
+                                                    ) : null}
+                                                </View>
+
+                                                {/* Description inside Overview */}
+                                                <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8, gap: 4 }}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Description</Text>
+                                                    <Text style={[{ color: colors.text, lineHeight: 20 }, FONTS.body]}>
+                                                        {workOrder.notes || 'No description provided for this work order.'}
+                                                    </Text>
+                                                </View>
+                                            </View>
+
+                                            {/* 3. Station & Charge Points */}
+                                            <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Station & Assets</Text>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Station Name</Text>
+                                                    <Text style={[styles.infoValue, { color: colors.text, fontWeight: '600' }]}>{workOrder.siteName}</Text>
+                                                </View>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Address</Text>
+                                                    <View style={{ flex: 1, alignItems: 'flex-end', gap: 4 }}>
+                                                        <Text style={[styles.infoValue, { color: colors.text, textAlign: 'right' }]}>{workOrder.address}</Text>
+                                                        <TouchableOpacity
+                                                            onPress={() => {
+                                                                const lat = workOrder.latitude;
+                                                                const lon = workOrder.longitude;
+                                                                if (!lat || !lon) return;
+                                                                const url = Platform.select({
+                                                                    ios: `maps:?daddr=${lat},${lon}`,
+                                                                    default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,
+                                                                });
+                                                                if (url) Linking.openURL(url);
+                                                            }}
+                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                                                        >
+                                                            <Ionicons name="navigate-outline" size={13} color={colors.primary} />
+                                                            <Text style={[FONTS.caption, { color: colors.primary, fontWeight: '600' }]}>Open in Maps</Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Charge Points (CPID)</Text>
+                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end', flex: 1 }}>
+                                                        {(workOrder.assetIds || [workOrder.assetId]).map((cp) => (
+                                                            <View key={cp} style={[styles.heroChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                                                <Text style={[styles.heroChipText, { color: colors.text }]}>{cp}</Text>
+                                                            </View>
+                                                        ))}
+                                                    </View>
+                                                </View>
+                                            </View>
+
+                                            {/* 4. Schedule */}
+                                            <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Schedule</Text>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Start Date</Text>
+                                                    <Text style={[styles.infoValue, { color: colors.text }]}>
+                                                        {new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    </Text>
+                                                </View>
+                                                <View style={styles.infoRow}>
+                                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Target / Due Date</Text>
+                                                    <Text style={[styles.infoValue, { color: colors.text }]}>
+                                                        {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    </Text>
+                                                </View>
+                                                {workOrder.dueWindow ? (
+                                                    <View style={styles.infoRow}>
+                                                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Due Window</Text>
+                                                        <Text style={[styles.infoValue, { color: colors.text }]}>{workOrder.dueWindow}</Text>
+                                                    </View>
+                                                ) : null}
+                                            </View>
+
+                                            {/* 5. Tools Required */}
+                                            {workOrder.tools && workOrder.tools.length > 0 && (
+                                                <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                    <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Required Tools</Text>
+                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                                                        {workOrder.tools.map((tool) => (
+                                                            <View key={tool} style={[styles.heroChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                                                <Text style={[styles.heroChipText, { color: colors.text }]}>{tool}</Text>
+                                                            </View>
+                                                        ))}
+                                                    </View>
+                                                </View>
+                                            )}
+
+                                            {/* 6. Parts Required */}
+                                            {workOrder.parts && workOrder.parts.length > 0 && (
+                                                <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                    <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Required Parts</Text>
+                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                                                        {workOrder.parts.map((part) => (
+                                                            <View key={part} style={[styles.heroChip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                                                <Text style={[styles.heroChipText, { color: colors.text }]}>{part}</Text>
+                                                            </View>
+                                                        ))}
+                                                    </View>
+                                                </View>
+                                            )}
+                                        </>
+                                    )}
+                                </ScrollView>
+                            </View>
+                        </KeyboardAvoidingView>
+                    </View>
+                </Modal>
         </View>
     );
 };
@@ -3067,6 +4022,14 @@ const styles = StyleSheet.create({
     headerTypeChipText: {
         ...FONTS.label,
         fontSize: 9,
+    },
+    headerInfoBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     content: {
         padding: 12,
@@ -3169,6 +4132,91 @@ const styles = StyleSheet.create({
         fontSize: 10,
         marginBottom: 6,
         marginTop: 0,
+    },
+    compactLocationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        marginTop: 6,
+        marginBottom: 8,
+    },
+    compactNavBtn: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    compactMetaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+    },
+    infoModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+        margin: 0,
+        padding: 0,
+    },
+    infoModalContent: {
+        width: '100%',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        maxHeight: '90%',
+        gap: 16,
+        marginBottom: 0,
+    },
+    infoModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingBottom: 14,
+        borderBottomWidth: 1,
+    },
+    infoModalHeaderIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    infoModalBtn: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    infoSectionCard: {
+        borderRadius: 14,
+        borderWidth: 1,
+        padding: 14,
+        gap: 10,
+    },
+    infoSectionTitle: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    infoLabel: {
+        ...FONTS.caption,
+    },
+    infoValue: {
+        ...FONTS.body,
+        fontSize: 13,
     },
     tabSwitch: {
         minHeight: 48,
@@ -3515,8 +4563,11 @@ const styles = StyleSheet.create({
     bottomSheetInner: {
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
         padding: 24,
         paddingTop: 32,
+        marginBottom: 0,
     },
     sheetTitle: {
         ...FONTS.label,
@@ -3601,11 +4652,14 @@ const styles = StyleSheet.create({
     modalSheet: {
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
         paddingHorizontal: 24,
         paddingTop: 24,
         paddingBottom: 16,
         width: '100%',
         maxHeight: '80%',
+        marginBottom: 0,
     },
     modalHeader: {
         flexDirection: 'row',
@@ -3739,5 +4793,312 @@ const styles = StyleSheet.create({
         lineHeight: 16,
         marginTop: 0,
         marginBottom: 2,
+    },
+    // Modern Form UI Styles for PM & Reactive
+    formSectionCard: {
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 14,
+        overflow: 'hidden',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    formSectionHeaderTouchable: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+    },
+    formSectionHeaderLeft: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginRight: 8,
+    },
+    formSectionTitle: {
+        ...FONTS.bodyStrong,
+        fontSize: 14,
+        lineHeight: 20,
+        fontWeight: '700',
+        flex: 1,
+    },
+    formSectionHeaderRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    formSectionProgressBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    formSectionProgressText: {
+        ...FONTS.caption,
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    formSectionSummaryRow: {
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    formGroupBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 9,
+        paddingHorizontal: 14,
+        marginTop: 0,
+        marginHorizontal: 0,
+        marginBottom: 0,
+        borderRadius: 0,
+    },
+    formGroupBannerLeft: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginRight: 8,
+    },
+    formGroupTitle: {
+        ...FONTS.bodyStrong,
+        fontSize: 13,
+        lineHeight: 18,
+        fontWeight: '600',
+        flex: 1,
+    },
+    formGroupCountBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 7,
+        paddingVertical: 2,
+        borderRadius: 10,
+        borderWidth: 1,
+    },
+    formGroupCountText: {
+        ...FONTS.caption,
+        fontSize: 11,
+        fontWeight: '600',
+    },
+    formFieldRow: {
+        paddingHorizontal: 14,
+        paddingVertical: 11,
+    },
+    formFieldHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+    formFieldLabelWrapper: {
+        flex: 1,
+        marginRight: 6,
+    },
+    formFieldLabelRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 4,
+    },
+    formFieldNumber: {
+        ...FONTS.bodyStrong,
+        fontSize: 13.5,
+        fontWeight: '700',
+        marginRight: 2,
+    },
+    formFieldLabel: {
+        ...FONTS.bodyStrong,
+        fontSize: 13.5,
+        lineHeight: 19,
+        fontWeight: '600',
+    },
+    formFieldTag: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 6,
+        paddingVertical: 1.5,
+        borderRadius: 4,
+        borderWidth: 0.5,
+        marginTop: 3,
+    },
+    formFieldTagText: {
+        ...FONTS.caption,
+        fontSize: 10,
+        fontWeight: '500',
+    },
+    fieldMenuTrigger: {
+        padding: 4,
+    },
+    fieldActionPopover: {
+        position: 'absolute',
+        top: 26,
+        right: 0,
+        borderRadius: 8,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        width: 140,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 6,
+        borderWidth: 1,
+        zIndex: 120,
+    },
+    fieldActionPopoverItem: {
+        paddingVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    formInputSingle: {
+        ...FONTS.body,
+        minHeight: 46,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+    },
+    formInputWithIcon: {
+        minHeight: 46,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+    },
+    formInputInsideIcon: {
+        ...FONTS.body,
+        flex: 1,
+        paddingVertical: 0,
+    },
+    formTextarea: {
+        ...FONTS.body,
+        minHeight: 80,
+        borderRadius: 10,
+        padding: 12,
+        textAlignVertical: 'top',
+        borderWidth: 1,
+    },
+    formYesNoContainer: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 4,
+    },
+    formYesNoButton: {
+        flex: 1,
+        minHeight: 42,
+        borderRadius: 8,
+        borderWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingHorizontal: 10,
+    },
+    formSelectOptionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    formDropdownSelector: {
+        minHeight: 46,
+        borderRadius: 10,
+        borderWidth: 1,
+        paddingHorizontal: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    formDropdownList: {
+        borderRadius: 8,
+        borderWidth: 1,
+        marginTop: 4,
+        overflow: 'hidden',
+    },
+    formDropdownItem: {
+        paddingVertical: 11,
+        paddingHorizontal: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottomWidth: 0.5,
+    },
+    formVoltageGrid: {
+        gap: 8,
+        marginTop: 4,
+    },
+    formVoltageCard: {
+        flex: 1,
+        borderRadius: 8,
+        borderWidth: 1,
+        padding: 10,
+    },
+    formVoltageKey: {
+        ...FONTS.caption,
+        fontSize: 11,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    formVoltageInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    formVoltageInput: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: '600',
+        paddingVertical: 2,
+        paddingHorizontal: 0,
+        minHeight: 32,
+    },
+    formVoltageUnit: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    formMediaThumbnailCard: {
+        width: 130,
+        height: 96,
+        borderRadius: 8,
+        borderWidth: 1,
+        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+    },
+    formMediaCheckBadge: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 999,
+    },
+    formVerificationCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    formInstructionCallout: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        padding: 10,
+        borderRadius: 8,
+        borderWidth: 1,
+        marginTop: 4,
     },
 });
