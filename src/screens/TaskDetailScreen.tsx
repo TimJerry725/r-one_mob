@@ -4518,7 +4518,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         padding: 4,
         gap: 4,
-        marginBottom: 10,
+        marginBottom: 8,
     },
     tabButton: {
         flex: 1,
@@ -4532,14 +4532,14 @@ const styles = StyleSheet.create({
     },
     sectionLabel: {
         ...FONTS.label,
-        marginBottom: 10,
+        marginBottom: 8,
     },
     listColumn: {
         gap: 8,
         marginBottom: 8,
     },
     listColumnCompact: {
-        gap: 4,
+        gap: 0,
         marginBottom: 4,
     },
     filterRow: {
@@ -5061,7 +5061,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         paddingHorizontal: 0,
         marginTop: 0,
-        marginBottom: 8,
+        marginBottom: 4,
         borderBottomWidth: 0,
         flexDirection: 'row',
         alignItems: 'center',
@@ -5096,7 +5096,7 @@ const styles = StyleSheet.create({
     formSectionCard: {
         borderRadius: 12,
         borderWidth: 1,
-        marginBottom: 14,
+        marginBottom: 8,
         overflow: 'hidden',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.07,
