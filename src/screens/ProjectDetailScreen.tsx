@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, Modal, Animated, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getStatusColor } from '../styles/statusColors';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
 import { useSession } from '../context/SessionContext';
@@ -46,6 +46,11 @@ export const OrderCard = ({
     const [cardRequested, setCardRequested] = useState(item.status === 'Requested' || item.isRequested);
     const [cardStatus, setCardStatus] = useState(item.status);
 
+    useEffect(() => {
+        setCardStatus(item.status);
+        setCardRequested(item.status === 'Requested' || item.isRequested);
+    }, [item.status, item.isRequested]);
+
     const handleAcceptClick = (e: any) => {
         e.stopPropagation();
         item.status = 'Accepted';
@@ -79,27 +84,35 @@ export const OrderCard = ({
         );
     };
 
+    const handleStartWorkClick = (e: any) => {
+        e.stopPropagation();
+        item.status = 'Working';
+        setCardStatus('Working');
+        onOpen();
+    };
+
     const isPreventive = item.type === 'Preventive';
     const isService = item.type === 'Service' || item.type === 'Reactive';
     const isCurrentlyRequested = cardRequested || cardStatus === 'Requested' || item.isRequested;
 
     const actionConfig = (() => {
+        if (isCurrentlyRequested) {
+            return { primaryLabel: 'Requested', isRequestedState: true as const };
+        }
         if (cardStatus === 'Assigned') {
             return { secondaryLabel: 'Reject', primaryLabel: 'Accept', isAcceptReject: true as const };
         }
-        if (isPreventive) {
-            return isCurrentlyRequested
-                ? { primaryLabel: 'Requested', isRequestedState: true as const }
-                : null;
-        }
         if (cardStatus === 'Accepted') {
-            return { primaryLabel: 'Start Work' };
+            return { primaryLabel: 'Start Work', isStartWork: true as const };
         }
-        if (cardStatus === 'Unassigned') {
-            return { secondaryLabel: 'Forward', primaryLabel: 'Accept Work' };
+        if (cardStatus === 'Working') {
+            return { secondaryLabel: 'Forward', primaryLabel: 'Mark as Complete', isWorking: true as const };
         }
         if (cardStatus === 'Under Review') {
-            return { secondaryLabel: 'Reject', primaryLabel: 'Review Work' };
+            return { secondaryLabel: 'Reject', primaryLabel: 'Approve', isUnderReview: true as const };
+        }
+        if (cardStatus === 'Unassigned') {
+            return { secondaryLabel: 'Forward', primaryLabel: 'Accept Work', isUnassigned: true as const };
         }
         return null;
     })();
@@ -214,14 +227,20 @@ export const OrderCard = ({
                             onPress={actionConfig.isAcceptReject ? handleRejectClick : onOpen}
                             style={[
                                 styles.actionButton,
-                                actionConfig.isAcceptReject
+                                (actionConfig.isAcceptReject || actionConfig.secondaryLabel === 'Reject')
                                     ? { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger }
                                     : { backgroundColor: colors.surfaceHighlight, borderColor: colors.border },
                             ]}
                         >
+                            {actionConfig.secondaryLabel === 'Reject' && (
+                                <Ionicons name="close-circle-outline" size={14} color={colors.danger} />
+                            )}
+                            {actionConfig.secondaryLabel === 'Forward' && (
+                                <Ionicons name="arrow-redo-outline" size={14} color={colors.text} />
+                            )}
                             <Text style={[
                                 styles.actionButtonText,
-                                { color: actionConfig.isAcceptReject ? colors.danger : colors.text },
+                                { color: (actionConfig.isAcceptReject || actionConfig.secondaryLabel === 'Reject') ? colors.danger : colors.text },
                             ]}>
                                 {actionConfig.secondaryLabel}
                             </Text>
@@ -232,7 +251,7 @@ export const OrderCard = ({
                             <Ionicons name="checkmark-circle" size={14} color={isDark ? '#FFB74D' : '#E65100'} />
                             <Text style={[styles.primaryActionText, { color: isDark ? '#FFB74D' : '#E65100' }]}>{actionConfig.primaryLabel}</Text>
                         </View>
-                    ) : actionConfig.isAcceptReject ? (
+                    ) : (actionConfig.isAcceptReject || actionConfig.isUnassigned) ? (
                         <TouchableOpacity
                             onPress={handleAcceptClick}
                             style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
@@ -240,11 +259,28 @@ export const OrderCard = ({
                             <Ionicons name="checkmark" size={14} color={colors.white} />
                             <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
                         </TouchableOpacity>
+                    ) : actionConfig.isStartWork ? (
+                        <TouchableOpacity
+                            onPress={handleStartWorkClick}
+                            style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        >
+                            <Ionicons name="play" size={14} color={colors.white} />
+                            <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
+                        </TouchableOpacity>
+                    ) : actionConfig.isUnderReview ? (
+                        <TouchableOpacity
+                            onPress={onOpen}
+                            style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        >
+                            <Ionicons name="checkmark-done" size={14} color={colors.white} />
+                            <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
+                        </TouchableOpacity>
                     ) : (
                         <TouchableOpacity
                             onPress={onOpen}
                             style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
                         >
+                            <Ionicons name="checkmark-circle-outline" size={14} color={colors.white} />
                             <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
                         </TouchableOpacity>
                     )}
@@ -294,6 +330,13 @@ export const ProjectDetailScreen = () => {
     const [showFilterMenu, setShowFilterMenu] = useState(false);
     const [tempSelectedStatuses, setTempSelectedStatuses] = useState<WorkOrderStatus[]>([]);
     const [tempSelectedTypes, setTempSelectedTypes] = useState<string[]>([]);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setRefreshKey((k) => k + 1);
+        }, [])
+    );
 
     const baseWorkOrders = useMemo(() => {
         return WORK_ORDERS.filter((item) => {
@@ -302,7 +345,7 @@ export const ProjectDetailScreen = () => {
             }
             return true;
         });
-    }, [isAdmin]);
+    }, [isAdmin, refreshKey]);
 
     useEffect(() => {
         if (route.params?.stationFilter !== undefined) {

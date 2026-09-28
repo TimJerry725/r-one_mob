@@ -476,7 +476,7 @@ export const TaskDetailScreen = () => {
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
     const isOffSite = isGeoFenceStation && !isNearSite;
-    const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite;
+    const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite || workStatus !== 'Working';
     const isGeoFenceWarningVisible = isOffSite;
     const isPreventiveOrService = true;
     const isAssignedPending = workStatus === 'Assigned';
@@ -1207,6 +1207,15 @@ export const TaskDetailScreen = () => {
         );
     };
 
+    const handleStartWork = () => {
+        if (isOffSite) {
+            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
+        workOrder.status = 'Working';
+        setWorkStatus('Working');
+    };
+
     const handleConfirmApproval = () => {
         const approveText = approveComments.trim() || 'Work approved successfully.';
         const newAct = {
@@ -1232,6 +1241,28 @@ export const TaskDetailScreen = () => {
     const handleRejectWork = () => {
         if (isOffSite) {
             Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
+        if (isAssignedPending) {
+            Alert.alert(
+                'Reject Work',
+                `Reject assigned work "${workOrder.title}"?`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Reject',
+                        style: 'destructive',
+                        onPress: () => {
+                            workOrder.status = 'Unassigned';
+                            workOrder.isRequested = false;
+                            setWorkStatus('Unassigned');
+                            Alert.alert('Rejected', `"${workOrder.title}" has been rejected and moved to Unassigned.`, [
+                                { text: 'OK', onPress: () => navigation.goBack() }
+                            ]);
+                        },
+                    },
+                ]
+            );
             return;
         }
         setRejectModalVisible(true);
@@ -2838,50 +2869,221 @@ export const TaskDetailScreen = () => {
                     ) : null}
                 </ScrollView>
 
-                {activeTab !== 'Activities' && (
-                    <View
-                        style={[
-                            styles.footer,
-                            {
-                                backgroundColor: colors.surface,
-                                borderTopColor: colors.border,
-                                paddingBottom: Math.max(insets.bottom, 16),
-                            },
-                        ]}
-                    >
-                        <TouchableOpacity
-                            onPress={handleForwardWork}
-                            style={[
-                                styles.footerButton,
-                                {
-                                    backgroundColor: colors.surfaceHighlight,
-                                    borderColor: colors.border,
-                                },
-                            ]}
-                            activeOpacity={0.8}
-                        >
-                            <Ionicons name="arrow-redo-outline" size={18} color={colors.text} />
-                            <Text style={[styles.footerButtonText, { color: colors.text }]}>Forward</Text>
-                        </TouchableOpacity>
+                {activeTab !== 'Activities' && (() => {
+                    if (workStatus === 'Completed' || workStatus === 'Requested') {
+                        return null;
+                    }
 
-                        <TouchableOpacity
-                            onPress={handleCompleteAction}
+                    if (workStatus === 'Assigned') {
+                        return (
+                            <View
+                                style={[
+                                    styles.footer,
+                                    {
+                                        backgroundColor: colors.surface,
+                                        borderTopColor: colors.border,
+                                        paddingBottom: Math.max(insets.bottom, 16),
+                                    },
+                                ]}
+                            >
+                                <TouchableOpacity
+                                    onPress={handleRejectWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.surfaceHighlight,
+                                            borderColor: colors.danger,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="close-circle-outline" size={18} color={colors.danger} />
+                                    <Text style={[styles.footerButtonText, { color: colors.danger }]}>Reject</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={handleAcceptAssignedWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.primary,
+                                            borderColor: colors.primary,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="checkmark" size={18} color={colors.white} />
+                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>Accept</Text>
+                                </TouchableOpacity>
+                            </View>
+                        );
+                    }
+
+                    if (workStatus === 'Accepted') {
+                        return (
+                            <View
+                                style={[
+                                    styles.footer,
+                                    {
+                                        backgroundColor: colors.surface,
+                                        borderTopColor: colors.border,
+                                        paddingBottom: Math.max(insets.bottom, 16),
+                                    },
+                                ]}
+                            >
+                                <TouchableOpacity
+                                    onPress={handleStartWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.primary,
+                                            borderColor: colors.primary,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="play" size={18} color={colors.white} />
+                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>Start Work</Text>
+                                </TouchableOpacity>
+                            </View>
+                        );
+                    }
+
+                    if (workStatus === 'Under Review') {
+                        return (
+                            <View
+                                style={[
+                                    styles.footer,
+                                    {
+                                        backgroundColor: colors.surface,
+                                        borderTopColor: colors.border,
+                                        paddingBottom: Math.max(insets.bottom, 16),
+                                    },
+                                ]}
+                            >
+                                <TouchableOpacity
+                                    onPress={handleRejectWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.surfaceHighlight,
+                                            borderColor: colors.danger,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="close-circle-outline" size={18} color={colors.danger} />
+                                    <Text style={[styles.footerButtonText, { color: colors.danger }]}>Reject</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={handleApproveWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.primary,
+                                            borderColor: colors.primary,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="checkmark-done" size={18} color={colors.white} />
+                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>Approve</Text>
+                                </TouchableOpacity>
+                            </View>
+                        );
+                    }
+
+                    if (workStatus === 'Unassigned') {
+                        return (
+                            <View
+                                style={[
+                                    styles.footer,
+                                    {
+                                        backgroundColor: colors.surface,
+                                        borderTopColor: colors.border,
+                                        paddingBottom: Math.max(insets.bottom, 16),
+                                    },
+                                ]}
+                            >
+                                <TouchableOpacity
+                                    onPress={handleForwardWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.surfaceHighlight,
+                                            borderColor: colors.border,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="arrow-redo-outline" size={18} color={colors.text} />
+                                    <Text style={[styles.footerButtonText, { color: colors.text }]}>Forward</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={handleAcceptAssignedWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.primary,
+                                            borderColor: colors.primary,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="checkmark" size={18} color={colors.white} />
+                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>Accept Work</Text>
+                                </TouchableOpacity>
+                            </View>
+                        );
+                    }
+
+                    return (
+                        <View
                             style={[
-                                styles.footerButton,
+                                styles.footer,
                                 {
-                                    backgroundColor: colors.primary,
-                                    borderColor: colors.primary,
+                                    backgroundColor: colors.surface,
+                                    borderTopColor: colors.border,
+                                    paddingBottom: Math.max(insets.bottom, 16),
                                 },
                             ]}
-                            activeOpacity={0.8}
                         >
-                            <Ionicons name="checkmark-circle-outline" size={18} color={colors.white} />
-                            <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
-                                Mark as Complete
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
+                            <TouchableOpacity
+                                onPress={handleForwardWork}
+                                style={[
+                                    styles.footerButton,
+                                    {
+                                        backgroundColor: colors.surfaceHighlight,
+                                        borderColor: colors.border,
+                                    },
+                                ]}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="arrow-redo-outline" size={18} color={colors.text} />
+                                <Text style={[styles.footerButtonText, { color: colors.text }]}>Forward</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={handleCompleteAction}
+                                style={[
+                                    styles.footerButton,
+                                    {
+                                        backgroundColor: colors.primary,
+                                        borderColor: colors.primary,
+                                    },
+                                ]}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="checkmark-circle-outline" size={18} color={colors.white} />
+                                <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
+                                    Mark as Complete
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    );
+                })()}
 
                 {activeTab === 'Activities' && !isOffSite && (
                     <KeyboardAvoidingView
