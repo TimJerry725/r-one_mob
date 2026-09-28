@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "r-one-mobV2",
-    "slug": "r-one",
+    "slug": "r-one-mob",
+    "owner": "tim0725-team",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -69,7 +70,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "c178cec5-4850-4baa-93dd-7cf566d17e6a"
+        "projectId": "3a372325-67ad-4c2b-830f-9697299eef77"
       }
     }
   }
