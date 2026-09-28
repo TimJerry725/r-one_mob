@@ -1382,7 +1382,7 @@ export const TaskDetailScreen = () => {
                     style={styles.scrollView}
                     contentContainerStyle={[
                         styles.content,
-                        { paddingBottom: Math.max(insets.bottom, 16) + 120 },
+                        { paddingBottom: Math.max(insets.bottom, 16) + 160 },
                     ]}
                     showsVerticalScrollIndicator={false}
                 >
@@ -3044,17 +3044,14 @@ export const TaskDetailScreen = () => {
                         style={[
                             styles.footer, 
                             { 
-                                backgroundColor: colors.surface, 
-                                borderTopColor: colors.border,
-                                paddingTop: 16,
-                                paddingBottom: Math.max(insets.bottom || 0, 34) + 28,
+                                backgroundColor: colors.background, 
+                                borderTopColor: 'transparent',
+                                borderTopWidth: 0,
+                                paddingTop: 12,
+                                paddingBottom: Math.max(insets.bottom || 0, 16) + 20,
+                                marginBottom: 20,
                                 gap: 12,
                                 alignItems: 'center',
-                                shadowColor: colors.shadow,
-                                shadowOffset: { width: 0, height: -3 },
-                                shadowOpacity: isDark ? 0.3 : 0.08,
-                                shadowRadius: 6,
-                                elevation: 8,
                             }
                         ]}
                     >
