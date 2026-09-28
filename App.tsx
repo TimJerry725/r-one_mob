@@ -28,7 +28,6 @@ import { ProfileScreen } from './src/screens/ProfileScreen';
 import { NotificationScreen } from './src/screens/NotificationScreen';
 import { LanguageScreen } from './src/screens/LanguageScreen';
 import { RoleSelectionScreen } from './src/screens/RoleSelectionScreen';
-import { AdminTeamScreen } from './src/screens/AdminTeamScreen';
 import { ProjectListScreen } from './src/screens/ProjectListScreen';
 import { SingleProjectScreen } from './src/screens/SingleProjectScreen';
 import { ProjectInfoScreen } from './src/screens/ProjectInfoScreen';
@@ -185,58 +184,6 @@ function BottomTabs() {
   );
 }
 
-function AdminTabs() {
-  return (
-    <Tab.Navigator
-      tabBar={(props) => <AppTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tab.Screen
-        name="Map"
-        component={MapScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Ionicons name="map" size={24} color={color} />,
-          title: 'Map',
-        }}
-        initialParams={{ isAdmin: true }}
-      />
-      <Tab.Screen
-        name="Work"
-        component={ProjectDetailScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Ionicons name="briefcase" size={24} color={color} />,
-          title: 'Work',
-        }}
-        initialParams={{ isAdmin: true }}
-      />
-      <Tab.Screen
-        name="Project"
-        component={ProjectListScreen}
-        options={{
-          tabBarIcon: ({ color }) => <Ionicons name="folder" size={24} color={color} />,
-          title: 'Project',
-        }}
-        initialParams={{ isAdmin: true }}
-      />
-      <Tab.Screen
-        name="Scan"
-        component={PlaceholderScreen}
-        options={{
-          title: 'r-vision',
-        }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('AssetScan');
-          },
-        })}
-      />
-    </Tab.Navigator>
-  );
-}
-
 function AppNavigator() {
   const { colors, isDark } = useTheme();
 
@@ -264,7 +211,6 @@ function AppNavigator() {
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
-        <Stack.Screen name="AdminTeam" component={AdminTabs} />
         <Stack.Screen name="MainTabs" component={BottomTabs} />
         <Stack.Screen name="TaskDetails" component={TaskDetailScreen} />
         <Stack.Screen name="AssetScan" component={AssetScanScreen} />

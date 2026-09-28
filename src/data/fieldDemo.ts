@@ -1119,7 +1119,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         assetId: 'CP-400210',
         checklistItems: [],
         offlineReady: true,
-        notes: 'Preventive request sent to Central Team.',
+        notes: 'Preventive request logged for Field Team.',
         latitude: 9.9312,
         longitude: 76.2673,
         priority: 'Medium',
