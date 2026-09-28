@@ -694,29 +694,6 @@ export const TaskDetailScreen = () => {
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
     const [workInfoModalVisible, setWorkInfoModalVisible] = useState(false);
-    const [isEditingDetails, setIsEditingDetails] = useState(false);
-    const [isEditingAssignees, setIsEditingAssignees] = useState(false);
-    const [editedNotes, setEditedNotes] = useState(workOrder.notes || '');
-    const [editedStartTime, setEditedStartTime] = useState(new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toISOString().slice(0, 10));
-    const [editedEndTime, setEditedEndTime] = useState(new Date(workOrder.targetTime).toISOString().slice(0, 10));
-    const [editedPrimaryApprover, setEditedPrimaryApprover] = useState(workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius');
-    const [editedSecondaryApprover, setEditedSecondaryApprover] = useState(workOrder.secondaryApprover || 'Andrea Meuschke');
-
-    const handleSaveDetails = () => {
-        workOrder.notes = editedNotes;
-        workOrder.primaryApprover = editedPrimaryApprover;
-        workOrder.secondaryApprover = editedSecondaryApprover;
-        workOrder.approver = editedPrimaryApprover;
-        const startTime = new Date(editedStartTime).getTime();
-        if (!isNaN(startTime)) {
-            workOrder.targetStartTime = startTime;
-        }
-        const endTime = new Date(editedEndTime).getTime();
-        if (!isNaN(endTime)) {
-            workOrder.targetTime = endTime;
-        }
-        setIsEditingDetails(false);
-    };
 
     const startEditTask = (task: ChecklistStateItem) => {
         setEditingTask(task);
@@ -1412,10 +1389,7 @@ export const TaskDetailScreen = () => {
                             </View>
                             <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                                 <TouchableOpacity 
-                                    onPress={() => {
-                                        setIsEditingDetails(false);
-                                        setWorkInfoModalVisible(true);
-                                    }}
+                                    onPress={() => setWorkInfoModalVisible(true)}
                                     style={[styles.navButton, { backgroundColor: colors.primary + '15', marginTop: 4 }]}
                                     accessibilityLabel="View full work details"
                                 >
@@ -3911,7 +3885,6 @@ export const TaskDetailScreen = () => {
                     animationType="slide"
                     statusBarTranslucent
                     onRequestClose={() => {
-                        setIsEditingDetails(false);
                         setWorkInfoModalVisible(false);
                     }}
                 >
@@ -3920,7 +3893,6 @@ export const TaskDetailScreen = () => {
                             style={StyleSheet.absoluteFill}
                             activeOpacity={1}
                             onPress={() => {
-                                setIsEditingDetails(false);
                                 setWorkInfoModalVisible(false);
                             }}
                         />
@@ -3945,7 +3917,7 @@ export const TaskDetailScreen = () => {
                                         </View>
                                         <View style={{ flex: 1 }}>
                                             <Text numberOfLines={1} style={[FONTS.h3, { color: colors.text }]}>
-                                                {isEditingDetails ? 'Edit Work Details' : 'Work Details'}
+                                                Work Details
                                             </Text>
                                             <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
                                                 {workOrder.id} • {workOrder.projectId}
@@ -3953,20 +3925,8 @@ export const TaskDetailScreen = () => {
                                         </View>
                                     </View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                        {!isOffSite && !isEditingDetails && (
-                                            <TouchableOpacity
-                                                onPress={() => setIsEditingDetails(true)}
-                                                style={[styles.infoModalBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
-                                                accessibilityLabel="Edit work details"
-                                            >
-                                                <Ionicons name="pencil" size={15} color={colors.primary} />
-                                            </TouchableOpacity>
-                                        )}
                                         <TouchableOpacity
-                                            onPress={() => {
-                                                setIsEditingDetails(false);
-                                                setWorkInfoModalVisible(false);
-                                            }}
+                                            onPress={() => setWorkInfoModalVisible(false)}
                                             style={[styles.infoModalBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                                             accessibilityLabel="Close"
                                         >
@@ -3980,133 +3940,8 @@ export const TaskDetailScreen = () => {
                                     contentContainerStyle={{ gap: 14, paddingBottom: 28 }}
                                     showsVerticalScrollIndicator={true}
                                 >
-                                    {isEditingDetails ? (
-                                        <View style={{ gap: 14, zIndex: 1000 }}>
-                                            {/* Approvers Dropdowns */}
-                                            <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Approvals</Text>
-                                            <View style={{ flexDirection: 'row', gap: 10, zIndex: 1010 }}>
-                                                <View style={{ flex: 1, zIndex: 1010 }}>
-                                                    <PopoverDropdown
-                                                        label="Primary Approver"
-                                                        placeholder="Select primary approver..."
-                                                        options={getSelectorOptions('assignees').options}
-                                                        value={editedPrimaryApprover}
-                                                        onSelect={(val) => setEditedPrimaryApprover(val as string)}
-                                                        isMulti={false}
-                                                    />
-                                                </View>
-                                                <View style={{ flex: 1, zIndex: 1009 }}>
-                                                    <PopoverDropdown
-                                                        label="Secondary Approver"
-                                                        placeholder="Select secondary approver..."
-                                                        options={getSelectorOptions('assignees').options}
-                                                        value={editedSecondaryApprover}
-                                                        onSelect={(val) => setEditedSecondaryApprover(val as string)}
-                                                        isMulti={false}
-                                                    />
-                                                </View>
-                                            </View>
-
-                                            {/* Lead & Assignees Dropdowns */}
-                                            <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Lead</Text>
-                                            <View style={{ flexDirection: 'row', gap: 10, zIndex: 1000 }}>
-                                                <View style={{ flex: 1, zIndex: 1000 }}>
-                                                    <PopoverDropdown
-                                                        label="Lead"
-                                                        placeholder="Select lead..."
-                                                        options={getSelectorOptions('assignees').options}
-                                                        value={assignees.length > 0 ? assignees[0] : ''}
-                                                        onSelect={(val) => {
-                                                            const newLead = val as string;
-                                                            if (newLead) {
-                                                                setAssignees([newLead, ...assignees.slice(1).filter(a => a !== newLead)]);
-                                                            } else if (assignees.length > 0) {
-                                                                setAssignees(assignees.slice(1));
-                                                            }
-                                                        }}
-                                                        isMulti={false}
-                                                    />
-                                                </View>
-                                                <View style={{ flex: 1, zIndex: 999 }}>
-                                                    <PopoverDropdown
-                                                        label="Assignees"
-                                                        placeholder="Select assignees..."
-                                                        options={getSelectorOptions('assignees').options}
-                                                        value={assignees.length > 0 ? assignees.slice(1) : []}
-                                                        onSelect={(val) => {
-                                                            const otherAssignees = val as string[];
-                                                            const lead = assignees.length > 0 ? assignees[0] : null;
-                                                            if (lead) {
-                                                                setAssignees([lead, ...otherAssignees.filter(a => a !== lead)]);
-                                                            } else {
-                                                                setAssignees(otherAssignees);
-                                                            }
-                                                        }}
-                                                        isMulti={true}
-                                                    />
-                                                </View>
-                                            </View>
-
-                                            {/* Description Input */}
-                                            <View style={{ gap: 6 }}>
-                                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Description</Text>
-                                                <TextInput
-                                                    style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, padding: 10, minHeight: 70, textAlignVertical: 'top' }, FONTS.body]}
-                                                    value={editedNotes}
-                                                    onChangeText={setEditedNotes}
-                                                    multiline
-                                                    placeholder="Enter work description..."
-                                                    placeholderTextColor={colors.textSecondary}
-                                                />
-                                            </View>
-
-                                            {/* Date Inputs */}
-                                            <View style={{ gap: 6 }}>
-                                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Target Dates (YYYY-MM-DD)</Text>
-                                                <View style={{ flexDirection: 'row', gap: 10 }}>
-                                                    <View style={{ flex: 1, gap: 4 }}>
-                                                        <Text style={[FONTS.caption, { color: colors.textSecondary }]}>Start Date</Text>
-                                                        <TextInput
-                                                            style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 }, FONTS.body]}
-                                                            value={editedStartTime}
-                                                            onChangeText={setEditedStartTime}
-                                                            placeholder="YYYY-MM-DD"
-                                                            placeholderTextColor={colors.textSecondary}
-                                                        />
-                                                    </View>
-                                                    <View style={{ flex: 1, gap: 4 }}>
-                                                        <Text style={[FONTS.caption, { color: colors.textSecondary }]}>End Date</Text>
-                                                        <TextInput
-                                                            style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 }, FONTS.body]}
-                                                            value={editedEndTime}
-                                                            onChangeText={setEditedEndTime}
-                                                            placeholder="YYYY-MM-DD"
-                                                            placeholderTextColor={colors.textSecondary}
-                                                        />
-                                                    </View>
-                                                </View>
-                                            </View>
-
-                                            {/* Save & Cancel Buttons */}
-                                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-                                                <TouchableOpacity
-                                                    onPress={() => setIsEditingDetails(false)}
-                                                    style={{ flex: 1, height: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}
-                                                >
-                                                    <Text style={[FONTS.bodyStrong, { color: colors.text }]}>Cancel</Text>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity
-                                                    onPress={handleSaveDetails}
-                                                    style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
-                                                >
-                                                    <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Save Changes</Text>
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    ) : (
-                                        <>
-                                            {/* 1. Station & Charge Points (Top) */}
-                                            <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                    {/* 1. Station & Charge Points (Top) */}
+                                    <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
                                                 <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Station & Assets</Text>
                                                 <View style={styles.infoRow}>
                                                     <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Station Name</Text>
@@ -4194,7 +4029,7 @@ export const TaskDetailScreen = () => {
                                                             <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Primary Approver</Text>
                                                         </View>
                                                         <Text style={[styles.infoValue, { color: colors.text, fontWeight: '700' }]}>
-                                                            {editedPrimaryApprover || workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}
+                                                            {workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}
                                                         </Text>
                                                     </View>
                                                     <View style={styles.infoRow}>
@@ -4203,7 +4038,7 @@ export const TaskDetailScreen = () => {
                                                             <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Secondary Approver</Text>
                                                         </View>
                                                         <Text style={[styles.infoValue, { color: colors.text, fontWeight: '600' }]}>
-                                                            {editedSecondaryApprover || workOrder.secondaryApprover || 'Andrea Meuschke'}
+                                                            {workOrder.secondaryApprover || 'Andrea Meuschke'}
                                                         </Text>
                                                     </View>
                                                 </View>
@@ -4301,8 +4136,6 @@ export const TaskDetailScreen = () => {
                                                     </View>
                                                 ) : null}
                                             </View>
-                                        </>
-                                    )}
                                 </ScrollView>
                             </View>
                         </KeyboardAvoidingView>
