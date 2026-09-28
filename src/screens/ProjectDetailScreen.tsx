@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, TextInput, Modal, Animated, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getStatusColor } from '../styles/statusColors';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { useTheme } from '../context/ThemeContext';
@@ -231,7 +231,7 @@ export const OrderCard = ({
                             ]}
                         >
                             {actionConfig.secondaryLabel === 'Reject' && (
-                                <Ionicons name="close-circle-outline" size={14} color={colors.danger} />
+                                <FontAwesome name="times-circle-o" size={14} color={colors.danger} />
                             )}
                             <Text style={[
                                 styles.actionButtonText,
@@ -246,7 +246,7 @@ export const OrderCard = ({
                             onPress={handleAcceptClick}
                             style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
                         >
-                            <Ionicons name="checkmark" size={16} color={colors.white} />
+                            <FontAwesome name="check" size={14} color={colors.white} />
                             <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
                         </TouchableOpacity>
                     ) : actionConfig.isMoveToWorking ? (
@@ -254,7 +254,7 @@ export const OrderCard = ({
                             onPress={handleMoveToWorkingClick}
                             style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
                         >
-                            <Ionicons name="create-outline" size={16} color={colors.white} />
+                            <FontAwesome name="pencil" size={14} color={colors.white} />
                             <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
                         </TouchableOpacity>
                     ) : (
@@ -262,7 +262,7 @@ export const OrderCard = ({
                             onPress={onOpen}
                             style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
                         >
-                            <Ionicons name="checkmark-circle-outline" size={14} color={colors.white} />
+                            <FontAwesome name="check-circle-o" size={14} color={colors.white} />
                             <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
                         </TouchableOpacity>
                     )}
@@ -491,7 +491,7 @@ export const ProjectDetailScreen = () => {
             <SafeAreaView style={styles.safeArea}>
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                     <View style={[styles.searchBar, getInputShellStyle(colors)]}>
-                        <Ionicons name="search" size={18} color={colors.textSecondary} />
+                        <FontAwesome name="search" size={16} color={colors.textSecondary} />
                         <TextInput
                             value={searchQuery}
                             onChangeText={setSearchQuery}
@@ -544,7 +544,7 @@ export const ProjectDetailScreen = () => {
                             style={[styles.filterDropdown, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: 'center' }]}
                         >
                             <View style={styles.filterDropdownContent}>
-                                <Ionicons name="filter" size={16} color={colors.textSecondary} />
+                                <FontAwesome name="filter" size={15} color={colors.textSecondary} />
                                 <Text style={[styles.filterDropdownText, { color: colors.text }]}>
                                     {selectedStatuses.length + selectedTypes.length === 0 ? 'All' : `${selectedStatuses.length + selectedTypes.length} selected`}
                                 </Text>
@@ -577,7 +577,7 @@ export const ProjectDetailScreen = () => {
                                     <View style={styles.bottomSheetHeader}>
                                         <Text style={[styles.bottomSheetTitle, { color: colors.text }]}>Filters</Text>
                                         <TouchableOpacity onPress={closeFilterMenu}>
-                                            <Ionicons name="close" size={24} color={colors.textSecondary} />
+                                            <FontAwesome name="times" size={20} color={colors.textSecondary} />
                                         </TouchableOpacity>
                                     </View>
 
@@ -659,9 +659,9 @@ export const ProjectDetailScreen = () => {
                                     onPress={() => setSelectedProject(null)}
                                     style={[styles.siteFilter, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                                 >
-                                    <Ionicons name="folder" size={16} color={colors.primary} />
+                                    <FontAwesome name="folder" size={15} color={colors.primary} />
                                     <Text style={[styles.siteFilterText, { color: colors.text }]}>{selectedProject}</Text>
-                                    <Ionicons name="close" size={16} color={colors.textSecondary} />
+                                    <FontAwesome name="times" size={14} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             ) : null}
                             {selectedSite ? (
@@ -669,9 +669,9 @@ export const ProjectDetailScreen = () => {
                                     onPress={() => setSelectedSite(null)}
                                     style={[styles.siteFilter, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                                 >
-                                    <Ionicons name="location" size={16} color={colors.primary} />
+                                    <FontAwesome name="map-marker" size={16} color={colors.primary} />
                                     <Text style={[styles.siteFilterText, { color: colors.text }]}>{selectedSite}</Text>
-                                    <Ionicons name="close" size={16} color={colors.textSecondary} />
+                                    <FontAwesome name="times" size={14} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             ) : null}
                             {selectedStatuses.map((status) => (
@@ -684,7 +684,7 @@ export const ProjectDetailScreen = () => {
                                     ]}
                                 >
                                     <Text style={[styles.selectedChipText, { color: colors.primary }]}>{status}</Text>
-                                    <Ionicons name="close" size={14} color={colors.primary} />
+                                    <FontAwesome name="times" size={13} color={colors.primary} />
                                 </TouchableOpacity>
                             ))}
                             {selectedTypes.map((type) => (
@@ -697,7 +697,7 @@ export const ProjectDetailScreen = () => {
                                     ]}
                                 >
                                     <Text style={[styles.selectedChipText, { color: colors.primary }]}>{type}</Text>
-                                    <Ionicons name="close" size={14} color={colors.primary} />
+                                    <FontAwesome name="times" size={13} color={colors.primary} />
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>

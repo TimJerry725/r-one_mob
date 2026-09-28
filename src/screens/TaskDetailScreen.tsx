@@ -2911,7 +2911,7 @@ export const TaskDetailScreen = () => {
                                     ]}
                                     activeOpacity={0.8}
                                 >
-                                    <Ionicons name="close-circle-outline" size={18} color={colors.danger} />
+                                    <FontAwesome name="times-circle-o" size={16} color={colors.danger} />
                                     <Text style={[styles.footerButtonText, { color: colors.danger }]}>Reject</Text>
                                 </TouchableOpacity>
 
@@ -2926,7 +2926,7 @@ export const TaskDetailScreen = () => {
                                     ]}
                                     activeOpacity={0.8}
                                 >
-                                    <Ionicons name="checkmark" size={18} color={colors.white} />
+                                    <FontAwesome name="check" size={16} color={colors.white} />
                                     <Text style={[styles.footerPrimaryText, { color: colors.white }]}>Accept</Text>
                                 </TouchableOpacity>
                             </View>
@@ -2956,7 +2956,7 @@ export const TaskDetailScreen = () => {
                                     ]}
                                     activeOpacity={0.8}
                                 >
-                                    <Ionicons name="create-outline" size={18} color={colors.white} />
+                                    <FontAwesome name="pencil" size={16} color={colors.white} />
                                     <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
                                         Move to Working
                                     </Text>
@@ -2988,7 +2988,7 @@ export const TaskDetailScreen = () => {
                                     ]}
                                     activeOpacity={0.8}
                                 >
-                                    <Ionicons name="close-circle-outline" size={18} color={colors.danger} />
+                                    <FontAwesome name="times-circle-o" size={16} color={colors.danger} />
                                     <Text style={[styles.footerButtonText, { color: colors.danger }]}>Reject</Text>
                                 </TouchableOpacity>
 
@@ -3003,7 +3003,7 @@ export const TaskDetailScreen = () => {
                                     ]}
                                     activeOpacity={0.8}
                                 >
-                                    <Ionicons name="checkmark" size={18} color={colors.white} />
+                                    <FontAwesome name="check" size={16} color={colors.white} />
                                     <Text style={[styles.footerPrimaryText, { color: colors.white }]}>Accept Work</Text>
                                 </TouchableOpacity>
                             </View>
@@ -3032,7 +3032,7 @@ export const TaskDetailScreen = () => {
                                 ]}
                                 activeOpacity={0.8}
                             >
-                                <Ionicons name="checkmark-circle-outline" size={18} color={colors.white} />
+                                <FontAwesome name="check-circle-o" size={16} color={colors.white} />
                                 <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
                                     Mark as Complete
                                 </Text>
