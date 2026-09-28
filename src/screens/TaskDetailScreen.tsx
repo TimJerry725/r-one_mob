@@ -3007,21 +3007,6 @@ export const TaskDetailScreen = () => {
                                 ]}
                             >
                                 <TouchableOpacity
-                                    onPress={handleForwardWork}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            backgroundColor: colors.surfaceHighlight,
-                                            borderColor: colors.border,
-                                        },
-                                    ]}
-                                    activeOpacity={0.8}
-                                >
-                                    <Ionicons name="arrow-redo-outline" size={18} color={colors.text} />
-                                    <Text style={[styles.footerButtonText, { color: colors.text }]}>Forward</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
                                     onPress={handleAcceptAssignedWork}
                                     style={[
                                         styles.footerButton,
@@ -3050,21 +3035,6 @@ export const TaskDetailScreen = () => {
                                 },
                             ]}
                         >
-                            <TouchableOpacity
-                                onPress={handleForwardWork}
-                                style={[
-                                    styles.footerButton,
-                                    {
-                                        backgroundColor: colors.surfaceHighlight,
-                                        borderColor: colors.border,
-                                    },
-                                ]}
-                                activeOpacity={0.8}
-                            >
-                                <Ionicons name="arrow-redo-outline" size={18} color={colors.text} />
-                                <Text style={[styles.footerButtonText, { color: colors.text }]}>Forward</Text>
-                            </TouchableOpacity>
-
                             <TouchableOpacity
                                 onPress={handleCompleteAction}
                                 style={[

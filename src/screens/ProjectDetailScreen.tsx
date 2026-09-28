@@ -106,13 +106,13 @@ export const OrderCard = ({
             return { primaryLabel: 'Start Work', isStartWork: true as const };
         }
         if (cardStatus === 'Working') {
-            return { secondaryLabel: 'Forward', primaryLabel: 'Mark as Complete', isWorking: true as const };
+            return { primaryLabel: 'Mark as Complete', isWorking: true as const };
         }
         if (cardStatus === 'Under Review') {
             return { secondaryLabel: 'Reject', primaryLabel: 'Approve', isUnderReview: true as const };
         }
         if (cardStatus === 'Unassigned') {
-            return { secondaryLabel: 'Forward', primaryLabel: 'Accept Work', isUnassigned: true as const };
+            return { primaryLabel: 'Accept Work', isUnassigned: true as const };
         }
         return null;
     })();
