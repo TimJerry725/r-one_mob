@@ -41,7 +41,7 @@ export const SingleProjectScreen = () => {
             id: 'pact-1',
             type: 'status',
             title: 'Project Initialized',
-            detail: 'Central team dispatched Powy Torino Centro DC installation.',
+            detail: 'Central team dispatched Powy Hub Torino Centro DC installation.',
             time: '2 hours ago',
         },
     ]);

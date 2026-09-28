@@ -66,7 +66,7 @@ export const ProjectInfoScreen = () => {
                             extra={<Text style={{ ...FONTS.label, color: colors.success }}>Status: Active</Text>}
                         />
                         <View style={styles.cardContentGrid}>
-                            <InfoRow vertical label="Charge Station Name" value="Powy Torino Centro" />
+                            <InfoRow vertical label="Charge Station Name" value="Powy Hub Torino Centro" />
                             <InfoRow vertical label="Scheduled Date" value="2 Oct 2024 - 3 Oct 2024" />
                             <InfoRow vertical label="Signature Date" value="-" />
                         </View>

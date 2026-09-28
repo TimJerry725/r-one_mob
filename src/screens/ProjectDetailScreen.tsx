@@ -297,7 +297,7 @@ export const ProjectDetailScreen = () => {
 
     const baseWorkOrders = useMemo(() => {
         return WORK_ORDERS.filter((item) => {
-            if (!isAdmin && (item.siteName === 'Powy Milano Stazione' || item.siteName === 'Steam a station CBE' || item.id === 'wo-steam-cbe-01')) {
+            if (!isAdmin && (item.siteName === 'Steam a station CBE' || item.id === 'wo-steam-cbe-01')) {
                 return false;
             }
             return true;

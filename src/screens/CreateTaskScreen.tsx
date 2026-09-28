@@ -37,18 +37,32 @@ import { WORK_ORDERS, PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST, PREVENTIVE_EV_INFRA
 
 const MOCK_PM_WORKS_LIST = [
     {
-        id: 'PM-9012',
-        cpid: 'CPID-KN-01',
-        title: 'Quarterly Inverter & Cable Inspection',
-        dueDate: '24 Aug 2026',
+        id: 'WID:1646',
+        cpid: 'CP001',
+        title: 'Monthly PM for EV Charger',
+        dueDate: '15 Aug 2026',
         frequency: 'Every 90 Days',
     },
     {
-        id: 'PM-9015',
-        cpid: 'CPID-KN-01',
-        title: 'HV Transformer Thermal Imaging & Calibration',
-        dueDate: '28 Aug 2026',
-        frequency: 'Every 180 Days',
+        id: 'WID:1647',
+        cpid: 'CP002',
+        title: 'Monthly PM for EV Charger',
+        dueDate: '22 Aug 2026',
+        frequency: 'Every 90 Days',
+    },
+    {
+        id: 'WID:1648',
+        cpid: 'CP003',
+        title: 'Half yearly PM for HT Yard',
+        dueDate: '05 Sep 2026',
+        frequency: 'Every 90 Days',
+    },
+    {
+        id: 'WID:1649',
+        cpid: 'CP004',
+        title: 'Monthly PM for EV Infra',
+        dueDate: '20 Sep 2026',
+        frequency: 'Every 90 Days',
     },
 ];
 
@@ -117,7 +131,7 @@ export const CreateTaskScreen = () => {
     const [secondaryApprover, setSecondaryApprover] = useState<string>('');
     const [serviceType, setServiceType] = useState<typeof SERVICE_TYPES[number]>('Reactive');
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-    const [selectedPmWorkIds, setSelectedPmWorkIds] = useState<string[]>(['PM-9012', 'PM-9015']);
+    const [selectedPmWorkIds, setSelectedPmWorkIds] = useState<string[]>(['WID:1646', 'WID:1647']);
 
     const isAllPmSelected = selectedPmWorkIds.length === MOCK_PM_WORKS_LIST.length && MOCK_PM_WORKS_LIST.length > 0;
 
@@ -390,9 +404,10 @@ export const CreateTaskScreen = () => {
                                                     label="Charge Point (CPID) (Optional)"
                                                     placeholder="Choose CPID (Optional)"
                                                     options={[
-                                                        { label: 'CPID-KN-01 (Fast Charger 1)', value: 'CPID-KN-01' },
-                                                        { label: 'CPID-KN-02 (Fast Charger 2)', value: 'CPID-KN-02' },
-                                                        { label: 'CPID-KN-03 (Standard Charger)', value: 'CPID-KN-03' },
+                                                        { label: 'CP001 (ABB Terra 54 - Milano)', value: 'CP001' },
+                                                        { label: 'CP002 (ABB Terra 44 - Bologna)', value: 'CP002' },
+                                                        { label: 'CP003 (Delta ModelZ - Roma)', value: 'CP003' },
+                                                        { label: 'CP004 (Delta ModelX - Torino)', value: 'CP004' },
                                                     ]}
                                                     value={chargePoint}
                                                     onSelect={(val) => setChargePoint(val as string)}

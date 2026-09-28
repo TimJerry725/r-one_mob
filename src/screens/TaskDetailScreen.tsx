@@ -472,7 +472,7 @@ export const TaskDetailScreen = () => {
     const [workStatus, setWorkStatus] = useState(workOrder.status);
     // Geofencing / location-based access control enabled ONLY for Powy Torino Centro
     const siteNameLower = (workOrder.siteName || '').toLowerCase();
-    const isGeoFenceStation = siteNameLower.includes('torino centro') || siteNameLower.includes('pune central');
+    const isGeoFenceStation = siteNameLower.includes('torino centro');
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
     const isOffSite = isGeoFenceStation && !isNearSite;

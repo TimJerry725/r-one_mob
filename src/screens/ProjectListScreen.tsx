@@ -18,7 +18,7 @@ export const ProjectListScreen = () => {
 
     const projects = useMemo(() => {
         const uniqueProjects = new Map();
-        WORK_ORDERS.filter(item => isAdmin || (item.siteName !== 'Powy Milano Stazione' && item.siteName !== 'Steam a station CBE' && item.id !== 'wo-steam-cbe-01')).forEach(item => {
+        WORK_ORDERS.filter(item => isAdmin || (item.siteName !== 'Steam a station CBE' && item.id !== 'wo-steam-cbe-01')).forEach(item => {
             if (!uniqueProjects.has(item.projectId)) {
                 uniqueProjects.set(item.projectId, {
                     id: item.projectId,

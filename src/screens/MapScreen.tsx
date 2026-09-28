@@ -120,7 +120,7 @@ export const MapScreen = () => {
 
     const availableOrders = useMemo(() => {
         return WORK_ORDERS.filter((item) => {
-            if (!isAdmin && (item.siteName === 'Powy Milano Stazione' || item.siteName === 'Steam a station CBE' || item.id === 'wo-steam-cbe-01')) {
+            if (!isAdmin && (item.siteName === 'Steam a station CBE' || item.id === 'wo-steam-cbe-01')) {
                 return false;
             }
             return true;
@@ -128,7 +128,7 @@ export const MapScreen = () => {
     }, [isAdmin]);
 
     const [selectedOrderId, setSelectedOrderId] = useState<string>(() => {
-        const initialList = WORK_ORDERS.filter((item) => item.siteName !== 'Powy Milano Stazione' && item.siteName !== 'Steam a station CBE');
+        const initialList = WORK_ORDERS.filter((item) => item.siteName !== 'Steam a station CBE');
         return initialList[0]?.id ?? WORK_ORDERS[0].id;
     });
     const [mapMode, setMapMode] = useState<'work' | 'live' | 'both'>('work');
