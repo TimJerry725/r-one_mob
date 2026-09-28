@@ -17,32 +17,39 @@ export const SingleProjectScreen = () => {
     const [activityFilter, setActivityFilter] = useState<'All' | 'Comment' | 'Activity'>('All');
     const [projectComments, setProjectComments] = useState([
         {
+            id: 'pact-5',
+            type: 'status',
+            title: 'Allaccio Rete Confermato',
+            detail: 'e-distribuzione ha convalidato la richiesta di connessione per il POD IT001E89234882.',
+            time: '10 mins ago',
+        },
+        {
             id: 'pact-4',
             type: 'attachment',
-            title: 'Site Survey Checklist uploaded',
-            detail: 'TorinoCentro_survey_v2.pdf',
-            time: '15 mins ago',
+            title: 'Documento DICO DM 37/08 Caricato',
+            detail: 'DICO_DM37_08_Certificato.pdf',
+            time: '25 mins ago',
         },
         {
             id: 'pact-3',
             type: 'status',
-            title: 'Charger Commissioned',
-            detail: 'CPID CP-100239 has been successfully taken live.',
-            time: '30 mins ago',
+            title: 'Colonnina Alpitronic HYC300 Installata',
+            detail: 'CPID CP-100239 posizionata su basamento e collegata al quadro secondario.',
+            time: '45 mins ago',
         },
         {
             id: 'pact-2',
             type: 'comment',
-            title: 'Timothy Field',
-            detail: 'Foundation work completed. Awaiting cables delivery to site.',
-            time: '1 hour ago',
+            title: 'Timothy (Lead)',
+            detail: 'Posa cavidotti e gettata basamento ultimata. In attesa del tecnico e-distribuzione.',
+            time: '2 hours ago',
         },
         {
             id: 'pact-1',
             type: 'status',
-            title: 'Project Initialized',
-            detail: 'Central team dispatched Powy Hub Torino Centro DC installation.',
-            time: '2 hours ago',
+            title: 'Progetto Installazione Avviato',
+            detail: 'Team Powy Centro ha avviato il cantiere per Powy Hub Torino Centro.',
+            time: '1 day ago',
         },
     ]);
     const [newProjectComment, setNewProjectComment] = useState('');
@@ -299,12 +306,32 @@ export const SingleProjectScreen = () => {
                                 </View>
 
                                 <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
+                                    <View style={[styles.stepIcon, { backgroundColor: colors.primary + '15', width: 48, height: 48 }]}>
+                                        <Ionicons name="document-text" size={24} color={colors.primary} />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={[styles.stepTitle, { color: colors.text }]}>DICO_DM37_08_Certificato.pdf</Text>
+                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>PDF Document • 2.1 MB</Text>
+                                    </View>
+                                </View>
+
+                                <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
+                                    <View style={[styles.stepIcon, { backgroundColor: colors.primary + '15', width: 48, height: 48 }]}>
+                                        <Ionicons name="document-text" size={24} color={colors.primary} />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={[styles.stepTitle, { color: colors.text }]}>Verbale_Allaccio_e-distribuzione.pdf</Text>
+                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>PDF Document • 950 KB</Text>
+                                    </View>
+                                </View>
+
+                                <View style={[styles.stepCard, { backgroundColor: colors.surface, shadowColor: colors.shadow, flexDirection: 'row', alignItems: 'center' }]}>
                                     <View style={[styles.stepIcon, { backgroundColor: colors.secondary + '15', width: 48, height: 48 }]}>
                                         <Ionicons name="image" size={24} color={colors.secondary} />
                                     </View>
                                     <View style={{ flex: 1, marginLeft: 12 }}>
-                                        <Text style={[styles.stepTitle, { color: colors.text }]}>Previous Service Photo.jpg</Text>
-                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>Image • 1.1 MB</Text>
+                                        <Text style={[styles.stepTitle, { color: colors.text }]}>Foto_Installazione_Alpitronic.jpg</Text>
+                                        <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>Image • 3.2 MB</Text>
                                     </View>
                                 </View>
                             </View>
