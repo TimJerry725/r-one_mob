@@ -609,95 +609,16 @@ export const CreateTaskScreen = () => {
                                                 </View>
                                                 {/* Assignment Type */}
                                                 <PopoverDropdown
-                                                    label="* Assignment Type"
-                                                    placeholder="Choose assignment type"
+                                                    label="* Assignee Type"
+                                                    placeholder="Self"
                                                     options={[
                                                         { label: 'Self', value: 'Self' },
-                                                        { label: 'Team', value: 'Team' },
-                                                        { label: 'Unassigned', value: 'Unassigned' },
                                                     ]}
-                                                    value={assignmentType}
-                                                    onSelect={(val) => {
-                                                        const selected = val as string;
-                                                        setAssignmentType(selected);
-                                                        if (selected === 'Team') {
-                                                            if (!primaryApprover) setPrimaryApprover('Marcus Aurelius');
-                                                            if (!secondaryApprover) setSecondaryApprover('Andrea Meuschke');
-                                                        } else {
-                                                            setPrimaryApprover('');
-                                                            setSecondaryApprover('');
-                                                            setAssignees([]);
-                                                        }
-                                                    }}
+                                                    value="Self"
+                                                    disabled={true}
+                                                    onSelect={() => {}}
                                                 />
 
-                                                {/* Approvers & Assignees (Conditional on Team selection) */}
-                                                {assignmentType === 'Team' && (
-                                                    <>
-                                                        {/* Primary & Secondary Approvers */}
-                                                        <View style={{ flexDirection: 'row', gap: 12, zIndex: 1010, marginTop: 4 }}>
-                                                            <View style={{ flex: 1, zIndex: 1010 }}>
-                                                                <PopoverDropdown
-                                                                    label="Primary Approver"
-                                                                    placeholder="Select primary approver..."
-                                                                    options={getSelectorOptions('assignees').options}
-                                                                    value={primaryApprover}
-                                                                    onSelect={(val) => setPrimaryApprover(val as string)}
-                                                                    isMulti={false}
-                                                                />
-                                                            </View>
-                                                            <View style={{ flex: 1, zIndex: 1009 }}>
-                                                                <PopoverDropdown
-                                                                    label="Secondary Approver"
-                                                                    placeholder="Select secondary approver..."
-                                                                    options={getSelectorOptions('assignees').options}
-                                                                    value={secondaryApprover}
-                                                                    onSelect={(val) => setSecondaryApprover(val as string)}
-                                                                    isMulti={false}
-                                                                />
-                                                            </View>
-                                                        </View>
-
-                                                        {/* Lead & Assignees */}
-                                                        <View style={{ flexDirection: 'row', gap: 12, zIndex: 1000 }}>
-                                                            <View style={{ flex: 1, zIndex: 1000 }}>
-                                                                <PopoverDropdown
-                                                                    label="* Lead"
-                                                                    placeholder="Select lead..."
-                                                                    options={getSelectorOptions('assignees').options}
-                                                                    value={assignees.length > 0 ? assignees[0] : ''}
-                                                                    onSelect={(val) => {
-                                                                        const newLead = val as string;
-                                                                        if (newLead) {
-                                                                            setAssignees([newLead, ...assignees.slice(1).filter(a => a !== newLead)]);
-                                                                        } else if (assignees.length > 0) {
-                                                                            setAssignees(assignees.slice(1));
-                                                                        }
-                                                                    }}
-                                                                    isMulti={false}
-                                                                />
-                                                            </View>
-                                                            <View style={{ flex: 1, zIndex: 999 }}>
-                                                                <PopoverDropdown
-                                                                    label="Assignees"
-                                                                    placeholder="Select assignees..."
-                                                                    options={getSelectorOptions('assignees').options}
-                                                                    value={assignees.length > 0 ? assignees.slice(1) : []}
-                                                                    onSelect={(val) => {
-                                                                        const otherAssignees = val as string[];
-                                                                        const lead = assignees.length > 0 ? assignees[0] : null;
-                                                                        if (lead) {
-                                                                            setAssignees([lead, ...otherAssignees.filter(a => a !== lead)]);
-                                                                        } else {
-                                                                            setAssignees(otherAssignees);
-                                                                        }
-                                                                    }}
-                                                                    isMulti={true}
-                                                                />
-                                                            </View>
-                                                        </View>
-                                                    </>
-                                                )}
 
                                                 </>
                                                 )}

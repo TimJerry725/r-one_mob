@@ -13,6 +13,7 @@ interface PopoverDropdownProps {
     isMulti?: boolean;
     onDone?: () => void;
     placement?: 'bottom' | 'top';
+    disabled?: boolean;
 }
 
 export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
@@ -24,6 +25,7 @@ export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
     isMulti = false,
     onDone,
     placement = 'bottom',
+    disabled = false,
 }) => {
     const { colors } = useTheme();
     const [isOpen, setIsOpen] = useState(false);
@@ -69,13 +71,23 @@ export const PopoverDropdown: React.FC<PopoverDropdownProps> = ({
             </Text>
             <TouchableOpacity 
                 ref={buttonRef}
-                style={[styles.dropdownButton, getInputShellStyle(colors), { marginBottom: 12 }]} 
-                onPress={toggleOpen}
+                style={[
+                    styles.dropdownButton, 
+                    getInputShellStyle(colors), 
+                    { marginBottom: 12 },
+                    disabled && { opacity: 0.85, backgroundColor: colors.surfaceHighlight }
+                ]} 
+                onPress={disabled ? undefined : toggleOpen}
+                activeOpacity={disabled ? 1 : 0.7}
             >
                 <Text style={{ color: hasValue ? colors.text : colors.textSecondary, ...FONTS.body }}>
                     {getDisplayText()}
                 </Text>
-                <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                {disabled ? (
+                    <Ionicons name="lock-closed" size={16} color={colors.textSecondary} />
+                ) : (
+                    <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                )}
             </TouchableOpacity>
 
             {isOpen && dropdownLayout && (
