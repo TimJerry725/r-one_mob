@@ -25,6 +25,11 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "jeraldtimothy@gmail.com",
+        "appleTeamId": "QUVW8J7Z94"
+      }
+    }
   }
 }
