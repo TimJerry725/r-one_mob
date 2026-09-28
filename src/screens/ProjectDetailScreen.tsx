@@ -115,6 +115,16 @@ export const OrderCard = ({
         >
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, gap: 12 }}>
                 <View style={{ flex: 1, gap: 4 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <Text style={[{ ...FONTS.label, color: colors.primary, fontSize: 13, fontWeight: '700' }]}>
+                            {item.workId || item.projectId}
+                        </Text>
+                        {item.charger ? (
+                            <Text style={[{ ...FONTS.caption, color: colors.textSecondary }]} numberOfLines={1}>
+                                • {item.charger}
+                            </Text>
+                        ) : null}
+                    </View>
                     <Text style={[styles.orderTitle, { color: colors.text, marginBottom: 0 }]}>{item.title}</Text>
                     <Text style={{ ...FONTS.caption, color: colors.textSecondary }}>
                         {!hideTypeChip && (
@@ -200,10 +210,10 @@ export const OrderCard = ({
 
             <View style={{ flexDirection: 'row', gap: 16, marginTop: 8, marginBottom: 4 }}>
                 <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
-                    Created by: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.createdBy || item.assignedBy || 'Andrea Meuschke'}</Text>
+                    Lead: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.lead || (item.technicians.length > 0 ? item.technicians[0] : 'Unassigned')}</Text>
                 </Text>
                 <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
-                    Requested by: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.requestedBy || 'Timothy Jerry'}</Text>
+                    Created by: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.createdBy || item.assignedBy || 'Admin User'}</Text>
                 </Text>
             </View>
 
@@ -317,9 +327,6 @@ export const ProjectDetailScreen = () => {
     }, [route.params?.stationFilter, route.params?.typeFilter, route.params?.projectFilter]);
 
     const calculateSmartRouteScore = (item: WorkOrder): number => {
-        if (isAdmin && item.id === 'wo-steam-cbe-01') return 2000000;
-        if (item.id === 'wo-pm-infra-01') return 1000000;
-        if (item.id === 'wo-pm-ht-yard-01') return 999000;
         let score = 0;
         
         // 1. Station Business Impact (Highest Priority)
@@ -355,6 +362,9 @@ export const ProjectDetailScreen = () => {
         });
 
         return filtered.sort((a, b) => {
+            if (selectedTypes.length === 1 && (selectedTypes[0] === 'Preventive' || selectedTypes[0] === 'Reactive')) {
+                return a.targetTime - b.targetTime;
+            }
             return calculateSmartRouteScore(b) - calculateSmartRouteScore(a);
         });
     }, [baseWorkOrders, searchQuery, selectedSite, selectedStatuses, selectedTypes, selectedProject, isAdmin]);

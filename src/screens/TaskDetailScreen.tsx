@@ -1381,7 +1381,7 @@ export const TaskDetailScreen = () => {
                             <View style={styles.heroTitleWrap}>
                                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                                     <Text style={[styles.jobTitle, { color: colors.text, flex: 1 }]}>{workOrder.title}</Text>
-                                    <Text style={[{ color: colors.primary, marginTop: 2 }, FONTS.caption]}>{workOrder.projectId}</Text>
+                                    <Text style={[{ color: colors.primary, marginTop: 2, fontWeight: '700' }, FONTS.caption]}>{workOrder.workId || workOrder.projectId}</Text>
                                 </View>
                                 <View style={styles.heroTopChipRow}>
                                     <View style={[
@@ -4148,6 +4148,16 @@ export const TaskDetailScreen = () => {
 
                                             {/* 2. Overview Card */}
                                             <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                    <Text style={[{ ...FONTS.label, color: colors.primary, fontSize: 13, fontWeight: '700' }]}>
+                                                        {workOrder.workId || workOrder.projectId}
+                                                    </Text>
+                                                    {workOrder.charger ? (
+                                                        <Text style={[{ ...FONTS.caption, color: colors.textSecondary }]}>
+                                                            {workOrder.charger}
+                                                        </Text>
+                                                    ) : null}
+                                                </View>
                                                 <Text style={[styles.infoSectionTitle, { color: colors.text }]}>{workOrder.title}</Text>
                                                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                                                     <View style={[styles.heroChip, { backgroundColor: getStatusColor(workStatus, colors, isDark) + '15', borderColor: getStatusColor(workStatus, colors, isDark) }]}>
@@ -4188,6 +4198,15 @@ export const TaskDetailScreen = () => {
 
                                                 {/* Approvers */}
                                                 <View style={{ gap: 8, paddingTop: 4 }}>
+                                                    <View style={styles.infoRow}>
+                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                            <Ionicons name="star" size={14} color={colors.primary} />
+                                                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Lead</Text>
+                                                        </View>
+                                                        <Text style={[styles.infoValue, { color: colors.text, fontWeight: '700' }]}>
+                                                            {workOrder.lead || (assignees.length > 0 ? assignees[0] : 'Unassigned')}
+                                                        </Text>
+                                                    </View>
                                                     <View style={styles.infoRow}>
                                                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                                             <Ionicons name="shield-checkmark" size={14} color={colors.primary} />
