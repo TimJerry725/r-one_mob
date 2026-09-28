@@ -479,7 +479,7 @@ export const TaskDetailScreen = () => {
     const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite || (workStatus !== 'Working' && workStatus !== 'Accepted');
     const isGeoFenceWarningVisible = isOffSite;
     const isPreventiveOrService = true;
-    const isAssignedPending = workStatus === 'Assigned';
+    const isAssignedPending = workStatus === 'Assigned' || workStatus === 'Unassigned';
     const isFillOnlyChecklist = true;
     const isAllowNotApplicable = true;
     const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
@@ -2878,6 +2878,21 @@ export const TaskDetailScreen = () => {
                                 ]}
                             >
                                 <TouchableOpacity
+                                    onPress={handleRejectWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.surfaceHighlight,
+                                            borderColor: colors.danger,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="close-circle-outline" size={18} color={colors.danger} />
+                                    <Text style={[styles.footerButtonText, { color: colors.danger }]}>Reject</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
                                     onPress={handleAcceptAssignedWork}
                                     style={[
                                         styles.footerButton,
@@ -2952,6 +2967,21 @@ export const TaskDetailScreen = () => {
                                     },
                                 ]}
                             >
+                                <TouchableOpacity
+                                    onPress={handleRejectWork}
+                                    style={[
+                                        styles.footerButton,
+                                        {
+                                            backgroundColor: colors.surfaceHighlight,
+                                            borderColor: colors.danger,
+                                        },
+                                    ]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="close-circle-outline" size={18} color={colors.danger} />
+                                    <Text style={[styles.footerButtonText, { color: colors.danger }]}>Reject</Text>
+                                </TouchableOpacity>
+
                                 <TouchableOpacity
                                     onPress={handleAcceptAssignedWork}
                                     style={[

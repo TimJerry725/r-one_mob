@@ -62,16 +62,38 @@ export const OrderCard = ({
         );
     };
 
+    const handleRejectClick = (e: any) => {
+        e.stopPropagation();
+        Alert.alert(
+            'Reject Work',
+            `Reject assigned work "${item.title}"?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Reject',
+                    style: 'destructive',
+                    onPress: () => {
+                        item.status = 'Unassigned';
+                        item.isRequested = false;
+                        setCardRequested(false);
+                        setCardStatus('Unassigned');
+                        Alert.alert('Rejected', `"${item.title}" has been rejected and moved to Unassigned.`);
+                    },
+                },
+            ]
+        );
+    };
+
     const isPreventive = item.type === 'Preventive';
     const isService = item.type === 'Service' || item.type === 'Reactive';
     const isCurrentlyRequested = cardRequested || cardStatus === 'Requested' || item.isRequested;
 
     const actionConfig = (() => {
         if (cardStatus === 'Assigned') {
-            return { primaryLabel: 'Accept', isAccept: true as const };
+            return { secondaryLabel: 'Reject', primaryLabel: 'Accept', isAccept: true as const };
         }
         if (cardStatus === 'Unassigned') {
-            return { primaryLabel: 'Accept Work', isAccept: true as const };
+            return { secondaryLabel: 'Reject', primaryLabel: 'Accept Work', isAccept: true as const };
         }
         if (cardStatus === 'Working' || cardStatus === 'Accepted') {
             return { primaryLabel: 'Mark as Complete', isWorking: true as const };
@@ -189,7 +211,7 @@ export const OrderCard = ({
                 <View style={styles.actionRow}>
                     {actionConfig.secondaryLabel ? (
                         <TouchableOpacity
-                            onPress={onOpen}
+                            onPress={actionConfig.isUnderReview ? onOpen : handleRejectClick}
                             style={[
                                 styles.actionButton,
                                 actionConfig.secondaryLabel === 'Reject'
