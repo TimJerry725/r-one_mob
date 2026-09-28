@@ -620,10 +620,10 @@ export const MapScreen = () => {
                                                 <Text style={[{ color: colors.primary }, FONTS.h2]}>{user.avatar}</Text>
                                             </View>
                                             <View style={styles.stationCardInfo}>
-                                                <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={1}>
+                                                <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                                                     {user.name}
                                                 </Text>
-                                                <Text style={[{ color: colors.textSecondary, marginTop: 2 }, FONTS.caption]}>
+                                                <Text style={[{ color: colors.textSecondary, marginTop: 2 }, FONTS.caption]} numberOfLines={1} ellipsizeMode="tail">
                                                     {user.locationName}
                                                 </Text>
                                             </View>
@@ -651,7 +651,7 @@ export const MapScreen = () => {
                                         >
                                             <View style={styles.stationCardRow}>
                                                 <View style={styles.stationCardInfo}>
-                                                    <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={2}>
+                                                    <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                                                         {station.siteName}
                                                     </Text>
                                                     <View style={styles.typeChipRow}>
@@ -707,7 +707,7 @@ export const MapScreen = () => {
                                             >
                                                 <View style={styles.stationCardRow}>
                                                     <View style={styles.stationCardInfo}>
-                                                        <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={2}>
+                                                        <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                                                             {station.siteName}
                                                         </Text>
                                                         <View style={styles.typeChipRow}>
@@ -768,10 +768,10 @@ export const MapScreen = () => {
                                                     <Text style={[{ color: colors.primary }, FONTS.h2]}>{user.avatar}</Text>
                                                 </View>
                                                 <View style={styles.stationCardInfo}>
-                                                    <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={1}>
+                                                    <Text style={[styles.jobCardTitle, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                                                         {user.name}
                                                     </Text>
-                                                    <Text style={[{ color: colors.textSecondary, marginTop: 2 }, FONTS.caption]}>
+                                                    <Text style={[{ color: colors.textSecondary, marginTop: 2 }, FONTS.caption]} numberOfLines={1} ellipsizeMode="tail">
                                                         {user.locationName}
                                                     </Text>
                                                 </View>
