@@ -1000,10 +1000,6 @@ export const TaskDetailScreen = () => {
     });
 
     const handleAddComment = () => {
-        if (isOffSite) {
-            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
-            return;
-        }
         if (!newComment.trim()) return;
         const newActivity = {
             id: Date.now().toString(),
@@ -1505,7 +1501,7 @@ export const TaskDetailScreen = () => {
                                     Location check
                                 </Text>
                                 <Text style={[styles.geoFenceMessage, { color: isDark ? colors.text : '#6B4A00' }]}>
-                                    You are not at or near this work location. You can view the work, but all actions are disabled until you arrive on site.
+                                    You are not at or near this work location. You can view work and post comments, but checklist & status actions are disabled until you arrive on site.
                                 </Text>
                             </View>
                             <TouchableOpacity
@@ -3041,7 +3037,7 @@ export const TaskDetailScreen = () => {
                     );
                 })()}
 
-                {activeTab === 'Activities' && !isOffSite && (
+                {activeTab === 'Activities' && (
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={[
@@ -3087,9 +3083,9 @@ export const TaskDetailScreen = () => {
                                     justifyContent: 'center',
                                 }}
                             >
-                                <Ionicons 
-                                    name="attach" 
-                                    size={20} 
+                                <FontAwesome 
+                                    name="paperclip" 
+                                    size={18} 
                                     color={commentHasAttachment ? colors.primary : colors.textSecondary} 
                                 />
                             </TouchableOpacity>
@@ -3103,7 +3099,7 @@ export const TaskDetailScreen = () => {
                             ]}
                             onPress={handleAddComment}
                         >
-                            <Ionicons name="send" size={16} color={colors.white} />
+                            <FontAwesome name="send" size={15} color={colors.white} />
                         </TouchableOpacity>
                     </KeyboardAvoidingView>
                 )}
