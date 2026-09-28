@@ -675,7 +675,6 @@ export const TaskDetailScreen = () => {
     const [completionNote, setCompletionNote] = useState('');
     const [mediaModalVisible, setMediaModalVisible] = useState(false);
     const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
-    const [actionModalVisible, setActionModalVisible] = useState(false);
     const [forwardModalVisible, setForwardModalVisible] = useState(false);
     const [forwardAssignee, setForwardAssignee] = useState<string>('');
     const [forwardComments, setForwardComments] = useState<string>('');
@@ -1335,13 +1334,6 @@ export const TaskDetailScreen = () => {
                     <View style={[styles.headerTypeChip, { backgroundColor: typeColors.tint, borderColor: typeColors.border }]}>
                         <Text style={[styles.headerTypeChipText, { color: typeColors.tintText }]}>{workOrder.type}</Text>
                     </View>
-                    <TouchableOpacity
-                        onPress={() => setActionModalVisible(true)}
-                        style={[styles.actionBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
-                    >
-                        <Text style={[styles.actionBtnText, { color: colors.text }]}>Action</Text>
-                        <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
-                    </TouchableOpacity>
                 </View>
 
                 <ScrollView
@@ -3012,61 +3004,6 @@ export const TaskDetailScreen = () => {
                     </View>
                 </Modal>
 
-                <Modal visible={actionModalVisible} transparent animationType="fade">
-                    <TouchableOpacity style={[styles.modalOverlay, { justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 16 }]} activeOpacity={1} onPress={() => setActionModalVisible(false)}>
-                        <View style={[{ backgroundColor: colors.surface, borderRadius: 16, padding: 12, minWidth: 260, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 20, elevation: 12 }]}>
-                            {isOffSite ? (
-                                <View style={{ paddingVertical: 16, paddingHorizontal: 16 }}>
-                                    <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 16, marginBottom: 6 }]}>View only</Text>
-                                    <Text style={[{ color: colors.textSecondary, ...FONTS.body, fontSize: 14 }]}>
-                                        Work actions are disabled until you are near this location.
-                                    </Text>
-                                </View>
-                            ) : isAssignedPending ? (
-                                <>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleAcceptAssignedWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-                                        <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Accept</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleForwardWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-                                        <Ionicons name="arrow-redo-outline" size={26} color={colors.primary} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Forward</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleRejectWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
-                                        <Ionicons name="close-circle-outline" size={26} color={colors.danger} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Reject</Text>
-                                    </TouchableOpacity>
-                                </>
-                            ) : isUnderReview ? (
-                                <>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleApproveWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-                                        <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Approve</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleForwardWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-                                        <Ionicons name="arrow-redo-outline" size={26} color={colors.primary} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Forward</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleRejectWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
-                                        <Ionicons name="close-circle-outline" size={26} color={colors.danger} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Reject</Text>
-                                    </TouchableOpacity>
-                                </>
-                            ) : (
-                                <>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleCompleteAction(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-                                        <Ionicons name="checkmark-circle-outline" size={26} color={colors.success} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Mark as Complete</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => { setActionModalVisible(false); handleForwardWork(); }} style={[{ flexDirection: 'row', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 16 }]}>
-                                        <Ionicons name="arrow-redo-outline" size={26} color={colors.primary} style={{ marginRight: 14 }} />
-                                        <Text style={[{ color: colors.text, ...FONTS.bodyStrong, fontSize: 18 }]}>Forward</Text>
-                                    </TouchableOpacity>
-                                </>
-                            )}
-                        </View>
-                    </TouchableOpacity>
-                </Modal>
                 <Modal visible={mandatoryErrorModalVisible} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setMandatoryErrorModalVisible(false)}>
                     <View style={styles.modalOverlay}>
                         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setMandatoryErrorModalVisible(false)} />
