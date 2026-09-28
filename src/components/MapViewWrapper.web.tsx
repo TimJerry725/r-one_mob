@@ -11,12 +11,12 @@ export interface Region {
 }
 
 export const Marker = ({ children, coordinate, onPress }: any) => {
-    // Normalizing India coordinates: Lat (8 to 33), Long (68 to 92)
+    // Normalizing Italy coordinates: Lat (36.5 to 47.0), Long (6.5 to 18.5)
     const leftPercent = coordinate?.longitude 
-        ? Math.max(8, Math.min(92, ((coordinate.longitude - 68) / (92 - 68)) * 100))
+        ? Math.max(8, Math.min(92, ((coordinate.longitude - 6.5) / (18.5 - 6.5)) * 100))
         : 50;
     const topPercent = coordinate?.latitude 
-        ? Math.max(8, Math.min(92, (1 - (coordinate.latitude - 8) / (33 - 8)) * 100))
+        ? Math.max(8, Math.min(92, (1 - (coordinate.latitude - 36.5) / (47.0 - 36.5)) * 100))
         : 50;
 
     return (

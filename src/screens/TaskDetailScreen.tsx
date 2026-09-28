@@ -470,9 +470,9 @@ export const TaskDetailScreen = () => {
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const [workStatus, setWorkStatus] = useState(workOrder.status);
-    // Geofencing / location-based access control enabled ONLY for Pune Central Station
+    // Geofencing / location-based access control enabled ONLY for Powy Torino Centro
     const siteNameLower = (workOrder.siteName || '').toLowerCase();
-    const isGeoFenceStation = siteNameLower.includes('pune central');
+    const isGeoFenceStation = siteNameLower.includes('torino centro') || siteNameLower.includes('pune central');
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
     const isOffSite = isGeoFenceStation && !isNearSite;

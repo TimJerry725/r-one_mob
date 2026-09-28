@@ -14,8 +14,8 @@ import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { getServiceTypeColors, ServiceType } from '../styles/workTypeColors';
 
 const DEFAULT_REGION: Region = {
-    latitude: 18.5314,
-    longitude: 73.8446,
+    latitude: 45.0622,
+    longitude: 7.6784,
     latitudeDelta: 0.12,
     longitudeDelta: 0.12,
 };
@@ -96,11 +96,11 @@ const StationMarkerPin = ({
 };
 
 const MOCK_USER_LOCATIONS = [
-    { name: 'Timothy', locationName: 'Mumbai', latitude: 19.0760, longitude: 72.8777, status: 'Active', avatar: 'T' },
-    { name: 'Arjun', locationName: 'Delhi', latitude: 28.7041, longitude: 77.1025, status: 'On Route', avatar: 'A' },
-    { name: 'Ravi', locationName: 'Bengaluru', latitude: 12.9716, longitude: 77.5946, status: 'At Site', avatar: 'R' },
-    { name: 'Neha', locationName: 'Kolkata', latitude: 22.5726, longitude: 88.3639, status: 'On Break', avatar: 'N' },
-    { name: 'Sara', locationName: 'Chennai', latitude: 13.0827, longitude: 80.2707, status: 'Active', avatar: 'S' },
+    { name: 'Timothy', locationName: 'Torino', latitude: 45.0622, longitude: 7.6784, status: 'Active', avatar: 'T' },
+    { name: 'Marco', locationName: 'Milano', latitude: 45.4870, longitude: 9.2045, status: 'On Route', avatar: 'M' },
+    { name: 'Matteo', locationName: 'Roma', latitude: 41.8752, longitude: 12.5218, status: 'At Site', avatar: 'M' },
+    { name: 'Giulia', locationName: 'Bologna', latitude: 44.5750, longitude: 11.4120, status: 'On Break', avatar: 'G' },
+    { name: 'Elena', locationName: 'Firenze', latitude: 43.7765, longitude: 11.2480, status: 'Active', avatar: 'E' },
 ];
 
 export const MapScreen = () => {
@@ -120,7 +120,7 @@ export const MapScreen = () => {
 
     const availableOrders = useMemo(() => {
         return WORK_ORDERS.filter((item) => {
-            if (!isAdmin && (item.siteName === 'Steam a station CBE' || item.id === 'wo-steam-cbe-01')) {
+            if (!isAdmin && (item.siteName === 'Powy Milano Stazione' || item.siteName === 'Steam a station CBE' || item.id === 'wo-steam-cbe-01')) {
                 return false;
             }
             return true;
@@ -128,7 +128,7 @@ export const MapScreen = () => {
     }, [isAdmin]);
 
     const [selectedOrderId, setSelectedOrderId] = useState<string>(() => {
-        const initialList = WORK_ORDERS.filter((item) => item.siteName !== 'Steam a station CBE');
+        const initialList = WORK_ORDERS.filter((item) => item.siteName !== 'Powy Milano Stazione' && item.siteName !== 'Steam a station CBE');
         return initialList[0]?.id ?? WORK_ORDERS[0].id;
     });
     const [mapMode, setMapMode] = useState<'work' | 'live' | 'both'>('work');
@@ -234,15 +234,15 @@ export const MapScreen = () => {
     useEffect(() => {
         if (!mapReady) return;
         if (mapMode === 'live' || mapMode === 'both') {
-            // Animate map to show all of India
+            // Animate map to show all of Italy
             mapRef.current?.animateToRegion({
-                latitude: 20.5937,
-                longitude: 78.9629,
-                latitudeDelta: 20.0,
-                longitudeDelta: 20.0,
+                latitude: 42.5041,
+                longitude: 12.5736,
+                latitudeDelta: 8.0,
+                longitudeDelta: 8.0,
             }, 600);
         } else {
-            // Focus back to Pune / default user region
+            // Focus back to Torino / default user region
             mapRef.current?.animateToRegion(region, 600);
         }
     }, [mapMode, mapReady]);

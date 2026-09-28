@@ -20,7 +20,7 @@ export const SingleProjectScreen = () => {
             id: 'pact-4',
             type: 'attachment',
             title: 'Site Survey Checklist uploaded',
-            detail: 'PuneCentral_survey_v2.pdf',
+            detail: 'TorinoCentro_survey_v2.pdf',
             time: '15 mins ago',
         },
         {
@@ -41,7 +41,7 @@ export const SingleProjectScreen = () => {
             id: 'pact-1',
             type: 'status',
             title: 'Project Initialized',
-            detail: 'Central team dispatched Pune Central Station DC installation.',
+            detail: 'Central team dispatched Powy Torino Centro DC installation.',
             time: '2 hours ago',
         },
     ]);
@@ -293,7 +293,7 @@ export const SingleProjectScreen = () => {
                                         <Ionicons name="document-text" size={24} color={colors.primary} />
                                     </View>
                                     <View style={{ flex: 1, marginLeft: 12 }}>
-                                        <Text style={[styles.stepTitle, { color: colors.text }]}>PuneCentral_survey_v2.pdf</Text>
+                                        <Text style={[styles.stepTitle, { color: colors.text }]}>TorinoCentro_survey_v2.pdf</Text>
                                         <Text style={[styles.stepMeta, { color: colors.textSecondary }]}>PDF Document • 1.8 MB</Text>
                                     </View>
                                 </View>

@@ -35,11 +35,11 @@ export type TaskDraftResult = {
 };
 
 export const STATION_PROJECT_OPTIONS: StationProjectOption[] = [
-    { siteName: 'Pune Central Station', projectId: 'PJ001' },
-    { siteName: 'Pune Central Station', projectId: 'PJ011' },
-    { siteName: 'Mumbai Highway Point', projectId: 'PJ002' },
-    { siteName: 'Skyline Mall Parking', projectId: 'PJ003' },
-    { siteName: 'Harbor Transit Hub', projectId: 'PJ006' },
+    { siteName: 'Powy Torino Centro', projectId: 'PJ001' },
+    { siteName: 'Powy Torino Centro', projectId: 'PJ011' },
+    { siteName: 'Powy A1 Milano Sud Hub', projectId: 'PJ002' },
+    { siteName: 'Powy Roma Galleria Hub', projectId: 'PJ003' },
+    { siteName: 'Powy Porto di Genova Hub', projectId: 'PJ006' },
 ];
 
 export const getStationSelectionValue = (siteName: string, projectId: string) =>
