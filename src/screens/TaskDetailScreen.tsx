@@ -3046,10 +3046,15 @@ export const TaskDetailScreen = () => {
                             { 
                                 backgroundColor: colors.surface, 
                                 borderTopColor: colors.border,
-                                paddingTop: 14,
-                                paddingBottom: Math.max(insets.bottom, 16) + 16,
+                                paddingTop: 16,
+                                paddingBottom: Math.max(insets.bottom || 0, 34) + 28,
                                 gap: 12,
                                 alignItems: 'center',
+                                shadowColor: colors.shadow,
+                                shadowOffset: { width: 0, height: -3 },
+                                shadowOpacity: isDark ? 0.3 : 0.08,
+                                shadowRadius: 6,
+                                elevation: 8,
                             }
                         ]}
                     >
@@ -3100,6 +3105,9 @@ export const TaskDetailScreen = () => {
                                 styles.addCommentButton, 
                                 { 
                                     backgroundColor: colors.primary,
+                                    width: 46,
+                                    height: 46,
+                                    borderRadius: 23,
                                 }
                             ]}
                             onPress={handleAddComment}
