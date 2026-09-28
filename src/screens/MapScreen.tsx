@@ -131,7 +131,7 @@ export const MapScreen = () => {
         const initialList = WORK_ORDERS.filter((item) => item.siteName !== 'Steam a station CBE');
         return initialList[0]?.id ?? WORK_ORDERS[0].id;
     });
-    const [mapMode, setMapMode] = useState<'work' | 'live' | 'both'>('work');
+    const [mapMode] = useState<'work' | 'live' | 'both'>('work');
 
     const filteredOrders = useMemo(() => {
         return availableOrders.filter((item) => {
@@ -466,58 +466,7 @@ export const MapScreen = () => {
                         style={{ gap: 12, alignItems: 'flex-end', paddingRight: 16, marginBottom: 16 }}
                         pointerEvents="box-none"
                     >
-                        <View
-                            style={[
-                                styles.verticalToggleContainer,
-                                {
-                                    backgroundColor: isDark ? colors.surface : colors.white,
-                                    borderColor: colors.border,
-                                    shadowColor: colors.shadow,
-                                },
-                            ]}
-                        >
-                            <TouchableOpacity
-                                onPress={() => setMapMode('work')}
-                                style={[
-                                    styles.verticalToggleButton,
-                                    { backgroundColor: mapMode === 'work' ? colors.primary : 'transparent' }
-                                ]}
-                            >
-                                <Ionicons
-                                    name={mapMode === 'work' ? "briefcase" : "briefcase-outline"}
-                                    size={22}
-                                    color={mapMode === 'work' ? colors.white : colors.textSecondary}
-                                />
-                            </TouchableOpacity>
 
-                            <TouchableOpacity
-                                onPress={() => setMapMode('both')}
-                                style={[
-                                    styles.verticalToggleButton,
-                                    { backgroundColor: mapMode === 'both' ? colors.primary : 'transparent' }
-                                ]}
-                            >
-                                <Ionicons
-                                    name={mapMode === 'both' ? "layers" : "layers-outline"}
-                                    size={22}
-                                    color={mapMode === 'both' ? colors.white : colors.textSecondary}
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={() => setMapMode('live')}
-                                style={[
-                                    styles.verticalToggleButton,
-                                    { backgroundColor: mapMode === 'live' ? colors.primary : 'transparent' }
-                                ]}
-                            >
-                                <Ionicons
-                                    name={mapMode === 'live' ? "people" : "people-outline"}
-                                    size={22}
-                                    color={mapMode === 'live' ? colors.white : colors.textSecondary}
-                                />
-                            </TouchableOpacity>
-                        </View>
 
                         <TouchableOpacity
                             onPress={() => navigation.navigate('Notification')}
@@ -995,25 +944,6 @@ const styles = StyleSheet.create({
     },
     markerPinActive: {
         transform: [{ scale: 1.04 }],
-    },
-    verticalToggleContainer: {
-        width: 50,
-        borderRadius: 25,
-        borderWidth: 1,
-        padding: 3,
-        gap: 4,
-        alignItems: 'center',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 5,
-    },
-    verticalToggleButton: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     userMarkerWrap: {
         alignItems: 'center',
