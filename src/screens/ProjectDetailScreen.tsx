@@ -62,6 +62,17 @@ export const OrderCard = ({
         );
     };
 
+    const handleMoveToWorkingClick = (e: any) => {
+        e.stopPropagation();
+        item.status = 'Working';
+        setCardStatus('Working');
+        Alert.alert(
+            'Moved to Working',
+            `"${item.title}" has been moved back to Working status.`,
+            [{ text: 'OK', onPress: onOpen }]
+        );
+    };
+
     const handleRejectClick = (e: any) => {
         e.stopPropagation();
         Alert.alert(
@@ -99,7 +110,7 @@ export const OrderCard = ({
             return { primaryLabel: 'Mark as Complete', isWorking: true as const };
         }
         if (cardStatus === 'Under Review') {
-            return { secondaryLabel: 'Reject', primaryLabel: 'Approve', isUnderReview: true as const };
+            return { primaryLabel: 'Move to Working', isMoveToWorking: true as const };
         }
         return null;
     })();
@@ -211,7 +222,7 @@ export const OrderCard = ({
                 <View style={styles.actionRow}>
                     {actionConfig.secondaryLabel ? (
                         <TouchableOpacity
-                            onPress={actionConfig.isUnderReview ? onOpen : handleRejectClick}
+                            onPress={handleRejectClick}
                             style={[
                                 styles.actionButton,
                                 actionConfig.secondaryLabel === 'Reject'
@@ -238,12 +249,12 @@ export const OrderCard = ({
                             <Ionicons name="checkmark" size={16} color={colors.white} />
                             <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
                         </TouchableOpacity>
-                    ) : actionConfig.isUnderReview ? (
+                    ) : actionConfig.isMoveToWorking ? (
                         <TouchableOpacity
-                            onPress={onOpen}
+                            onPress={handleMoveToWorkingClick}
                             style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
                         >
-                            <Ionicons name="checkmark-done" size={14} color={colors.white} />
+                            <Ionicons name="create-outline" size={16} color={colors.white} />
                             <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
                         </TouchableOpacity>
                     ) : (

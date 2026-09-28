@@ -1194,6 +1194,29 @@ export const TaskDetailScreen = () => {
         setApproveModalVisible(true);
     };
 
+    const handleMoveToWorking = () => {
+        if (isOffSite) {
+            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
+
+        const newAct = {
+            id: Date.now().toString(),
+            title: 'Andrea Meuschke (You)',
+            time: 'Just now',
+            type: 'status' as const,
+            detail: 'Moved work order back to Working status.',
+        };
+        
+        setActivities([newAct, ...activities]);
+        workOrder.status = 'Working';
+        setWorkStatus('Working');
+        Alert.alert(
+            'Moved to Working',
+            `"${workOrder.title}" has been moved back to Working status. You can now edit and complete the checklist.`
+        );
+    };
+
     const handleAcceptAssignedWork = () => {
         if (isOffSite) {
             Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
@@ -2923,22 +2946,7 @@ export const TaskDetailScreen = () => {
                                 ]}
                             >
                                 <TouchableOpacity
-                                    onPress={handleRejectWork}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            backgroundColor: colors.surfaceHighlight,
-                                            borderColor: colors.danger,
-                                        },
-                                    ]}
-                                    activeOpacity={0.8}
-                                >
-                                    <Ionicons name="close-circle-outline" size={18} color={colors.danger} />
-                                    <Text style={[styles.footerButtonText, { color: colors.danger }]}>Reject</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    onPress={handleApproveWork}
+                                    onPress={handleMoveToWorking}
                                     style={[
                                         styles.footerButton,
                                         {
@@ -2948,8 +2956,10 @@ export const TaskDetailScreen = () => {
                                     ]}
                                     activeOpacity={0.8}
                                 >
-                                    <Ionicons name="checkmark-done" size={18} color={colors.white} />
-                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>Approve</Text>
+                                    <Ionicons name="create-outline" size={18} color={colors.white} />
+                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>
+                                        Move to Working
+                                    </Text>
                                 </TouchableOpacity>
                             </View>
                         );
