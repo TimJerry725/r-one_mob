@@ -53,42 +53,13 @@ export const OrderCard = ({
 
     const handleAcceptClick = (e: any) => {
         e.stopPropagation();
-        item.status = 'Accepted';
-        setCardStatus('Accepted');
-        Alert.alert(
-            'Work Accepted',
-            `"${item.title}" has been accepted and moved to Accepted status.`,
-            [{ text: 'OK', onPress: onOpen }]
-        );
-    };
-
-    const handleRejectClick = (e: any) => {
-        e.stopPropagation();
-        Alert.alert(
-            'Reject Work',
-            `Reject assigned work "${item.title}"?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Reject',
-                    style: 'destructive',
-                    onPress: () => {
-                        item.status = 'Unassigned';
-                        item.isRequested = false;
-                        setCardRequested(false);
-                        setCardStatus('Unassigned');
-                        Alert.alert('Rejected', `"${item.title}" has been rejected and moved to Unassigned.`);
-                    },
-                },
-            ]
-        );
-    };
-
-    const handleStartWorkClick = (e: any) => {
-        e.stopPropagation();
         item.status = 'Working';
         setCardStatus('Working');
-        onOpen();
+        Alert.alert(
+            'Work Accepted',
+            `"${item.title}" has been accepted. You can now complete the work.`,
+            [{ text: 'OK', onPress: onOpen }]
+        );
     };
 
     const isPreventive = item.type === 'Preventive';
@@ -96,23 +67,17 @@ export const OrderCard = ({
     const isCurrentlyRequested = cardRequested || cardStatus === 'Requested' || item.isRequested;
 
     const actionConfig = (() => {
-        if (isCurrentlyRequested) {
-            return { primaryLabel: 'Requested', isRequestedState: true as const };
-        }
         if (cardStatus === 'Assigned') {
-            return { secondaryLabel: 'Reject', primaryLabel: 'Accept', isAcceptReject: true as const };
+            return { primaryLabel: 'Accept', isAccept: true as const };
         }
-        if (cardStatus === 'Accepted') {
-            return { primaryLabel: 'Start Work', isStartWork: true as const };
+        if (cardStatus === 'Unassigned') {
+            return { primaryLabel: 'Accept Work', isAccept: true as const };
         }
-        if (cardStatus === 'Working') {
+        if (cardStatus === 'Working' || cardStatus === 'Accepted') {
             return { primaryLabel: 'Mark as Complete', isWorking: true as const };
         }
         if (cardStatus === 'Under Review') {
             return { secondaryLabel: 'Reject', primaryLabel: 'Approve', isUnderReview: true as const };
-        }
-        if (cardStatus === 'Unassigned') {
-            return { primaryLabel: 'Accept Work', isUnassigned: true as const };
         }
         return null;
     })();
@@ -224,10 +189,10 @@ export const OrderCard = ({
                 <View style={styles.actionRow}>
                     {actionConfig.secondaryLabel ? (
                         <TouchableOpacity
-                            onPress={actionConfig.isAcceptReject ? handleRejectClick : onOpen}
+                            onPress={onOpen}
                             style={[
                                 styles.actionButton,
-                                (actionConfig.isAcceptReject || actionConfig.secondaryLabel === 'Reject')
+                                actionConfig.secondaryLabel === 'Reject'
                                     ? { backgroundColor: colors.surfaceHighlight, borderColor: colors.danger }
                                     : { backgroundColor: colors.surfaceHighlight, borderColor: colors.border },
                             ]}
@@ -235,36 +200,20 @@ export const OrderCard = ({
                             {actionConfig.secondaryLabel === 'Reject' && (
                                 <Ionicons name="close-circle-outline" size={14} color={colors.danger} />
                             )}
-                            {actionConfig.secondaryLabel === 'Forward' && (
-                                <Ionicons name="arrow-redo-outline" size={14} color={colors.text} />
-                            )}
                             <Text style={[
                                 styles.actionButtonText,
-                                { color: (actionConfig.isAcceptReject || actionConfig.secondaryLabel === 'Reject') ? colors.danger : colors.text },
+                                { color: actionConfig.secondaryLabel === 'Reject' ? colors.danger : colors.text },
                             ]}>
                                 {actionConfig.secondaryLabel}
                             </Text>
                         </TouchableOpacity>
                     ) : null}
-                    {actionConfig.isRequestedState ? (
-                        <View style={[styles.actionButton, { backgroundColor: isDark ? 'rgba(255, 183, 77, 0.18)' : 'rgba(230, 81, 0, 0.12)', borderColor: isDark ? '#FFB74D' : '#E65100' }]}>
-                            <Ionicons name="checkmark-circle" size={14} color={isDark ? '#FFB74D' : '#E65100'} />
-                            <Text style={[styles.primaryActionText, { color: isDark ? '#FFB74D' : '#E65100' }]}>{actionConfig.primaryLabel}</Text>
-                        </View>
-                    ) : (actionConfig.isAcceptReject || actionConfig.isUnassigned) ? (
+                    {actionConfig.isAccept ? (
                         <TouchableOpacity
                             onPress={handleAcceptClick}
                             style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
                         >
-                            <Ionicons name="checkmark" size={14} color={colors.white} />
-                            <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
-                        </TouchableOpacity>
-                    ) : actionConfig.isStartWork ? (
-                        <TouchableOpacity
-                            onPress={handleStartWorkClick}
-                            style={[styles.actionButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
-                        >
-                            <Ionicons name="play" size={14} color={colors.white} />
+                            <Ionicons name="checkmark" size={16} color={colors.white} />
                             <Text style={[styles.primaryActionText, { color: colors.white }]}>{actionConfig.primaryLabel}</Text>
                         </TouchableOpacity>
                     ) : actionConfig.isUnderReview ? (

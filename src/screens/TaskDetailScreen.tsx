@@ -476,7 +476,7 @@ export const TaskDetailScreen = () => {
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
     const isOffSite = isGeoFenceStation && !isNearSite;
-    const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite || workStatus !== 'Working';
+    const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite || (workStatus !== 'Working' && workStatus !== 'Accepted');
     const isGeoFenceWarningVisible = isOffSite;
     const isPreventiveOrService = true;
     const isAssignedPending = workStatus === 'Assigned';
@@ -1199,21 +1199,12 @@ export const TaskDetailScreen = () => {
             Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
             return;
         }
-        workOrder.status = 'Accepted';
-        setWorkStatus('Accepted');
-        Alert.alert(
-            'Work Accepted',
-            `"${workOrder.title}" has been accepted.`
-        );
-    };
-
-    const handleStartWork = () => {
-        if (isOffSite) {
-            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
-            return;
-        }
         workOrder.status = 'Working';
         setWorkStatus('Working');
+        Alert.alert(
+            'Work Accepted',
+            `"${workOrder.title}" has been accepted. You can now complete the checklist.`
+        );
     };
 
     const handleConfirmApproval = () => {
@@ -2887,21 +2878,6 @@ export const TaskDetailScreen = () => {
                                 ]}
                             >
                                 <TouchableOpacity
-                                    onPress={handleRejectWork}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            backgroundColor: colors.surfaceHighlight,
-                                            borderColor: colors.danger,
-                                        },
-                                    ]}
-                                    activeOpacity={0.8}
-                                >
-                                    <Ionicons name="close-circle-outline" size={18} color={colors.danger} />
-                                    <Text style={[styles.footerButtonText, { color: colors.danger }]}>Reject</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
                                     onPress={handleAcceptAssignedWork}
                                     style={[
                                         styles.footerButton,
@@ -2914,36 +2890,6 @@ export const TaskDetailScreen = () => {
                                 >
                                     <Ionicons name="checkmark" size={18} color={colors.white} />
                                     <Text style={[styles.footerPrimaryText, { color: colors.white }]}>Accept</Text>
-                                </TouchableOpacity>
-                            </View>
-                        );
-                    }
-
-                    if (workStatus === 'Accepted') {
-                        return (
-                            <View
-                                style={[
-                                    styles.footer,
-                                    {
-                                        backgroundColor: colors.surface,
-                                        borderTopColor: colors.border,
-                                        paddingBottom: Math.max(insets.bottom, 16),
-                                    },
-                                ]}
-                            >
-                                <TouchableOpacity
-                                    onPress={handleStartWork}
-                                    style={[
-                                        styles.footerButton,
-                                        {
-                                            backgroundColor: colors.primary,
-                                            borderColor: colors.primary,
-                                        },
-                                    ]}
-                                    activeOpacity={0.8}
-                                >
-                                    <Ionicons name="play" size={18} color={colors.white} />
-                                    <Text style={[styles.footerPrimaryText, { color: colors.white }]}>Start Work</Text>
                                 </TouchableOpacity>
                             </View>
                         );
