@@ -82,7 +82,7 @@ export const ProfileScreen = () => {
                     {/* Logout Button */}
                     <TouchableOpacity 
                         style={[styles.logoutCard, { backgroundColor: colors.danger + '08', borderColor: colors.danger }]}
-                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'RoleSelection' }] })}
+                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] })}
                     >
                         <Ionicons name="log-out-outline" size={20} color={colors.danger} />
                         <Text style={[styles.logoutCardText, { color: colors.danger }]}>Log Out of Account</Text>

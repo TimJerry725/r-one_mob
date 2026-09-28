@@ -36,7 +36,10 @@ export const LoginScreen = () => {
             displayName: getDisplayName(email),
             role: 'field',
         });
-        navigation.navigate('MainTabs');
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' }],
+        });
     };
 
     return (

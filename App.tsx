@@ -27,7 +27,6 @@ import { AssetScanScreen } from './src/screens/AssetScanScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { NotificationScreen } from './src/screens/NotificationScreen';
 import { LanguageScreen } from './src/screens/LanguageScreen';
-import { RoleSelectionScreen } from './src/screens/RoleSelectionScreen';
 import { ProjectListScreen } from './src/screens/ProjectListScreen';
 import { SingleProjectScreen } from './src/screens/SingleProjectScreen';
 import { ProjectInfoScreen } from './src/screens/ProjectInfoScreen';
@@ -210,7 +209,6 @@ function AppNavigator() {
         }}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
         <Stack.Screen name="MainTabs" component={BottomTabs} />
         <Stack.Screen name="TaskDetails" component={TaskDetailScreen} />
         <Stack.Screen name="AssetScan" component={AssetScanScreen} />
