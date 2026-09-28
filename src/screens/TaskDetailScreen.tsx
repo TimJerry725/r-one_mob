@@ -3040,13 +3040,16 @@ export const TaskDetailScreen = () => {
                 {activeTab === 'Activities' && (
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
                         style={[
                             styles.footer, 
                             { 
-                                backgroundColor: colors.background, 
+                                backgroundColor: colors.surface, 
                                 borderTopColor: colors.border,
-                                paddingVertical: 12,
+                                paddingTop: 14,
+                                paddingBottom: Math.max(insets.bottom, 16) + 16,
                                 gap: 12,
+                                alignItems: 'center',
                             }
                         ]}
                     >
@@ -3059,6 +3062,8 @@ export const TaskDetailScreen = () => {
                                         color: colors.text, 
                                         backgroundColor: colors.surfaceHighlight,
                                         paddingRight: 44,
+                                        minHeight: 46,
+                                        borderRadius: 23,
                                     }
                                 ]}
                                 placeholder="Add a comment..."
