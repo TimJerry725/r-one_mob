@@ -1645,65 +1645,13 @@ export const TaskDetailScreen = () => {
                                                                         </Text>
                                                                     </View>
                                                                 ) : null}
-                                                                {!isChecklistDisabled && (
-                                                                    <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 120 : 1 }}>
-                                                                        <TouchableOpacity
-                                                                            onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
-                                                                            style={styles.fieldMenuTrigger}
-                                                                        >
-                                                                            <Ionicons name="ellipsis-vertical" size={17} color={colors.textSecondary} />
-                                                                        </TouchableOpacity>
-                                                                        {openMenuId === item.id && (
-                                                                            <View style={[styles.fieldActionPopover, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                                                                <TouchableOpacity
-                                                                                    style={styles.fieldActionPopoverItem}
-                                                                                    onPress={() => {
-                                                                                        setOpenMenuId(null);
-                                                                                        startEditTask(item);
-                                                                                    }}
-                                                                                >
-                                                                                    <FontAwesome name="pencil" size={14} color={colors.primary} />
-                                                                                    <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>Edit</Text>
-                                                                                </TouchableOpacity>
-                                                                                {isAllowNotApplicable && (
-                                                                                    <TouchableOpacity
-                                                                                        style={styles.fieldActionPopoverItem}
-                                                                                        onPress={() => {
-                                                                                            setOpenMenuId(null);
-                                                                                            toggleTaskApplicable(item.id);
-                                                                                        }}
-                                                                                    >
-                                                                                        <FontAwesome
-                                                                                            name={isNA ? 'check-circle-o' : 'ban'}
-                                                                                            size={14}
-                                                                                            color={isNA ? colors.primary : colors.textSecondary}
-                                                                                        />
-                                                                                        <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]} numberOfLines={1}>
-                                                                                            {isNA ? 'Applicable' : 'Not Applicable'}
-                                                                                        </Text>
-                                                                                    </TouchableOpacity>
-                                                                                )}
-                                                                                <TouchableOpacity
-                                                                                    style={styles.fieldActionPopoverItem}
-                                                                                    onPress={() => {
-                                                                                        setOpenMenuId(null);
-                                                                                        deleteTask(item.id);
-                                                                                    }}
-                                                                                >
-                                                                                    <FontAwesome name="trash-o" size={14} color={colors.danger} />
-                                                                                    <Text style={[FONTS.body, { color: colors.danger, fontSize: 13 }]}>Delete</Text>
-                                                                                </TouchableOpacity>
-                                                                            </View>
-                                                                        )}
-                                                                    </View>
-                                                                )}
                                                             </View>
                                                         </View>
 
                                                         {/* Field Control Body */}
                                                         {isNA ? (
                                                             <Text style={[FONTS.caption, { color: colors.textSecondary, fontStyle: 'italic', marginTop: 2 }]}>
-                                                                Not Applicable — tap ••• to re-enable
+                                                                Not Applicable
                                                             </Text>
                                                         ) : (
                                                             <>
@@ -2065,61 +2013,7 @@ export const TaskDetailScreen = () => {
                                                                          <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>Not Applicable</Text>
                                                                      </View>
                                                                  )}
-                                                            </View>
-                                                            {!isChecklistDisabled && (
-                                                                <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 10 : 1, marginLeft: 8 }}>
-                                                                    <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
-                                                                        <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
-                                                                    </TouchableOpacity>
-                                                                    {openMenuId === item.id && (
-                                                                        <View style={{
-                                                                            position: 'absolute',
-                                                                            top: 30,
-                                                                            right: 0,
-                                                                            backgroundColor: colors.surfaceHighlight,
-                                                                            borderRadius: 8,
-                                                                            paddingVertical: 8,
-                                                                            paddingHorizontal: 12,
-                                                                            width: 150,
-                                                                            shadowColor: '#000',
-                                                                            shadowOffset: { width: 0, height: 2 },
-                                                                             shadowOpacity: 0.15,
-                                                                            shadowRadius: 4,
-                                                                            elevation: 4,
-                                                                            zIndex: 100
-                                                                        }}>
-                                                                             <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
-                                                                                 <FontAwesome name="pencil" size={16} color={colors.primary} />
-                                                                                 <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
-                                                                             </TouchableOpacity>
-
-                                                                             {isAllowNotApplicable && (
-                                                                                 <TouchableOpacity
-                                                                                     style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}
-                                                                                     onPress={() => {
-                                                                                         setOpenMenuId(null);
-                                                                                         toggleTaskApplicable(item.id);
-                                                                                     }}
-                                                                                 >
-                                                                                     <FontAwesome
-                                                                                         name={item.type === 'not_applicable' || item.isNotApplicable ? "check-circle-o" : "ban"}
-                                                                                         size={16}
-                                                                                         color={item.type === 'not_applicable' || item.isNotApplicable ? colors.primary : colors.textSecondary}
-                                                                                     />
-                                                                                     <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]} numberOfLines={1}>
-                                                                                         {item.type === 'not_applicable' || item.isNotApplicable ? "Applicable" : "Not Applicable"}
-                                                                                     </Text>
-                                                                                 </TouchableOpacity>
-                                                                             )}
-
-                                                                             <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
-                                                                                 <FontAwesome name="trash-o" size={16} color={colors.danger} />
-                                                                                 <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
-                                                                             </TouchableOpacity>
-                                                                        </View>
-                                                                    )}
-                                                                </View>
-                                                            )}
+                                                             </View>
                                                         </View>
                                                     </View>
 
@@ -2415,41 +2309,6 @@ export const TaskDetailScreen = () => {
                                                                                     color={colors.textSecondary}
                                                                                 />
                                                                             </TouchableOpacity>
-                                                                            {!isChecklistDisabled && (
-                                                                                <View style={{ position: 'relative', zIndex: openMenuId === sectionBlock.section.id ? 110 : 1 }}>
-                                                                                    <TouchableOpacity
-                                                                                        onPress={() => setOpenMenuId(openMenuId === sectionBlock.section.id ? null : sectionBlock.section.id)}
-                                                                                        style={{ padding: 4 }}
-                                                                                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
-                                                                                    >
-                                                                                        <Ionicons name="ellipsis-vertical" size={17} color={colors.textSecondary} />
-                                                                                    </TouchableOpacity>
-                                                                                    {openMenuId === sectionBlock.section.id && (
-                                                                                        <View style={[styles.fieldActionPopover, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                                                                        <TouchableOpacity
-                                                                                            style={styles.fieldActionPopoverItem}
-                                                                                            onPress={() => {
-                                                                                                setOpenMenuId(null);
-                                                                                                startEditTask(sectionBlock.section);
-                                                                                            }}
-                                                                                        >
-                                                                                            <FontAwesome name="pencil" size={14} color={colors.primary} />
-                                                                                            <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>Edit Section</Text>
-                                                                                        </TouchableOpacity>
-                                                                                        <TouchableOpacity
-                                                                                            style={styles.fieldActionPopoverItem}
-                                                                                            onPress={() => {
-                                                                                                setOpenMenuId(null);
-                                                                                                deleteTask(sectionBlock.section.id);
-                                                                                            }}
-                                                                                        >
-                                                                                            <FontAwesome name="trash-o" size={14} color={colors.danger} />
-                                                                                            <Text style={[FONTS.body, { color: colors.danger, fontSize: 13 }]}>Delete</Text>
-                                                                                        </TouchableOpacity>
-                                                                                    </View>
-                                                                                )}
-                                                                            </View>
-                                                                            )}
                                                                         </View>
                                                                     </View>
                                                                 </>
@@ -2516,40 +2375,6 @@ export const TaskDetailScreen = () => {
                                                                                                     color={colors.textSecondary}
                                                                                                 />
                                                                                             </TouchableOpacity>
-                                                                                            {!isChecklistDisabled && (
-                                                                                                <View style={{ position: 'relative', zIndex: openMenuId === block.checklist.id ? 110 : 1 }}>
-                                                                                                    <TouchableOpacity
-                                                                                                        onPress={() => setOpenMenuId(openMenuId === block.checklist.id ? null : block.checklist.id)}
-                                                                                                        style={{ padding: 4 }}
-                                                                                                    >
-                                                                                                        <Ionicons name="ellipsis-vertical" size={16} color={colors.textSecondary} />
-                                                                                                    </TouchableOpacity>
-                                                                                                    {openMenuId === block.checklist.id && (
-                                                                                                        <View style={[styles.fieldActionPopover, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
-                                                                                                            <TouchableOpacity
-                                                                                                                style={styles.fieldActionPopoverItem}
-                                                                                                                onPress={() => {
-                                                                                                                    setOpenMenuId(null);
-                                                                                                                    startEditTask(block.checklist);
-                                                                                                                }}
-                                                                                                            >
-                                                                                                                <FontAwesome name="pencil" size={14} color={colors.primary} />
-                                                                                                                <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>Edit</Text>
-                                                                                                            </TouchableOpacity>
-                                                                                                            <TouchableOpacity
-                                                                                                                style={styles.fieldActionPopoverItem}
-                                                                                                                onPress={() => {
-                                                                                                                    setOpenMenuId(null);
-                                                                                                                    deleteTask(block.checklist.id);
-                                                                                                                }}
-                                                                                                            >
-                                                                                                                <FontAwesome name="trash-o" size={14} color={colors.danger} />
-                                                                                                                <Text style={[FONTS.body, { color: colors.danger, fontSize: 13 }]}>Delete</Text>
-                                                                                                            </TouchableOpacity>
-                                                                                                        </View>
-                                                                                                    )}
-                                                                                                </View>
-                                                                                            )}
                                                                                         </View>
                                                                                     </View>
                                                                                 )}
@@ -2598,41 +2423,6 @@ export const TaskDetailScreen = () => {
                                                                 </View>
                                                             )}
                                                         </TouchableOpacity>
-
-                                                        {!isChecklistDisabled && (
-                                                            <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 110 : 1, marginLeft: 8 }}>
-                                                                <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
-                                                                    <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
-                                                                </TouchableOpacity>
-                                                                {openMenuId === item.id && (
-                                                                    <View style={{
-                                                                        position: 'absolute',
-                                                                        top: 30,
-                                                                        right: 0,
-                                                                        backgroundColor: colors.surfaceHighlight,
-                                                                        borderRadius: 8,
-                                                                        paddingVertical: 8,
-                                                                        paddingHorizontal: 12,
-                                                                        width: 140,
-                                                                        shadowColor: '#000',
-                                                                        shadowOffset: { width: 0, height: 2 },
-                                                                        shadowOpacity: 0.15,
-                                                                        shadowRadius: 4,
-                                                                        elevation: 4,
-                                                                        zIndex: 120
-                                                                    }}>
-                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
-                                                                            <FontAwesome name="pencil" size={16} color={colors.primary} />
-                                                                            <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
-                                                                        </TouchableOpacity>
-                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
-                                                                            <FontAwesome name="trash-o" size={16} color={colors.danger} />
-                                                                            <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
-                                                                        </TouchableOpacity>
-                                                                    </View>
-                                                                )}
-                                                            </View>
-                                                        )}
                                                     </View>
                                                 );
                                             }
@@ -2653,41 +2443,6 @@ export const TaskDetailScreen = () => {
                                                             {num ? `${num}. ` : ''}{item.label}
                                                             {nestCount ? `  (${nestCount} ${nestCount === 1 ? 'task' : 'tasks'})` : ''}
                                                         </Text>
-
-                                                        {!isChecklistDisabled && (
-                                                            <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 110 : 1, marginLeft: 8 }}>
-                                                                <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
-                                                                    <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
-                                                                </TouchableOpacity>
-                                                                {openMenuId === item.id && (
-                                                                    <View style={{
-                                                                        position: 'absolute',
-                                                                        top: 30,
-                                                                        right: 0,
-                                                                        backgroundColor: colors.surfaceHighlight,
-                                                                        borderRadius: 8,
-                                                                        paddingVertical: 8,
-                                                                        paddingHorizontal: 12,
-                                                                        width: 140,
-                                                                        shadowColor: '#000',
-                                                                        shadowOffset: { width: 0, height: 2 },
-                                                                        shadowOpacity: 0.15,
-                                                                        shadowRadius: 4,
-                                                                        elevation: 4,
-                                                                        zIndex: 120
-                                                                    }}>
-                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
-                                                                            <FontAwesome name="pencil" size={16} color={colors.primary} />
-                                                                            <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
-                                                                        </TouchableOpacity>
-                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
-                                                                            <FontAwesome name="trash-o" size={16} color={colors.danger} />
-                                                                            <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
-                                                                        </TouchableOpacity>
-                                                                    </View>
-                                                                )}
-                                                            </View>
-                                                        )}
                                                     </View>
                                                 );
                                             }
@@ -3113,31 +2868,6 @@ export const TaskDetailScreen = () => {
                         </TouchableOpacity>
                     </KeyboardAvoidingView>
                 )}
-
-                {activeTab === 'Tasks' && !isChecklistDisabled && (
-                    <TouchableOpacity
-                        style={[
-                            styles.fab, 
-                            { 
-                                backgroundColor: colors.primary, 
-                                shadowColor: colors.shadow || '#000', 
-                                zIndex: 100,
-                                bottom: Math.max(insets.bottom, 16) + 74,
-                            }
-                        ]}
-                        activeOpacity={0.85}
-                        onPress={() => {
-                            setNewTaskLabel('');
-                            setNewTaskSectionId('');
-                            setNewTaskChecklistId('');
-                            setNewDataType('Short text');
-                            setNewTaskOptions([]);
-                            setAddTaskModalVisible(true);
-                        }}
-                    >
-                        <Ionicons name="add" size={30} color={colors.white} />
-                    </TouchableOpacity>
-                )}
             </SafeAreaView>
 
                 <Modal visible={mediaModalVisible} transparent animationType="fade" statusBarTranslucent>
@@ -3386,41 +3116,6 @@ export const TaskDetailScreen = () => {
                                     onPress={handleConfirmNa}
                                 >
                                     <Text style={[styles.confirmBtnText, { color: colors.white }]}>Yes</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </Modal>
-
-                <Modal visible={deleteConfirmModalVisible} transparent animationType="fade">
-                    <View style={styles.popupOverlay}>
-                        <View style={[styles.popupModal, { backgroundColor: colors.surface }]}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                                <FontAwesome name="trash-o" size={24} color={colors.danger} />
-                                <Text style={[styles.confirmTitle, { color: colors.text, marginBottom: 0 }]}>
-                                    Delete Task?
-                                </Text>
-                            </View>
-                            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
-                                Are you sure you want to delete this task? This action cannot be undone.
-                            </Text>
-
-                            <View style={styles.confirmActions}>
-                                <TouchableOpacity
-                                    style={[styles.confirmBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
-                                    onPress={() => {
-                                        setDeleteConfirmModalVisible(false);
-                                        setTaskToDelete(null);
-                                    }}
-                                >
-                                    <Text style={[styles.confirmBtnText, { color: colors.text }]}>Cancel</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.confirmBtn, { backgroundColor: colors.danger }]}
-                                    onPress={handleConfirmDelete}
-                                >
-                                    <Text style={[styles.confirmBtnText, { color: colors.white }]}>Delete</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -3719,263 +3414,6 @@ export const TaskDetailScreen = () => {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    </View>
-                </Modal>
-
-                <Modal
-                    visible={editTaskModalVisible}
-                    transparent
-                    animationType="slide"
-                    statusBarTranslucent
-                    onRequestClose={() => setEditTaskModalVisible(false)}
-                >
-                    <View style={styles.modalOverlay}>
-                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setEditTaskModalVisible(false)} />
-                        <KeyboardAvoidingView
-                            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                            style={{ width: '100%', justifyContent: 'flex-end' }}
-                        >
-                            <View
-                                style={{
-                                    width: '100%',
-                                    backgroundColor: colors.surface,
-                                    borderTopLeftRadius: 24,
-                                    borderTopRightRadius: 24,
-                                    borderBottomLeftRadius: 0,
-                                    borderBottomRightRadius: 0,
-                                    paddingHorizontal: 20,
-                                    paddingTop: 20,
-                                    paddingBottom: Math.max(insets.bottom + 16, 24),
-                                    maxHeight: 620,
-                                    gap: 16,
-                                }}
-                            >
-                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <Text style={[FONTS.h3, { color: colors.text }]}>Edit Task</Text>
-                                    <TouchableOpacity onPress={() => setEditTaskModalVisible(false)} style={{ padding: 4 }}>
-                                        <Ionicons name="close" size={24} color={colors.text} />
-                                    </TouchableOpacity>
-                                </View>
-
-                                <ScrollView contentContainerStyle={{ gap: 14, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
-                                    <View>
-                                        <Text style={[FONTS.label, { color: colors.textSecondary, marginBottom: 6 }]}>Task Title / Question</Text>
-                                        <TextInput
-                                            style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
-                                            value={editTaskLabel}
-                                            onChangeText={setEditTaskLabel}
-                                            placeholder="Enter task description"
-                                            placeholderTextColor={colors.textSecondary}
-                                        />
-                                    </View>
-
-                                    <View style={{ zIndex: 100 }}>
-                                        <PopoverDropdown
-                                            label="Data Type"
-                                            placeholder="Select data type"
-                                            options={getSelectorOptions('dataType').options}
-                                            value={editDataType}
-                                            onSelect={(val) => setEditDataType(val as any)}
-                                            placement="top"
-                                        />
-                                    </View>
-
-                                    {['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(editDataType) && (
-                                        <View style={{ gap: 8 }}>
-                                            <Text style={[FONTS.label, { color: colors.textSecondary }]}>Options</Text>
-                                            {editTaskOptions.map((option, idx) => (
-                                                <View key={`${option}-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 10 }}>
-                                                    <Text style={[FONTS.body, { color: colors.text }]}>{option}</Text>
-                                                    <TouchableOpacity onPress={() => setEditTaskOptions(editTaskOptions.filter((_, i) => i !== idx))}>
-                                                        <Ionicons name="close-circle" size={20} color={colors.danger} />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            ))}
-                                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                                <TextInput
-                                                    style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
-                                                    placeholder="Add option..."
-                                                    placeholderTextColor={colors.textSecondary}
-                                                    value={newEditOption}
-                                                    onChangeText={setNewEditOption}
-                                                    onSubmitEditing={() => {
-                                                        if (newEditOption.trim() && !editTaskOptions.includes(newEditOption.trim())) {
-                                                            setEditTaskOptions([...editTaskOptions, newEditOption.trim()]);
-                                                            setNewEditOption('');
-                                                        }
-                                                    }}
-                                                />
-                                                <TouchableOpacity
-                                                    onPress={() => {
-                                                        if (newEditOption.trim() && !editTaskOptions.includes(newEditOption.trim())) {
-                                                            setEditTaskOptions([...editTaskOptions, newEditOption.trim()]);
-                                                            setNewEditOption('');
-                                                        }
-                                                    }}
-                                                    style={{ backgroundColor: colors.primary, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
-                                                >
-                                                    <Ionicons name="add" size={24} color="#FFF" />
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    )}
-                                </ScrollView>
-
-                                <View style={{ flexDirection: 'row', gap: 12, paddingTop: 8 }}>
-                                    <TouchableOpacity
-                                        onPress={() => setEditTaskModalVisible(false)}
-                                        style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}
-                                    >
-                                        <Text style={[FONTS.bodyStrong, { color: colors.text }]}>Cancel</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={saveEditTask}
-                                        style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
-                                    >
-                                        <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Save Changes</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </KeyboardAvoidingView>
-                    </View>
-                </Modal>
-
-                {/* Add New Task Modal (BottomSheet) */}
-                <Modal
-                    visible={addTaskModalVisible}
-                    transparent
-                    animationType="slide"
-                    statusBarTranslucent
-                    onRequestClose={() => setAddTaskModalVisible(false)}
-                >
-                    <View style={styles.modalOverlay}>
-                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setAddTaskModalVisible(false)} />
-                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%', justifyContent: 'flex-end' }}>
-                            <View
-                                style={{
-                                    width: '100%',
-                                    backgroundColor: colors.surface,
-                                    borderTopLeftRadius: 24,
-                                    borderTopRightRadius: 24,
-                                    borderBottomLeftRadius: 0,
-                                    borderBottomRightRadius: 0,
-                                    paddingHorizontal: 20,
-                                    paddingTop: 20,
-                                    paddingBottom: Math.max(insets.bottom + 16, 24),
-                                    maxHeight: 650,
-                                    gap: 16,
-                                }}
-                            >
-                                <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 4 }} />
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Text style={[FONTS.h3, { color: colors.text }]}>Add New Task / Step</Text>
-                                    <TouchableOpacity onPress={() => setAddTaskModalVisible(false)} style={{ padding: 4 }}>
-                                        <Ionicons name="close" size={24} color={colors.textSecondary} />
-                                    </TouchableOpacity>
-                                </View>
-
-                                <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 16, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
-                                    <View style={{ gap: 6 }}>
-                                        <Text style={[FONTS.label, { color: colors.textSecondary }]}>Task Title / Question</Text>
-                                        <TextInput
-                                            style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
-                                            placeholder="Enter task title or question..."
-                                            placeholderTextColor={colors.textSecondary}
-                                            value={newTaskLabel}
-                                            onChangeText={setNewTaskLabel}
-                                        />
-                                    </View>
-
-                                    <View style={{ gap: 6, zIndex: 1200 }}>
-                                        <PopoverDropdown
-                                            label="Section (Optional)"
-                                            placeholder="Select section (optional)..."
-                                            options={sectionDropdownOptions}
-                                            value={newTaskSectionId}
-                                            onSelect={handleSelectNewTaskSection}
-                                            placement="bottom"
-                                        />
-                                    </View>
-
-                                    <View style={{ gap: 6, zIndex: 1100 }}>
-                                        <PopoverDropdown
-                                            label="Checklist (Optional)"
-                                            placeholder="Select checklist (optional)..."
-                                            options={checklistDropdownOptions}
-                                            value={newTaskChecklistId}
-                                            onSelect={handleSelectNewTaskChecklist}
-                                            placement="bottom"
-                                        />
-                                    </View>
-
-                                    <View style={{ gap: 6, zIndex: 1000 }}>
-                                        <PopoverDropdown
-                                            label="Data Type"
-                                            placeholder="Select data type..."
-                                            options={DATA_TYPES.map(dt => ({ label: dt, value: dt }))}
-                                            value={newDataType}
-                                            onSelect={(val) => setNewDataType(val as any)}
-                                            placement="top"
-                                        />
-                                    </View>
-
-                                    {['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(newDataType) && (
-                                        <View style={{ gap: 8 }}>
-                                            <Text style={[FONTS.label, { color: colors.textSecondary }]}>Options</Text>
-                                            {newTaskOptions.map((option, idx) => (
-                                                <View key={`${option}-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 10 }}>
-                                                    <Text style={[FONTS.body, { color: colors.text }]}>{option}</Text>
-                                                    <TouchableOpacity onPress={() => setNewTaskOptions(newTaskOptions.filter((_, i) => i !== idx))}>
-                                                        <Ionicons name="close-circle" size={20} color={colors.danger} />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            ))}
-                                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                                <TextInput
-                                                    style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
-                                                    placeholder="Add option..."
-                                                    placeholderTextColor={colors.textSecondary}
-                                                    value={addNewTaskOptionInput}
-                                                    onChangeText={setAddNewTaskOptionInput}
-                                                    onSubmitEditing={() => {
-                                                        if (addNewTaskOptionInput.trim() && !newTaskOptions.includes(addNewTaskOptionInput.trim())) {
-                                                            setNewTaskOptions([...newTaskOptions, addNewTaskOptionInput.trim()]);
-                                                            setAddNewTaskOptionInput('');
-                                                        }
-                                                    }}
-                                                />
-                                                <TouchableOpacity
-                                                    onPress={() => {
-                                                        if (addNewTaskOptionInput.trim() && !newTaskOptions.includes(addNewTaskOptionInput.trim())) {
-                                                            setNewTaskOptions([...newTaskOptions, addNewTaskOptionInput.trim()]);
-                                                            setAddNewTaskOptionInput('');
-                                                        }
-                                                    }}
-                                                    style={{ backgroundColor: colors.primary, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
-                                                >
-                                                    <Ionicons name="add" size={24} color="#FFF" />
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    )}
-                                </ScrollView>
-
-                                <View style={{ flexDirection: 'row', gap: 12, paddingTop: 8 }}>
-                                    <TouchableOpacity
-                                        onPress={() => setAddTaskModalVisible(false)}
-                                        style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}
-                                    >
-                                        <Text style={[FONTS.bodyStrong, { color: colors.text }]}>Cancel</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={handleAddNewTask}
-                                        style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
-                                    >
-                                        <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Add Task</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </KeyboardAvoidingView>
                     </View>
                 </Modal>
 
