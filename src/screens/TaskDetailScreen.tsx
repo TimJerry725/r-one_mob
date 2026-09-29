@@ -476,7 +476,7 @@ export const TaskDetailScreen = () => {
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
     const isOffSite = isGeoFenceStation && !isNearSite;
-    const isChecklistDisabled = isUnderReview || dutyStatus === 'away' || isOffSite || (workStatus !== 'Working' && workStatus !== 'Accepted');
+    const isChecklistDisabled = isUnderReview || workStatus === 'Completed';
     const isGeoFenceWarningVisible = isOffSite;
     const isPreventiveOrService = true;
     const isAssignedPending = workStatus === 'Assigned' || workStatus === 'Unassigned';
@@ -503,7 +503,7 @@ export const TaskDetailScreen = () => {
         if (!parentItem) return true;
         if (!isItemVisible(parentItem)) return false;
         const parentValue = Array.isArray(parentItem?.value) ? parentItem?.value[0] : parentItem?.value;
-        return parentValue === item.showWhenEquals;
+        return String(parentValue ?? '').trim().toLowerCase() === String(item.showWhenEquals ?? '').trim().toLowerCase();
     };
 
     const taskNumbers = useMemo(() => {
@@ -1032,7 +1032,10 @@ export const TaskDetailScreen = () => {
     };
 
     const updateItem = (id: string, value: any) => {
-        if (isOffSite) return;
+        if (workStatus === 'Assigned' || workStatus === 'Unassigned') {
+            workOrder.status = 'Working';
+            setWorkStatus('Working');
+        }
         setItems((current) => current.map((item) => (item.id === id ? { ...item, value } : item)));
     };
 

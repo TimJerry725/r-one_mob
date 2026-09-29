@@ -422,57 +422,106 @@ export const PREVENTIVE_EV_INFRA_QUESTION_COUNT = PREVENTIVE_EV_INFRA_MONTHLY_CH
 
 export const PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST: ChecklistTemplateItem[] = [
     section('evch-yellow-1', 'EV Charger'),
+
+    // 1. Check cables for cuts or discoloration
     checklist('evch-t1-instruction', 'Check cables for cuts or discoloration'),
     yesNoRadio('evch-t1-visual', 'Visual Check'),
+    instructionRow('evch-t1-remarks-ins', 'Remarks: Check for cuts, cracks or discoloration at cable ends and sleeves.', 'evch-t1-visual'),
+    { id: 'evch-t1-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t1-visual', showWhenEquals: 'Yes', options: ['Overview of cable condition', 'Close-up of connector sleeve', 'Terminations'] },
+    { id: 'evch-t1-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t1-visual', showWhenEquals: 'Yes' },
+
+    // 2. MCB/MCCB is not burnt and working
     checklist('evch-t2-instruction', 'MCB/MCCB is not burnt and working'),
     yesNoRadio('evch-t2-visual', 'Visual Check'),
-    instructionRow('evch-t2-remarks', 'Remarks: switch off and turn back on'),
+    instructionRow('evch-t2-remarks-ins', 'Remarks: switch off and turn back on', 'evch-t2-visual'),
+    { id: 'evch-t2-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t2-visual', showWhenEquals: 'Yes', options: ['Overview of breaker', 'Close-up of contacts', 'Panel surround'] },
+    { id: 'evch-t2-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t2-visual', showWhenEquals: 'Yes' },
+
+    // 3. Air Filter Cleaning
     checklist('evch-t3-instruction', 'Air Filter Cleaning'),
     yesNoRadio('evch-t3-visual', 'Visual Check'),
-    instructionRow('evch-t3-remarks', 'Remarks: Clean the air filters periodically to avoid dust accumulation and maintain proper airflow.'),
-    { id: 'evch-t3-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    instructionRow('evch-t3-remarks-ins', 'Remarks: Clean the air filters periodically to avoid dust accumulation and maintain proper airflow.', 'evch-t3-visual'),
+    { id: 'evch-t3-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t3-visual', showWhenEquals: 'Yes', options: ['Filter before cleaning', 'Filter after cleaning', 'Airflow vent'] },
+    { id: 'evch-t3-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t3-visual', showWhenEquals: 'Yes' },
+
+    // 4. Exhaust is working and clean(if visible)
     checklist('evch-t4-instruction', 'Exhaust is working and clean(if visible)'),
     yesNoRadio('evch-t4-visual', 'Visual Check'),
-    instructionRow('evch-t4-remarks', 'Remarks: clean with blower/cloth'),
-    { id: 'evch-t4-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    instructionRow('evch-t4-remarks-ins', 'Remarks: clean with blower/cloth', 'evch-t4-visual'),
+    { id: 'evch-t4-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t4-visual', showWhenEquals: 'Yes', options: ['Exhaust fan overview', 'Blades clean condition', 'Vent louvers'] },
+    { id: 'evch-t4-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t4-visual', showWhenEquals: 'Yes' },
+
+    // 5. No signs of rodents
     checklist('evch-t5-instruction', 'No signs of rodents'),
     yesNoRadio('evch-t5-visual', 'Visual Check'),
-    instructionRow('evch-t5-remarks', 'Remarks: Remove if found any'),
+    instructionRow('evch-t5-remarks-ins', 'Remarks: Remove if found any', 'evch-t5-visual'),
+    { id: 'evch-t5-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t5-visual', showWhenEquals: 'Yes', options: ['Bottom gland plate', 'Internal wire conduits', 'Surrounding floor'] },
+    { id: 'evch-t5-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t5-visual', showWhenEquals: 'Yes' },
+
+    // 6. Charger is clean from inside
     checklist('evch-t6-instruction', 'Charger is clean from inside'),
     yesNoRadio('evch-t6-visual', 'Visual Check'),
-    instructionRow('evch-t6-remarks', 'Remarks: clean with blower'),
-    { id: 'evch-t6-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    instructionRow('evch-t6-remarks-ins', 'Remarks: clean with blower', 'evch-t6-visual'),
+    { id: 'evch-t6-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t6-visual', showWhenEquals: 'Yes', options: ['Internal cabinet before', 'Internal cabinet after', 'Module bay'] },
+    { id: 'evch-t6-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t6-visual', showWhenEquals: 'Yes' },
+
+    // 7. Charger is clean from outside
     checklist('evch-t7-instruction', 'Charger is clean from outside'),
     yesNoRadio('evch-t7-visual', 'Visual Check'),
-    instructionRow('evch-t7-remarks', 'Remarks: clean with wet cloth wherever possible (only panels and connector cable)'),
-    { id: 'evch-t7-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    instructionRow('evch-t7-remarks-ins', 'Remarks: clean with wet cloth wherever possible (only panels and connector cable)', 'evch-t7-visual'),
+    { id: 'evch-t7-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t7-visual', showWhenEquals: 'Yes', options: ['Front panel', 'Side panels & holster', 'Connector cables clean'] },
+    { id: 'evch-t7-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t7-visual', showWhenEquals: 'Yes' },
+
+    // 8. HMI screen is clan with no dust
     checklist('evch-t8-instruction', 'HMI screen is clan with no dust'),
     yesNoRadio('evch-t8-visual', 'Visual Check'),
-    instructionRow('evch-t8-remarks', 'Remarks: Clean with dry cloth'),
+    instructionRow('evch-t8-remarks-ins', 'Remarks: Clean with dry cloth', 'evch-t8-visual'),
+    { id: 'evch-t8-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t8-visual', showWhenEquals: 'Yes', options: ['HMI screen display', 'Touch area clean', 'Enclosure bezel'] },
+    { id: 'evch-t8-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t8-visual', showWhenEquals: 'Yes' },
+
+    // 9. Emergency button is working and clean
     checklist('evch-t9-instruction', 'Emergency button is working and clean'),
     yesNoRadio('evch-t9-visual', 'Visual Check'),
-    instructionRow('evch-t9-remarks', 'Remarks: check by pushing and releasing, clean with dry cloth'),
+    instructionRow('evch-t9-remarks-ins', 'Remarks: check by pushing and releasing, clean with dry cloth', 'evch-t9-visual'),
+    { id: 'evch-t9-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t9-visual', showWhenEquals: 'Yes', options: ['EPO button released', 'EPO button pressed test', 'EPO label visible'] },
+    { id: 'evch-t9-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t9-visual', showWhenEquals: 'Yes' },
+
+    // 10. Input and Earthing Voltage Validation
     checklist('evch-t10-instruction', 'Input and Earthing Voltage Validation'),
     yesNoRadio('evch-t10-visual', 'Visual Check'),
-    instructionRow('evch-t10-remarks', 'Remarks: Verify input voltage levels and ensure N-E voltage should be maintained < 03 Volts. Check earthing voltage'),
-    { id: 'evch-t10-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    instructionRow('evch-t10-remarks-ins', 'Remarks: Verify input voltage levels and ensure N-E voltage should be maintained < 03 Volts. Check earthing voltage', 'evch-t10-visual'),
+    { id: 'evch-t10-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t10-visual', showWhenEquals: 'Yes', options: ['Multimeter input voltage', 'N-E voltage reading', 'Earthing busbar'] },
+    { id: 'evch-t10-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t10-visual', showWhenEquals: 'Yes' },
+
+    // 11. Earthing Resistance Check
     checklist('evch-t11-instruction', 'Earthing Resistance Check'),
     yesNoRadio('evch-t11-visual', 'Visual Check'),
-    instructionRow('evch-t11-remarks', 'Remarks: Measure and maintain earthing resistance < 05 Ω(ohms) regularly to ensure effective grounding.'),
-    { id: 'evch-t11-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    { id: 'evch-t11-ep1', label: 'EP-1 Value (Ohms)', type: 'number', dataType: 'Number', required: false },
-    { id: 'evch-t11-ep2', label: 'EP-2 Value (Ohms)', type: 'number', dataType: 'Number', required: false },
+    instructionRow('evch-t11-remarks-ins', 'Remarks: Measure and maintain earthing resistance < 05 Ω(ohms) regularly to ensure effective grounding.', 'evch-t11-visual'),
+    { id: 'evch-t11-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t11-visual', showWhenEquals: 'Yes', options: ['Earth tester connected', 'Pit 1 test reading', 'Pit 2 test reading'] },
+    { id: 'evch-t11-ep1', label: 'EP-1 Value (Ohms)', type: 'number', dataType: 'Number', required: false, showWhenFieldId: 'evch-t11-visual', showWhenEquals: 'Yes' },
+    { id: 'evch-t11-ep2', label: 'EP-2 Value (Ohms)', type: 'number', dataType: 'Number', required: false, showWhenFieldId: 'evch-t11-visual', showWhenEquals: 'Yes' },
+    { id: 'evch-t11-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t11-visual', showWhenEquals: 'Yes' },
+
+    // 12. Gun & Vehicle Inlet Cleaning
     checklist('evch-t12-instruction', 'Gun & Vehicle Inlet Cleaning'),
     yesNoRadio('evch-t12-visual', 'Visual Check'),
-    instructionRow('evch-t12-remarks', 'Remarks: Clean the charging gun and vehicle inlet terminals regularly to avoid contamination and ensure a secure connection.'),
-    { id: 'evch-t12-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    instructionRow('evch-t12-remarks-ins', 'Remarks: Clean the charging gun and vehicle inlet terminals regularly to avoid contamination and ensure a secure connection.', 'evch-t12-visual'),
+    { id: 'evch-t12-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t12-visual', showWhenEquals: 'Yes', options: ['Gun A pins clean', 'Gun B pins clean', 'Holster clean'] },
+    { id: 'evch-t12-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t12-visual', showWhenEquals: 'Yes' },
+
+    // 13. Physical Verification of Gun and Contact Points
     checklist('evch-t13-instruction', 'Physical Verification of Gun and Contact Points'),
     yesNoRadio('evch-t13-visual', 'Visual Check'),
-    instructionRow('evch-t13-remarks', 'Remarks: Inspect the charging gun and contact points for physical damage or wear'),
+    instructionRow('evch-t13-remarks-ins', 'Remarks: Inspect the charging gun and contact points for physical damage or wear', 'evch-t13-visual'),
+    { id: 'evch-t13-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t13-visual', showWhenEquals: 'Yes', options: ['Gun terminal pins', 'Latch mechanism', 'Cable strain relief'] },
+    { id: 'evch-t13-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t13-visual', showWhenEquals: 'Yes' },
+
+    // 14. Verification and Monitoring of Critical Alarms
     checklist('evch-t14-instruction', 'Verification and Monitoring of Critical Alarms'),
     yesNoRadio('evch-t14-visual', 'Visual Check'),
-    instructionRow('evch-t14-remarks', 'Remarks: Regularly verify and monitor critical alarms related to EPO pressed, earthing faults, or any input-related faults.'),
-    { id: 'evch-t14-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    instructionRow('evch-t14-remarks-ins', 'Remarks: Regularly verify and monitor critical alarms related to EPO pressed, earthing faults, or any input-related faults.', 'evch-t14-visual'),
+    { id: 'evch-t14-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t14-visual', showWhenEquals: 'Yes', options: ['Alarm log screen', 'System healthy status', 'Active warning lights'] },
+    { id: 'evch-t14-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t14-visual', showWhenEquals: 'Yes' },
 ];
 
 export const PREVENTIVE_EV_CHARGER_QUESTION_COUNT = PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST.filter(
@@ -786,7 +835,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         address: 'Platform Road, Shivajinagar, Pune',
         type: 'Preventive',
         stage: 'Monthly Inspection',
-        status: 'Assigned',
+        status: 'Working',
         dueWindow: 'Today, 09:00 - 12:00',
         eta: 'Starts in 10 min',
         distance: '0.5 km',
@@ -817,7 +866,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         address: 'Platform Road, Shivajinagar, Pune',
         type: 'Preventive',
         stage: 'Monthly Inspection',
-        status: 'Assigned',
+        status: 'Working',
         dueWindow: 'Today, 11:00 - 14:00',
         eta: 'Starts in 45 min',
         distance: '0.7 km',
@@ -879,7 +928,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         address: 'NH48 Service Lane, Panvel, Pune Outskirts',
         type: 'Reactive',
         stage: 'Fault Check',
-        status: 'Assigned',
+        status: 'Working',
         dueWindow: 'Today, 13:00 - 16:00',
         eta: 'Starts in 20 min',
         distance: '1.6 km',
