@@ -10,52 +10,77 @@ import { FONTS } from '../styles/futurist';
 const INITIAL_NOTIFICATIONS = [
     {
         id: '1',
-        type: 'Projects',
-        title: 'Project end date approaching',
-        description: 'Project "Vienna West Hub" scheduled end date is approaching.',
-        timestamp: '18 Mar 2026, 05:47 AM',
-        isStarred: false,
+        type: 'Reactive',
+        workOrderId: 'wo-102',
+        title: 'Reactive Work Assigned',
+        description: 'Connector Fault Investigation at Mumbai Highway Point (CP-200451) is assigned to you.',
+        timestamp: 'Today, 08:30 AM',
+        isStarred: true,
         isRead: false,
     },
     {
         id: '2',
-        type: 'Checklists',
-        title: 'Checklist has been created',
-        description: 'Checklist "Site survey readiness" has been created in project "Vienna West Hub".',
-        timestamp: '18 Mar 2026, 03:47 AM',
+        type: 'Preventive',
+        workOrderId: 'wo-pm-charger-01',
+        title: 'Preventive PM Scheduled',
+        description: 'Monthly PM for EV Charger scheduled today at Shell Recharge (CP-100239, CP-100240).',
+        timestamp: 'Today, 07:15 AM',
         isStarred: false,
-        isRead: true, 
+        isRead: false,
     },
     {
         id: '3',
-        type: 'Checklists',
-        title: 'Checklist has been assigned',
-        description: 'Checklist "Pre-site readiness" has been assigned to "Andrea Meuschke" in project "Vienna West Hub".',
-        timestamp: '18 Mar 2026, 01:47 AM',
-        isStarred: false,
+        type: 'Reactive',
+        workOrderId: 'wo-reactive-105',
+        title: 'Emergency Repair Request',
+        description: 'DC Fast Charger Emergency Repair requested at Moto Services (CP-100555) due to power unit alarm.',
+        timestamp: 'Yesterday, 06:45 PM',
+        isStarred: true,
         isRead: false,
     },
     {
         id: '4',
-        type: 'Others',
-        title: 'Milestone moved to under review',
-        description: 'Milestone "Grid energization" moved to Under Review in project "Project Vienna 102".',
-        timestamp: '18 Mar 2026, 01:47 AM',
+        type: 'Preventive',
+        workOrderId: 'wo-pm-infra-01',
+        title: 'Monthly PM Inspection Due',
+        description: 'Monthly PM for EV Infra checklist due for completion at Pune Central Station.',
+        timestamp: 'Yesterday, 02:20 PM',
         isStarred: false,
-        isRead: false,
+        isRead: true,
     },
     {
         id: '5',
-        type: 'Checklists',
-        title: 'Checklist moved to working',
-        description: 'Checklist "Cable trench inspection" status changed from "Assigned" to "Working" in project "North Loop Fast Charging Hub".',
-        timestamp: '17 Mar 2026, 11:47 PM',
-        isStarred: true,
-        isRead: false,
+        type: 'Preventive',
+        workOrderId: 'wo-pm-ht-yard-01',
+        title: 'Preventive Work Ready for Review',
+        description: 'Half yearly PM for HT Yard submitted by field team at Tesco Extra.',
+        timestamp: '27 Mar 2026, 11:10 AM',
+        isStarred: false,
+        isRead: true,
+    },
+    {
+        id: '6',
+        type: 'Reactive',
+        workOrderId: 'wo-reactive-106',
+        title: 'Liquid Cooled Cable Warning',
+        description: 'Liquid Cooled Cable Inspection requested at Westfield Hub (CP-400210).',
+        timestamp: '26 Mar 2026, 04:30 PM',
+        isStarred: false,
+        isRead: true,
+    },
+    {
+        id: '7',
+        type: 'Reactive',
+        workOrderId: 'wo-104',
+        title: 'Cable Replacement Work Update',
+        description: 'Cable Replacement and Test materials ready for dispatch to Industrial Zone B (CP-300182).',
+        timestamp: '25 Mar 2026, 09:15 AM',
+        isStarred: false,
+        isRead: true,
     },
 ];
 
-const FILTER_TYPES = ['All', 'Starred', 'Projects', 'Checklists', 'Others'];
+const FILTER_TYPES = ['All', 'Starred', 'Preventive', 'Reactive'];
 
 export const NotificationScreen = () => {
     const { colors, isDark } = useTheme();
@@ -92,10 +117,8 @@ export const NotificationScreen = () => {
     };
 
     const handlePressNotification = (item: any) => {
-        if (item.type === 'Projects') {
-            navigation.navigate('MainTabs', { screen: 'Work' });
-        } else if (item.type === 'Checklists') {
-            navigation.navigate('TaskDetails', { taskId: 'task-1' });
+        if (item.workOrderId) {
+            navigation.navigate('TaskDetails', { taskId: item.workOrderId });
         } else {
             navigation.navigate('MainTabs', { screen: 'Work' });
         }
@@ -188,16 +211,21 @@ export const NotificationScreen = () => {
                                                 styles.typeBadge, 
                                                 { 
                                                     backgroundColor: 
-                                                        item.type === 'Projects' ? '#E2315115' : 
-                                                        item.type === 'Checklists' ? '#4CA7FF15' : colors.surfaceHighlight 
+                                                        item.type === 'Preventive' ? '#10B98118' : 
+                                                        item.type === 'Reactive' ? '#F59E0B18' : colors.surfaceHighlight,
+                                                    borderColor:
+                                                        item.type === 'Preventive' ? '#10B98135' : 
+                                                        item.type === 'Reactive' ? '#F59E0B35' : colors.border,
+                                                    borderWidth: 1,
                                                 }
                                             ]}>
                                                 <Text style={[
                                                     styles.typeBadgeText, 
                                                     { 
                                                         color: 
-                                                            item.type === 'Projects' ? '#E23151' : 
-                                                            item.type === 'Checklists' ? '#4CA7FF' : colors.textSecondary 
+                                                            item.type === 'Preventive' ? '#10B981' : 
+                                                            item.type === 'Reactive' ? '#D97706' : colors.textSecondary,
+                                                        fontWeight: '600',
                                                     }
                                                 ]}>
                                                     {item.type}
