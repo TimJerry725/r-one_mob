@@ -470,9 +470,13 @@ export const TaskDetailScreen = () => {
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const [workStatus, setWorkStatus] = useState(workOrder.status);
-    // Geofencing / location-based access control enabled ONLY for Pune Central Station
+    // Geofencing / location-based access control enabled ONLY for Connector Fault Investigation (Mumbai Highway Point)
     const siteNameLower = (workOrder.siteName || '').toLowerCase();
-    const isGeoFenceStation = siteNameLower.includes('pune central');
+    const titleLower = (workOrder.title || '').toLowerCase();
+    const isGeoFenceStation =
+        workOrder.id === 'wo-102' ||
+        siteNameLower.includes('mumbai highway') ||
+        titleLower.includes('connector fault');
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
     const isOffSite = isGeoFenceStation && !isNearSite;

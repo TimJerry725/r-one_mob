@@ -205,18 +205,16 @@ const evInfraChecklist = (
     if (trimmedRemarks) {
         items.push(instructionRow(`evpm-t${sno}-remarks-ins`, trimmedRemarks, visualId));
     }
-    if (photoRequired) {
-        items.push({
-            id: `evpm-t${sno}-media`,
-            label: 'Upload 3 photos',
-            type: 'media',
-            dataType: 'Media',
-            required: true,
-            showWhenFieldId: visualId,
-            showWhenEquals: 'Yes',
-            options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'],
-        });
-    }
+    items.push({
+        id: `evpm-t${sno}-media`,
+        label: 'Upload 3 photos',
+        type: 'media',
+        dataType: 'Media',
+        required: true,
+        showWhenFieldId: visualId,
+        showWhenEquals: 'Yes',
+        options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'],
+    });
     items.push({
         id: `evpm-t${sno}-remarks`,
         label: 'Remarks',
@@ -431,18 +429,16 @@ const htYardChecklist = (
             }
         });
     }
-    if (photoRequired) {
-        items.push({
-            id: `htpm-t${sno}-media`,
-            label: 'Upload 3 photos',
-            type: 'media',
-            dataType: 'Media',
-            required: true,
-            showWhenFieldId: visualId,
-            showWhenEquals: 'Yes',
-            options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'],
-        });
-    }
+    items.push({
+        id: `htpm-t${sno}-media`,
+        label: 'Upload 3 photos',
+        type: 'media',
+        dataType: 'Media',
+        required: true,
+        showWhenFieldId: visualId,
+        showWhenEquals: 'Yes',
+        options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'],
+    });
     if (numericFields && numericFields.length > 0) {
         numericFields.forEach((num) => {
             items.push({
@@ -787,6 +783,36 @@ export const resolveChecklistForWorkOrder = (
 
 export let WORK_ORDERS: WorkOrder[] = [
     {
+        id: 'wo-102',
+        projectId: 'PJ002',
+        title: 'Connector Fault Investigation',
+        siteName: 'Mumbai Highway Point',
+        address: 'NH48 Service Lane, Panvel, Pune Outskirts',
+        type: 'Reactive',
+        stage: 'Fault Check',
+        status: 'Working',
+        dueWindow: 'Today, 13:00 - 16:00',
+        eta: 'Starts in 20 min',
+        distance: '1.6 km',
+        checklistCompleted: 0,
+        checklistTotal: REACTIVE_FAULT_QUESTION_COUNT,
+        checklistItems: REACTIVE_FAULT_CHECKLIST,
+        tools: ['Clamp meter', 'Laptop'],
+        parts: ['Connector latch', 'Fuse set'],
+        technicians: ['Tim'],
+        assetId: 'CP-200451',
+        offlineReady: true,
+        notes: 'Intermittent handshake failure reported overnight.',
+        latitude: 18.5324,
+        longitude: 73.8456,
+        priority: 'High',
+        targetTime: Date.now() + 1 * 60 * 60 * 1000,
+        assignedBy: 'Andrea Meuschke',
+        approver: 'Marcus Aurelius',
+        primaryApprover: 'Marcus Aurelius',
+        secondaryApprover: 'Andrea Meuschke',
+    },
+    {
         id: 'wo-steam-cbe-01',
         projectId: 'PJ001',
         title: 'Steam a station CBE',
@@ -911,34 +937,6 @@ export let WORK_ORDERS: WorkOrder[] = [
         approver: 'Andrea Meuschke',
         primaryApprover: 'Andrea Meuschke',
         secondaryApprover: 'Marcus Aurelius',
-    },
-    {
-        id: 'wo-102',
-        projectId: 'PJ002',
-        title: 'Connector Fault Investigation',
-        siteName: 'Mumbai Highway Point',
-        address: 'NH48 Service Lane, Panvel, Pune Outskirts',
-        type: 'Reactive',
-        stage: 'Fault Check',
-        status: 'Working',
-        dueWindow: 'Today, 13:00 - 16:00',
-        eta: 'Starts in 20 min',
-        distance: '1.6 km',
-        checklistCompleted: 0,
-        checklistTotal: REACTIVE_FAULT_QUESTION_COUNT,
-        checklistItems: REACTIVE_FAULT_CHECKLIST,
-        tools: ['Clamp meter', 'Laptop'],
-        parts: ['Connector latch', 'Fuse set'],
-        technicians: ['Tim'],
-        assetId: 'CP-200451',
-        offlineReady: true,
-        notes: 'Intermittent handshake failure reported overnight.',
-        latitude: 18.5324,
-        longitude: 73.8456,
-        priority: 'High',
-        targetTime: Date.now() + 1 * 60 * 60 * 1000,
-        assignedBy: 'Andrea Meuschke',
-        approver: 'Marcus Aurelius',
     },
     {
         id: 'wo-104',
