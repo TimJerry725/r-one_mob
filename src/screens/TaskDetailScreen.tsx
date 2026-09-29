@@ -1849,48 +1849,102 @@ export const TaskDetailScreen = () => {
                                                                         );
                                                                     })()
                                                                 ) : item.type === 'radio' || item.dataType === 'Radio button' ? (
-                                                                    <View style={{ gap: 8, marginTop: 2, flexDirection: (item.options || []).length <= 2 ? 'row' : 'column', flexWrap: 'wrap' }}>
-                                                                        {(item.options || ['Yes', 'No']).map((opt) => {
-                                                                            const selected = item.value === opt;
-                                                                            return (
-                                                                                <TouchableOpacity
-                                                                                    key={opt}
-                                                                                    disabled={isChecklistDisabled}
-                                                                                    onPress={() => updateItem(item.id, opt)}
-                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 0 }}
-                                                                                >
-                                                                                    <Ionicons
-                                                                                        name={selected ? 'radio-button-on' : 'radio-button-off'}
-                                                                                        size={18}
-                                                                                        color={selected ? colors.primary : colors.textSecondary}
-                                                                                    />
-                                                                                    <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>{opt}</Text>
-                                                                                </TouchableOpacity>
-                                                                            );
-                                                                        })}
-                                                                    </View>
+                                                                    (() => {
+                                                                        const opts = item.options && item.options.length > 0 ? item.options : ['Yes', 'No'];
+                                                                        const isTwoOptions = opts.length <= 2;
+                                                                        return (
+                                                                            <View
+                                                                                accessibilityRole="radiogroup"
+                                                                                style={{
+                                                                                    gap: 10,
+                                                                                    marginTop: 6,
+                                                                                    flexDirection: isTwoOptions ? 'row' : 'column',
+                                                                                }}
+                                                                            >
+                                                                                {opts.map((opt) => {
+                                                                                    const selected = item.value === opt;
+                                                                                    return (
+                                                                                        <TouchableOpacity
+                                                                                            key={opt}
+                                                                                            accessible={true}
+                                                                                            accessibilityRole="radio"
+                                                                                            accessibilityState={{ checked: selected, disabled: isChecklistDisabled }}
+                                                                                            accessibilityLabel={opt}
+                                                                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                                                            disabled={isChecklistDisabled}
+                                                                                            onPress={() => updateItem(item.id, opt)}
+                                                                                            activeOpacity={0.7}
+                                                                                            style={[
+                                                                                                isTwoOptions ? styles.formYesNoButton : styles.formSelectOptionRow,
+                                                                                                {
+                                                                                                    backgroundColor: selected
+                                                                                                        ? colors.primary + '18'
+                                                                                                        : colors.surfaceHighlight + '70',
+                                                                                                    borderColor: selected ? colors.primary : colors.border,
+                                                                                                    borderWidth: selected ? 1.5 : 1,
+                                                                                                }
+                                                                                            ]}
+                                                                                        >
+                                                                                            <Ionicons
+                                                                                                name={selected ? 'radio-button-on' : 'radio-button-off'}
+                                                                                                size={22}
+                                                                                                color={selected ? colors.primary : colors.textSecondary}
+                                                                                            />
+                                                                                            <Text
+                                                                                                style={[
+                                                                                                    FONTS.body,
+                                                                                                    {
+                                                                                                        color: selected ? colors.primary : colors.text,
+                                                                                                        fontSize: 14,
+                                                                                                        fontWeight: selected ? '600' : '400',
+                                                                                                    }
+                                                                                                ]}
+                                                                                            >
+                                                                                                {opt}
+                                                                                            </Text>
+                                                                                        </TouchableOpacity>
+                                                                                    );
+                                                                                })}
+                                                                            </View>
+                                                                        );
+                                                                    })()
                                                                 ) : !item.isReadOnly && (item.type === 'multiselect' || item.type === 'checkbox' || item.dataType === 'Multiple Choice' || item.dataType === 'Checkbox') ? (
-                                                                    <View style={{ gap: 6, marginTop: 4 }}>
+                                                                    <View style={{ gap: 8, marginTop: 6 }}>
                                                                         {(item.options && item.options.length > 0 ? item.options : ['Option 1', 'Option 2']).map((opt) => {
                                                                             const currentArray = Array.isArray(item.value) ? (item.value as string[]) : (item.value ? [String(item.value)] : []);
                                                                             const selected = currentArray.includes(opt);
                                                                             return (
                                                                                 <TouchableOpacity
                                                                                     key={opt}
+                                                                                    accessible={true}
+                                                                                    accessibilityRole="checkbox"
+                                                                                    accessibilityState={{ checked: selected, disabled: isChecklistDisabled }}
+                                                                                    accessibilityLabel={opt}
+                                                                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                                                                     disabled={isChecklistDisabled}
                                                                                     onPress={() => {
                                                                                         if (isChecklistDisabled) return;
                                                                                         const nextArray = selected ? currentArray.filter(i => i !== opt) : [...currentArray, opt];
                                                                                         updateItem(item.id, nextArray);
                                                                                     }}
-                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                                    activeOpacity={0.7}
+                                                                                    style={[
+                                                                                        styles.formSelectOptionRow,
+                                                                                        {
+                                                                                            backgroundColor: selected
+                                                                                                ? colors.primary + '18'
+                                                                                                : colors.surfaceHighlight + '70',
+                                                                                            borderColor: selected ? colors.primary : colors.border,
+                                                                                            borderWidth: selected ? 1.5 : 1,
+                                                                                        }
+                                                                                    ]}
                                                                                 >
                                                                                     <Ionicons
                                                                                         name={selected ? 'checkbox' : 'square-outline'}
-                                                                                        size={20}
+                                                                                        size={22}
                                                                                         color={selected ? colors.primary : colors.textSecondary}
                                                                                     />
-                                                                                    <Text style={[FONTS.body, { color: colors.text, fontWeight: selected ? '600' : '400' }]}>
+                                                                                    <Text style={[FONTS.body, { color: selected ? colors.primary : colors.text, fontWeight: selected ? '600' : '400', fontSize: 14 }]}>
                                                                                         {opt}
                                                                                     </Text>
                                                                                 </TouchableOpacity>
@@ -1904,26 +1958,41 @@ export const TaskDetailScreen = () => {
                                                                             return null;
                                                                         }
                                                                         return (
-                                                                            <View style={{ gap: 6, marginTop: 4 }}>
+                                                                            <View style={{ gap: 8, marginTop: 6 }}>
                                                                                 {item.options!.map((opt) => {
                                                                                     const currentArray = Array.isArray(item.value) ? item.value : (item.value ? [String(item.value)] : []);
                                                                                     const isChecked = currentArray.includes(opt);
                                                                                     return (
                                                                                         <TouchableOpacity
                                                                                             key={opt}
+                                                                                            accessible={true}
+                                                                                            accessibilityRole="checkbox"
+                                                                                            accessibilityState={{ checked: isChecked, disabled: isChecklistDisabled }}
+                                                                                            accessibilityLabel={opt}
+                                                                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                                                                             disabled={isChecklistDisabled}
                                                                                             onPress={() => {
                                                                                                 if (isChecklistDisabled) return;
                                                                                                 updateItem(item.id, isChecked ? [] : [opt]);
                                                                                             }}
-                                                                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                                            activeOpacity={0.7}
+                                                                                            style={[
+                                                                                                styles.formSelectOptionRow,
+                                                                                                {
+                                                                                                    backgroundColor: isChecked
+                                                                                                        ? colors.primary + '18'
+                                                                                                        : colors.surfaceHighlight + '70',
+                                                                                                    borderColor: isChecked ? colors.primary : colors.border,
+                                                                                                    borderWidth: isChecked ? 1.5 : 1,
+                                                                                                }
+                                                                                            ]}
                                                                                         >
                                                                                             <Ionicons
                                                                                                 name={isChecked ? 'checkbox' : 'square-outline'}
-                                                                                                size={20}
+                                                                                                size={22}
                                                                                                 color={isChecked ? colors.primary : colors.textSecondary}
                                                                                             />
-                                                                                            <Text style={[FONTS.body, { color: colors.text, fontWeight: isChecked ? '600' : '400', flex: 1 }]}>
+                                                                                            <Text style={[FONTS.body, { color: isChecked ? colors.primary : colors.text, fontWeight: isChecked ? '600' : '400', flex: 1, fontSize: 14 }]}>
                                                                                                 {opt}
                                                                                             </Text>
                                                                                         </TouchableOpacity>
@@ -2169,34 +2238,78 @@ export const TaskDetailScreen = () => {
                                                                     />
                                                                     )
                                                                 ) : item.type === 'radio' || item.dataType === 'Radio button' || item.type === 'dropdown' || item.dataType === 'Dropdown' ? (
-                                                                    <View style={{ gap: isFillOnlyChecklist ? 8 : 12, marginTop: isFillOnlyChecklist ? 2 : 4, flexDirection: (item.options || []).length <= 2 ? 'row' : 'column', flexWrap: 'wrap' }}>
-                                                                        {(item.options || ['Option 1', 'Option 2']).map((opt) => {
-                                                                            const selected = item.value === opt;
-                                                                            return (
-                                                                                <TouchableOpacity
-                                                                                    key={opt}
-                                                                                    disabled={isChecklistDisabled}
-                                                                                    onPress={() => updateItem(item.id, opt)}
-                                                                                    style={{ flexDirection: 'row', alignItems: 'center', gap: isFillOnlyChecklist ? 6 : 10, paddingVertical: isFillOnlyChecklist ? 0 : 4 }}
-                                                                                >
-                                                                                    <Ionicons
-                                                                                        name={selected ? 'radio-button-on' : 'radio-button-off'}
-                                                                                        size={isFillOnlyChecklist ? 18 : 20}
-                                                                                        color={selected ? colors.primary : colors.textSecondary}
-                                                                                    />
-                                                                                    <Text style={[FONTS.body, { color: colors.text, fontSize: isFillOnlyChecklist ? 13 : undefined }]}>{opt}</Text>
-                                                                                </TouchableOpacity>
-                                                                            );
-                                                                        })}
-                                                                    </View>
+                                                                    (() => {
+                                                                        const opts = item.options && item.options.length > 0 ? item.options : ['Option 1', 'Option 2'];
+                                                                        const isTwoOptions = opts.length <= 2;
+                                                                        return (
+                                                                            <View
+                                                                                accessibilityRole="radiogroup"
+                                                                                style={{
+                                                                                    gap: 10,
+                                                                                    marginTop: 6,
+                                                                                    flexDirection: isTwoOptions ? 'row' : 'column',
+                                                                                }}
+                                                                            >
+                                                                                {opts.map((opt) => {
+                                                                                    const selected = item.value === opt;
+                                                                                    return (
+                                                                                        <TouchableOpacity
+                                                                                            key={opt}
+                                                                                            accessible={true}
+                                                                                            accessibilityRole="radio"
+                                                                                            accessibilityState={{ checked: selected, disabled: isChecklistDisabled }}
+                                                                                            accessibilityLabel={opt}
+                                                                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                                                            disabled={isChecklistDisabled}
+                                                                                            onPress={() => updateItem(item.id, opt)}
+                                                                                            activeOpacity={0.7}
+                                                                                            style={[
+                                                                                                isTwoOptions ? styles.formYesNoButton : styles.formSelectOptionRow,
+                                                                                                {
+                                                                                                    backgroundColor: selected
+                                                                                                        ? colors.primary + '18'
+                                                                                                        : colors.surfaceHighlight + '70',
+                                                                                                    borderColor: selected ? colors.primary : colors.border,
+                                                                                                    borderWidth: selected ? 1.5 : 1,
+                                                                                                }
+                                                                                            ]}
+                                                                                        >
+                                                                                            <Ionicons
+                                                                                                name={selected ? 'radio-button-on' : 'radio-button-off'}
+                                                                                                size={22}
+                                                                                                color={selected ? colors.primary : colors.textSecondary}
+                                                                                            />
+                                                                                            <Text
+                                                                                                style={[
+                                                                                                    FONTS.body,
+                                                                                                    {
+                                                                                                        color: selected ? colors.primary : colors.text,
+                                                                                                        fontSize: 14,
+                                                                                                        fontWeight: selected ? '600' : '400',
+                                                                                                    }
+                                                                                                ]}
+                                                                                            >
+                                                                                                {opt}
+                                                                                            </Text>
+                                                                                        </TouchableOpacity>
+                                                                                    );
+                                                                                })}
+                                                                            </View>
+                                                                        );
+                                                                    })()
                                                                 ) : !item.isReadOnly && (item.type === 'multiselect' || item.type === 'checkbox' || item.dataType === 'Multiple Choice' || item.dataType === 'Checkbox' || item.dataType === 'None' || (item.type as string) === 'None' || (item.dataType && item.dataType.toLowerCase() === 'none')) ? (
-                                                                     <View style={{ gap: 6, marginTop: 4 }}>
+                                                                     <View style={{ gap: 8, marginTop: 6 }}>
                                                                          {(item.options && item.options.length > 0 ? item.options : ['Yes', 'No']).map((opt) => {
                                                                              const currentArray = Array.isArray(item.value) ? (item.value as string[]) : (item.value ? [String(item.value)] : []);
                                                                              const selected = currentArray.includes(opt);
                                                                              return (
                                                                                  <TouchableOpacity
                                                                                      key={opt}
+                                                                                     accessible={true}
+                                                                                     accessibilityRole="checkbox"
+                                                                                     accessibilityState={{ checked: selected, disabled: isChecklistDisabled }}
+                                                                                     accessibilityLabel={opt}
+                                                                                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                                                                      disabled={isChecklistDisabled}
                                                                                      onPress={() => {
                                                                                          if (isChecklistDisabled) return;
@@ -2206,14 +2319,24 @@ export const TaskDetailScreen = () => {
                                                                                              : (selected ? currentArray.filter(i => i !== opt) : [...currentArray, opt]);
                                                                                          updateItem(item.id, nextArray);
                                                                                      }}
-                                                                                     style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                                                                                     activeOpacity={0.7}
+                                                                                     style={[
+                                                                                         styles.formSelectOptionRow,
+                                                                                         {
+                                                                                             backgroundColor: selected
+                                                                                                 ? colors.primary + '18'
+                                                                                                 : colors.surfaceHighlight + '70',
+                                                                                             borderColor: selected ? colors.primary : colors.border,
+                                                                                             borderWidth: selected ? 1.5 : 1,
+                                                                                         }
+                                                                                     ]}
                                                                                  >
                                                                                      <Ionicons
                                                                                          name={selected ? 'checkbox' : 'square-outline'}
-                                                                                         size={20}
+                                                                                         size={22}
                                                                                          color={selected ? colors.primary : colors.textSecondary}
                                                                                      />
-                                                                                     <Text style={[FONTS.body, { color: colors.text, fontWeight: selected ? '600' : '400' }]}>{opt}</Text>
+                                                                                     <Text style={[FONTS.body, { color: selected ? colors.primary : colors.text, fontWeight: selected ? '600' : '400', fontSize: 14 }]}>{opt}</Text>
                                                                                  </TouchableOpacity>
                                                                              );
                                                                          })}
@@ -4709,26 +4832,28 @@ const styles = StyleSheet.create({
     formYesNoContainer: {
         flexDirection: 'row',
         gap: 10,
-        marginTop: 4,
+        marginTop: 6,
     },
     formYesNoButton: {
         flex: 1,
-        minHeight: 42,
-        borderRadius: 8,
+        minHeight: 46,
+        borderRadius: 10,
         borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
-        paddingHorizontal: 10,
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
     },
     formSelectOptionRow: {
+        minHeight: 46,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
         paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 8,
+        paddingHorizontal: 14,
+        borderRadius: 10,
         borderWidth: 1,
     },
     formDropdownSelector: {
