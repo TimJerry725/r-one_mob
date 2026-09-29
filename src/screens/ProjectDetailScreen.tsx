@@ -209,12 +209,9 @@ export const OrderCard = ({
                 </View>
             </View>
 
-            <View style={{ flexDirection: 'row', gap: 16, marginTop: 8, marginBottom: 4 }}>
-                <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
+            <View style={{ marginTop: 8, marginBottom: 4 }}>
+                <Text style={[{ color: colors.textSecondary }, FONTS.caption]}>
                     Created by: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.createdBy || item.assignedBy || 'Andrea Meuschke'}</Text>
-                </Text>
-                <Text style={[{ color: colors.textSecondary, flex: 1 }, FONTS.caption]}>
-                    Requested by: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.requestedBy || 'Timothy Jerry'}</Text>
                 </Text>
             </View>
 
