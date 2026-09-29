@@ -3668,12 +3668,6 @@ export const TaskDetailScreen = () => {
                                                         {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                     </Text>
                                                 </View>
-                                                {workOrder.dueWindow ? (
-                                                    <View style={styles.infoRow}>
-                                                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Due Window</Text>
-                                                        <Text style={[styles.infoValue, { color: colors.text }]}>{workOrder.dueWindow}</Text>
-                                                    </View>
-                                                ) : null}
                                             </View>
                                 </ScrollView>
                             </View>
