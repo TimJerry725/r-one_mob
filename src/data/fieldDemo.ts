@@ -680,35 +680,110 @@ export const STEAM_A_CBE_QUESTION_COUNT = 12;
 export const WORK_ORDER_TEMPLATES = [
     {
         id: 'ev-infra-monthly',
+        templateId: 'TMP010',
         name: 'Monthly PM for EV Infra',
         items: PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST,
         total: PREVENTIVE_EV_INFRA_QUESTION_COUNT,
     },
     {
         id: 'ev-charger-monthly',
+        templateId: 'TMP011',
         name: 'Monthly PM for EV Charger',
         items: PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST,
         total: PREVENTIVE_EV_CHARGER_QUESTION_COUNT,
     },
     {
         id: 'ht-yard-half-yearly',
+        templateId: 'TMP012',
         name: 'Half yearly PM for HT Yard',
         items: PREVENTIVE_HT_YARD_CHECKLIST,
         total: PREVENTIVE_HT_YARD_QUESTION_COUNT,
     },
     {
         id: 'standard-fault',
+        templateId: 'standard-fault',
         name: 'Standard Reactive Fault Checklist',
         items: REACTIVE_FAULT_CHECKLIST,
         total: REACTIVE_FAULT_QUESTION_COUNT,
     },
     {
         id: 'steam-a-cbe-all-types',
+        templateId: 'steam-a-cbe-all-types',
         name: 'Steam a Station CBE Diagnostics Checklist',
         items: STEAM_A_CBE_CHECKLIST,
         total: STEAM_A_CBE_QUESTION_COUNT,
     },
 ];
+
+export const resolveChecklistForWorkOrder = (
+    wo?: Partial<WorkOrder> | null
+): { items: ChecklistTemplateItem[]; total: number } => {
+    if (!wo) {
+        return { items: REACTIVE_FAULT_CHECKLIST, total: REACTIVE_FAULT_QUESTION_COUNT };
+    }
+    const title = (wo.title || '').toLowerCase();
+    const notes = (wo.notes || '').toLowerCase();
+    const id = (wo.id || '').toLowerCase();
+
+    // 1. Monthly PM for EV Infra (TMP010)
+    if (
+        id.includes('infra') ||
+        title.includes('ev infra') ||
+        notes.includes('ev infra') ||
+        title.includes('inverter & cable')
+    ) {
+        return { items: PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST, total: PREVENTIVE_EV_INFRA_QUESTION_COUNT };
+    }
+
+    // 2. Monthly PM for EV Charger (TMP011)
+    if (
+        id.includes('charger') ||
+        title.includes('ev charger') ||
+        notes.includes('ev charger') ||
+        title.includes('filter replacement')
+    ) {
+        return { items: PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST, total: PREVENTIVE_EV_CHARGER_QUESTION_COUNT };
+    }
+
+    // 3. Half yearly PM for HT Yard (TMP012)
+    if (
+        id.includes('ht-yard') ||
+        id.includes('ht_yard') ||
+        title.includes('ht yard') ||
+        notes.includes('ht yard') ||
+        title.includes('grounding inspection')
+    ) {
+        return { items: PREVENTIVE_HT_YARD_CHECKLIST, total: PREVENTIVE_HT_YARD_QUESTION_COUNT };
+    }
+
+    // 4. Steam CBE
+    if (id.includes('steam-cbe') || title.includes('steam a station')) {
+        return { items: STEAM_A_CBE_CHECKLIST, total: STEAM_A_CBE_QUESTION_COUNT };
+    }
+
+    // 5. Reactive works
+    if (
+        wo.type === 'Reactive' ||
+        title.includes('fault') ||
+        title.includes('repair') ||
+        title.includes('cable') ||
+        title.includes('liquid cooled')
+    ) {
+        return { items: REACTIVE_FAULT_CHECKLIST, total: REACTIVE_FAULT_QUESTION_COUNT };
+    }
+
+    // 6. Existing items if valid and full length
+    if (wo.checklistItems && wo.checklistItems.length > 8) {
+        return { items: wo.checklistItems, total: wo.checklistTotal || wo.checklistItems.length };
+    }
+
+    // 7. Preventive fallback
+    if (wo.type === 'Preventive') {
+        return { items: PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST, total: PREVENTIVE_EV_CHARGER_QUESTION_COUNT };
+    }
+
+    return { items: REACTIVE_FAULT_CHECKLIST, total: REACTIVE_FAULT_QUESTION_COUNT };
+};
 
 export let WORK_ORDERS: WorkOrder[] = [
     {
@@ -961,8 +1036,8 @@ export let WORK_ORDERS: WorkOrder[] = [
         eta: 'Pending Request',
         distance: '0.8 km',
         checklistCompleted: 0,
-        checklistTotal: 6,
-        checklistItems: PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST.slice(0, 8),
+        checklistTotal: PREVENTIVE_EV_INFRA_QUESTION_COUNT,
+        checklistItems: PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST,
         tools: ['Thermal camera', 'Multimeter'],
         parts: ['DC Fuses'],
         technicians: ['Unassigned'],
@@ -988,8 +1063,8 @@ export let WORK_ORDERS: WorkOrder[] = [
         eta: 'Scheduled',
         distance: '0.7 km',
         checklistCompleted: 0,
-        checklistTotal: 5,
-        checklistItems: PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST.slice(0, 8),
+        checklistTotal: PREVENTIVE_EV_CHARGER_QUESTION_COUNT,
+        checklistItems: PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST,
         tools: ['Screwdriver set', 'Vacuum blower'],
         parts: ['HEPA Filter', 'Intake Mesh'],
         technicians: ['Arjun'],
@@ -1015,8 +1090,8 @@ export let WORK_ORDERS: WorkOrder[] = [
         eta: 'Pending Review',
         distance: '1.2 km',
         checklistCompleted: 0,
-        checklistTotal: 6,
-        checklistItems: PREVENTIVE_HT_YARD_CHECKLIST.slice(0, 8),
+        checklistTotal: PREVENTIVE_HT_YARD_QUESTION_COUNT,
+        checklistItems: PREVENTIVE_HT_YARD_CHECKLIST,
         tools: ['Earth tester', 'Wrench set'],
         parts: ['Copper tape', 'Earthing compound'],
         technicians: ['Tim'],
@@ -1358,6 +1433,10 @@ export const autoSchedulePMs = () => {
                 
                 if (!existingPM) {
                     const newWoId = `wo-auto-${Date.now()}-${asset.id}`;
+                    const pmResolved = resolveChecklistForWorkOrder({
+                        type: 'Preventive',
+                        title: 'Monthly PM for EV Charger',
+                    });
                     addWorkOrder({
                         id: newWoId,
                         projectId: `PJ-AUTO-${Math.floor(Math.random() * 1000)}`,
@@ -1371,7 +1450,8 @@ export const autoSchedulePMs = () => {
                         eta: 'Pending',
                         distance: '0.0 km',
                         checklistCompleted: 0,
-                        checklistTotal: 5,
+                        checklistTotal: pmResolved.total,
+                        checklistItems: pmResolved.items,
                         tools: ['Inspection kit'],
                         parts: [],
                         technicians: [asset.pmAssignee],
@@ -1392,6 +1472,10 @@ export const autoSchedulePMs = () => {
 export const requestPM = (assetId: string, notes: string, hasAttachment: boolean, user: string) => {
     const asset = getAssetById(assetId);
     const newWoId = `wo-req-${Date.now()}`;
+    const reqResolved = resolveChecklistForWorkOrder({
+        type: 'Preventive',
+        title: 'Monthly PM for EV Charger',
+    });
     addWorkOrder({
         id: newWoId,
         projectId: `PJ-REQ-${Math.floor(Math.random() * 1000)}`,
@@ -1405,7 +1489,8 @@ export const requestPM = (assetId: string, notes: string, hasAttachment: boolean
         eta: 'Pending Dispatch',
         distance: '0.0 km',
         checklistCompleted: 0,
-        checklistTotal: 5,
+        checklistTotal: reqResolved.total,
+        checklistItems: reqResolved.items,
         tools: ['Inspection kit'],
         parts: [],
         technicians: [user],

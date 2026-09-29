@@ -23,7 +23,7 @@ import { EmptyStateIllustration } from '../components/EmptyStateIllustration';
 import { getStatusColor } from '../styles/statusColors';
 import { useTheme } from '../context/ThemeContext';
 import { useSession } from '../context/SessionContext';
-import { ACTIVITY_LOG, CHECKLIST_TEMPLATE, ChecklistTemplateItem, getWorkOrderById } from '../data/fieldDemo';
+import { ACTIVITY_LOG, CHECKLIST_TEMPLATE, ChecklistTemplateItem, getWorkOrderById, resolveChecklistForWorkOrder } from '../data/fieldDemo';
 import { PM_DEMO_PHOTOS, getPmDemoPhotoSeed, resolvePmDemoPhotoSource } from '../data/pmDemoPhotos';
 import { FONTS, getInputShellStyle } from '../styles/futurist';
 import { PopoverDropdown } from '../components/PopoverDropdown';
@@ -482,7 +482,10 @@ export const TaskDetailScreen = () => {
     const isAssignedPending = workStatus === 'Assigned' || workStatus === 'Unassigned';
     const isFillOnlyChecklist = true;
     const isAllowNotApplicable = true;
-    const checklistTemplate = workOrder.checklistItems ?? CHECKLIST_TEMPLATE;
+    const resolvedChecklist = resolveChecklistForWorkOrder(workOrder);
+    const checklistTemplate = (workOrder.checklistItems && workOrder.checklistItems.length > 8)
+        ? workOrder.checklistItems
+        : resolvedChecklist.items;
     const [items, setItems] = useState<ChecklistStateItem[]>(() => buildChecklistState(checklistTemplate, isUnderReview));
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const sectionIds = useMemo(

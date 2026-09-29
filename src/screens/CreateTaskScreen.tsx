@@ -33,7 +33,7 @@ import {
     STAGE_NAMES,
     TaskDraftResult,
 } from '../data/createTaskOptions';
-import { WORK_ORDERS, PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST, PREVENTIVE_EV_INFRA_QUESTION_COUNT, WORK_ORDER_TEMPLATES } from '../data/fieldDemo';
+import { WORK_ORDERS, PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST, PREVENTIVE_EV_INFRA_QUESTION_COUNT, WORK_ORDER_TEMPLATES, resolveChecklistForWorkOrder } from '../data/fieldDemo';
 
 const MOCK_PM_WORKS_LIST = [
     {
@@ -164,13 +164,30 @@ export const CreateTaskScreen = () => {
 
         const techs = assignmentType === 'Self' ? ['Self'] : assignees;
         const chosenTemplate = selectedTemplateId
-            ? WORK_ORDER_TEMPLATES.find((t) => t.id === selectedTemplateId) ?? null
+            ? WORK_ORDER_TEMPLATES.find((t) => t.id === selectedTemplateId || t.templateId === selectedTemplateId) ?? null
             : null;
+
+        const effectiveTitle = title.trim() || (
+            serviceType === 'Request Preventive'
+                ? (selectedPmWorkIds.length > 0
+                    ? (MOCK_PM_WORKS_LIST.find((p) => selectedPmWorkIds.includes(p.id))?.title || 'Preventive Maintenance Work')
+                    : 'Preventive Maintenance Work')
+                : 'Reactive Maintenance'
+        );
+
+        const resolved = resolveChecklistForWorkOrder({
+            type: serviceType === 'Request Preventive' ? 'Preventive' : 'Reactive',
+            title: effectiveTitle,
+            notes: description.trim(),
+        });
+
+        const finalItems = chosenTemplate ? chosenTemplate.items : resolved.items;
+        const finalTotal = chosenTemplate ? chosenTemplate.total : resolved.total;
 
         const newWO = {
             id: `wo-${Date.now()}`,
             projectId: projectId || 'PJ001',
-            title: title.trim(),
+            title: effectiveTitle,
             description: description.trim(),
             siteName: siteName,
             address: 'Platform Road, Shivajinagar, Pune',
@@ -181,14 +198,14 @@ export const CreateTaskScreen = () => {
             eta: 'Not started',
             distance: '1.2 km',
             checklistCompleted: 0,
-            checklistTotal: chosenTemplate ? chosenTemplate.total : 0,
-            checklistItems: chosenTemplate ? chosenTemplate.items : [],
+            checklistTotal: finalTotal,
+            checklistItems: finalItems,
             tools: [],
             parts: [],
             technicians: techs,
             assetId: chargePoint || 'CP-100239',
             offlineReady: true,
-            notes: description.trim() || 'Reactive job',
+            notes: description.trim() || (serviceType === 'Request Preventive' ? 'Preventive job' : 'Reactive job'),
             latitude: 18.5314,
             longitude: 73.8446,
             priority: (priority || 'Medium') as any,
