@@ -36,8 +36,12 @@ export type TaskDraftResult = {
 
 export const STATION_PROJECT_OPTIONS: StationProjectOption[] = [
     { siteName: 'Pune Central Station', projectId: 'PJ001' },
-    { siteName: 'Pune Central Station', projectId: 'PJ011' },
+    { siteName: 'Shell Recharge', projectId: 'PJ001' },
+    { siteName: 'Tesco Extra', projectId: 'PJ001' },
     { siteName: 'Mumbai Highway Point', projectId: 'PJ002' },
+    { siteName: 'Industrial Zone B', projectId: 'PJ004' },
+    { siteName: 'Moto Services', projectId: 'PJ005' },
+    { siteName: 'Westfield Hub', projectId: 'PJ006' },
     { siteName: 'Skyline Mall Parking', projectId: 'PJ003' },
     { siteName: 'Harbor Transit Hub', projectId: 'PJ006' },
 ];

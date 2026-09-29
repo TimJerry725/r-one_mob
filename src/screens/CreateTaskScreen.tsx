@@ -37,18 +37,32 @@ import { WORK_ORDERS, PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST, PREVENTIVE_EV_INFRA
 
 const MOCK_PM_WORKS_LIST = [
     {
+        id: 'PM-1000',
+        cpid: 'CPID-KN-01',
+        title: 'Monthly PM for EV Infra',
+        dueDate: 'Today, 09:00 - 12:00',
+        frequency: 'Monthly',
+    },
+    {
+        id: 'PM-1001',
+        cpid: 'CP-100239',
+        title: 'Monthly PM for EV Charger',
+        dueDate: 'Tomorrow, 08:00 - 11:00',
+        frequency: 'Monthly',
+    },
+    {
+        id: 'PM-1002',
+        cpid: 'CP-100102',
+        title: 'Half yearly PM for HT Yard',
+        dueDate: '28 Aug 2026',
+        frequency: 'Half Yearly',
+    },
+    {
         id: 'PM-9012',
         cpid: 'CPID-KN-01',
         title: 'Quarterly Inverter & Cable Inspection',
         dueDate: '24 Aug 2026',
         frequency: 'Every 90 Days',
-    },
-    {
-        id: 'PM-9015',
-        cpid: 'CPID-KN-01',
-        title: 'HV Transformer Thermal Imaging & Calibration',
-        dueDate: '28 Aug 2026',
-        frequency: 'Every 180 Days',
     },
 ];
 
@@ -161,7 +175,7 @@ export const CreateTaskScreen = () => {
             siteName: siteName,
             address: 'Platform Road, Shivajinagar, Pune',
             type: serviceType === 'Request Preventive' ? 'Preventive' as const : 'Reactive' as const,
-            stage: serviceType === 'Request Preventive' ? 'Commissioning' : 'Site Prep',
+            stage: serviceType === 'Request Preventive' ? 'Inspection' : 'Fault Check',
             status: 'Unassigned' as const,
             dueWindow: 'Today, 14:00 - 17:00',
             eta: 'Not started',

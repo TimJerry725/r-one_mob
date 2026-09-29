@@ -77,7 +77,7 @@ export const SingleProjectScreen = () => {
     const projectName = route.params?.projectName;
 
     const visibleOrders = useMemo(() => {
-        return WORK_ORDERS.filter((item) => item.projectId === projectId && item.type === 'Installation');
+        return WORK_ORDERS.filter((item) => item.projectId === projectId);
     }, [projectId]);
 
     const projectAssets = useMemo(() => {
@@ -215,7 +215,7 @@ export const SingleProjectScreen = () => {
                             <View style={styles.emptyState}>
                                 <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
                                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                                    No installation work found for this project.
+                                    No maintenance work found for this project.
                                 </Text>
                             </View>
                         )

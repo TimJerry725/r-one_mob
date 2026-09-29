@@ -134,7 +134,7 @@ export const OrderCard = ({
                                 {' • '}
                             </>
                         )}
-                        {item.type === 'Installation' && (
+                        {item.stage && (
                             <>
                                 <Text style={{ color: isDark ? colors.primaryLight : colors.primary, fontWeight: '600' }}>{item.stage}</Text>
                                 {' • '}
@@ -322,6 +322,9 @@ export const ProjectDetailScreen = () => {
 
     const baseWorkOrders = useMemo(() => {
         return WORK_ORDERS.filter((item) => {
+            if (item.type === 'Installation') {
+                return false;
+            }
             if (!isAdmin && (item.siteName === 'Steam a station CBE' || item.id === 'wo-steam-cbe-01')) {
                 return false;
             }
@@ -344,6 +347,7 @@ export const ProjectDetailScreen = () => {
     const calculateSmartRouteScore = (item: WorkOrder): number => {
         if (isAdmin && item.id === 'wo-steam-cbe-01') return 2000000;
         if (item.id === 'wo-pm-infra-01') return 1000000;
+        if (item.id === 'wo-pm-charger-01') return 999500;
         if (item.id === 'wo-pm-ht-yard-01') return 999000;
         let score = 0;
         
@@ -466,7 +470,7 @@ export const ProjectDetailScreen = () => {
     const filterCounts = useMemo(() => {
         const counts: Record<string, number> = { 
             'Unassigned': 0, 'Assigned': 0, 'Accepted': 0, 'Working': 0, 'Under Review': 0, 'Completed': 0,
-            'Installation': 0, 'Service': 0, 'Reactive': 0, 'Preventive': 0
+            'Reactive': 0, 'Preventive': 0
         };
         baseWorkOrders.forEach((item) => {
             const matchesStatus = selectedStatuses.length === 0 ? true : selectedStatuses.includes(item.status);
@@ -502,10 +506,6 @@ export const ProjectDetailScreen = () => {
                     </View>
 
                     <View style={styles.typeMetricsContainer}>
-                        <View style={[styles.typeMetricBox, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-                            <Text style={[styles.typeMetricCount, { color: colors.primary }]}>{filterCounts['Installation'] || 0}</Text>
-                            <Text style={[styles.typeMetricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Installation</Text>
-                        </View>
                         <View style={[styles.typeMetricBox, { backgroundColor: colors.secondary + '15', borderColor: colors.secondary }]}>
                             <Text style={[styles.typeMetricCount, { color: colors.secondary }]}>{(filterCounts['Reactive'] || 0) + (filterCounts['Service'] || 0)}</Text>
                             <Text style={[styles.typeMetricLabel, { color: colors.textSecondary }]} numberOfLines={1}>Reactive</Text>
@@ -607,7 +607,7 @@ export const ProjectDetailScreen = () => {
 
                                         <View style={[styles.filterDivider, { backgroundColor: colors.border, marginTop: 16 }]} />
                                         <Text style={[styles.filterHeader, { color: colors.textSecondary }]}>TYPE</Text>
-                                        {['Installation', 'Reactive', 'Preventive'].map((type) => {
+                                        {['Reactive', 'Preventive'].map((type) => {
                                             const isSelected = tempSelectedTypes.includes(type);
                                             return (
                                                 <TouchableOpacity
