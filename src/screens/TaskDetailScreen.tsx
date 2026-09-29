@@ -2372,17 +2372,6 @@ export const TaskDetailScreen = () => {
                                                     const sectionId = sectionBlock.section.id;
                                                     const isRootSection = sectionId === '__root__';
                                                     const isExpanded = expandedSectionIds.has(sectionId) || isRootSection;
-
-                                                    // Calculate tasks inside this section
-                                                    const allTasksInSection = [
-                                                        ...sectionBlock.checklists.flatMap((b) => b.tasks),
-                                                        ...sectionBlock.looseTasks,
-                                                    ].filter(isItemVisible);
-                                                    const totalCount = allTasksInSection.length;
-                                                    const completedCount = allTasksInSection.filter((t) => isComplete(t) || t.type === 'not_applicable' || t.isNotApplicable).length;
-                                                    const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-                                                    const isAllDone = totalCount > 0 && completedCount === totalCount;
-
                                                     return (
                                                         <View
                                                             key={sectionId}
@@ -2404,7 +2393,7 @@ export const TaskDetailScreen = () => {
                                                                         style={[
                                                                             styles.formSectionHeaderTouchable,
                                                                             {
-                                                                                backgroundColor: isAllDone ? colors.success + '08' : colors.primary + '08',
+                                                                                backgroundColor: colors.primary + '08',
                                                                                 borderBottomColor: isExpanded ? colors.border : 'transparent',
                                                                                 borderBottomWidth: isExpanded ? StyleSheet.hairlineWidth : 0,
                                                                             },
@@ -2417,7 +2406,7 @@ export const TaskDetailScreen = () => {
                                                                             style={styles.formSectionHeaderLeft}
                                                                         >
                                                                             <View style={{ flex: 1 }}>
-                                                                                <Text style={[styles.formSectionTitle, { color: isAllDone ? colors.success : colors.text }]} numberOfLines={2}>
+                                                                                <Text style={[styles.formSectionTitle, { color: colors.text }]} numberOfLines={2}>
                                                                                     {sectionBlock.section.label}
                                                                                 </Text>
                                                                             </View>
