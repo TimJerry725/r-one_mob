@@ -117,18 +117,23 @@ export type ActivityItem = {
 
 const instructionLabel = (content: string) => {
     const trimmed = content.trim();
-    return /^instruction:/i.test(trimmed) ? trimmed : `Instruction: ${trimmed}`;
+    if (/^remarks:/i.test(trimmed) || /^instruction:/i.test(trimmed)) return trimmed;
+    return `Remarks: ${trimmed}`;
 };
 
-const instructionRow = (id: string, content: string, showWhenFieldId?: string): ChecklistTemplateItem => ({
-    id,
-    label: instructionLabel(content),
-    type: 'none',
-    dataType: 'None',
-    required: false,
-    isReadOnly: true,
-    ...(showWhenFieldId ? { showWhenFieldId, showWhenEquals: 'Yes' } : {}),
-});
+const instructionRow = (id: string, content: string, showWhenFieldId?: string): ChecklistTemplateItem => {
+    const lbl = instructionLabel(content);
+    return {
+        id,
+        label: lbl,
+        type: 'none',
+        dataType: 'None',
+        required: false,
+        isReadOnly: true,
+        defaultValue: lbl,
+        ...(showWhenFieldId ? { showWhenFieldId, showWhenEquals: 'Yes' } : {}),
+    };
+};
 
 const yesNoRadio = (id: string, label: string, showWhenFieldId?: string): ChecklistTemplateItem => ({
     id,
@@ -146,29 +151,36 @@ export const REACTIVE_FAULT_CHECKLIST: ChecklistTemplateItem[] = [
     section('react-sec-1', 'Reactive Fault & Diagnostics'),
     checklist('react-t1-instruction', 'Initial Fault & Alarm Inspection'),
     yesNoRadio('react-t1-visual', 'Visual Check'),
-    instructionRow('react-t1-remarks', 'Remarks: Inspect HMI screen, warning LEDs, and physical enclosure for visible damage.'),
-    { id: 'react-t1-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of fault area', 'Close-up of error screen', 'Surrounding area'] },
+    instructionRow('react-t1-remarks', 'Remarks: Inspect HMI screen, warning LEDs, and physical enclosure for visible damage.', 'react-t1-visual'),
+    { id: 'react-t1-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'react-t1-visual', showWhenEquals: 'Yes', options: ['Overview of fault area', 'Close-up of error screen', 'Surrounding area'] },
+    { id: 'react-t1-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'react-t1-visual', showWhenEquals: 'Yes' },
 
     checklist('react-t2-instruction', 'Connector & Cable Diagnostics'),
     yesNoRadio('react-t2-visual', 'Visual Check'),
-    instructionRow('react-t2-remarks', 'Remarks: Inspect charging cable, connector latch, and pins for damage or burn marks.'),
-    { id: 'react-t2-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Connector pins', 'Cable sleeve', 'Lock mechanism'] },
+    instructionRow('react-t2-remarks', 'Remarks: Inspect charging cable, connector latch, and pins for damage or burn marks.', 'react-t2-visual'),
+    { id: 'react-t2-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'react-t2-visual', showWhenEquals: 'Yes', options: ['Connector pins', 'Cable sleeve', 'Lock mechanism'] },
+    { id: 'react-t2-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'react-t2-visual', showWhenEquals: 'Yes' },
 
     section('react-sec-2', 'Electrical & Earthing Diagnostics'),
     checklist('react-t3-instruction', 'Electrical & Earthing Measurement'),
     yesNoRadio('react-t3-visual', 'Visual Check'),
-    instructionRow('react-t3-remarks', 'Remarks: Verify input supply voltage and Neutral-Earth voltage (< 3V).'),
-    { id: 'react-t3-voltage', label: 'Three-phase input voltage measurements', type: 'three_phase_voltage', dataType: '3 phase voltage', required: true },
+    instructionRow('react-t3-remarks', 'Remarks: Verify input supply voltage and Neutral-Earth voltage (< 3V).', 'react-t3-visual'),
+    { id: 'react-t3-voltage', label: 'Three-phase input voltage measurements', type: 'three_phase_voltage', dataType: '3 phase voltage', required: true, showWhenFieldId: 'react-t3-visual', showWhenEquals: 'Yes' },
+    { id: 'react-t3-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'react-t3-visual', showWhenEquals: 'Yes', options: ['Multimeter screen', 'Busbar terminals', 'Earthing pit'] },
+    { id: 'react-t3-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'react-t3-visual', showWhenEquals: 'Yes' },
 
     section('react-sec-3', 'Component Repair & Verification'),
     checklist('react-t4-instruction', 'Component Repair / Replacement Verification'),
     yesNoRadio('react-t4-visual', 'Visual Check'),
-    instructionRow('react-t4-remarks', 'Remarks: Replace blown fuse, damaged gun latch, or loose terminal connections as required.'),
+    instructionRow('react-t4-remarks', 'Remarks: Replace blown fuse, damaged gun latch, or loose terminal connections as required.', 'react-t4-visual'),
+    { id: 'react-t4-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'react-t4-visual', showWhenEquals: 'Yes', options: ['Old component removed', 'New component installed', 'Wiring completed'] },
+    { id: 'react-t4-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'react-t4-visual', showWhenEquals: 'Yes' },
 
     checklist('react-t5-instruction', 'Post-Repair Test & Operational Sign-off'),
     yesNoRadio('react-t5-visual', 'Visual Check'),
-    instructionRow('react-t5-remarks', 'Remarks: Initiate 5-minute test charging session and confirm normal operation.'),
-    { id: 'react-t5-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Active charging HMI screen', 'Restored charger enclosure', 'Site area cleared'] },
+    instructionRow('react-t5-remarks', 'Remarks: Initiate 5-minute test charging session and confirm normal operation.', 'react-t5-visual'),
+    { id: 'react-t5-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'react-t5-visual', showWhenEquals: 'Yes', options: ['Active charging HMI screen', 'Restored charger enclosure', 'Site area cleared'] },
+    { id: 'react-t5-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'react-t5-visual', showWhenEquals: 'Yes' },
 ];
 
 export const REACTIVE_FAULT_QUESTION_COUNT = REACTIVE_FAULT_CHECKLIST.filter(
@@ -178,242 +190,112 @@ export const REACTIVE_FAULT_QUESTION_COUNT = REACTIVE_FAULT_CHECKLIST.filter(
 export const CHECKLIST_TEMPLATE: ChecklistTemplateItem[] = REACTIVE_FAULT_CHECKLIST;
 
 
-const THREE_PHOTO_REMARKS = ['Photo 1', 'Photo 2', 'Photo 3'];
-
-const evidenceRow = (
-    id: string,
-    label: string,
-    showWhenFieldId: string,
-    kind: 'photos' | 'documents' = 'photos'
-): ChecklistTemplateItem => {
-    if (kind === 'documents') {
-        const options = /SLD|diagram/i.test(label)
-            ? ['SLD document', 'As-installed copy']
-            : ['Test certificate', 'Validity marking'];
-        return {
-    id,
-    label,
-    type: 'media',
-    dataType: 'Media',
-    required: true,
-    showWhenFieldId,
-    showWhenEquals: 'Yes',
-            options,
-        };
-    }
-    const threePhotos = /3 photos/i.test(label);
-    return {
-        id,
-        label,
-        type: 'media',
-        dataType: 'Media',
-        required: true,
-        showWhenFieldId,
-        showWhenEquals: 'Yes',
-        options: threePhotos ? [...THREE_PHOTO_REMARKS] : [''],
-    };
-};
-
-
-const pmChecklist = (
+const evInfraChecklist = (
     sno: string,
     title: string,
-    instruction: string,
-    observation: string,
-    action?: string,
-    evidence?: string,
-    evidenceKind: 'photos' | 'documents' = 'photos'
+    remarks?: string,
+    photoRequired = false
 ): ChecklistTemplateItem[] => {
-    const instructionId = `evpm-t${sno}-instruction`;
-    const observationId = `evpm-t${sno}-obs`;
-    const actionId = `evpm-t${sno}-action`;
-    const evidenceId = `evpm-t${sno}-evidence`;
-    const rows: ChecklistTemplateItem[] = [
-        section(`evpm-sec-${sno}`, title),
-        instructionRow(instructionId, instruction),
+    const visualId = `evpm-t${sno}-visual`;
+    const items: ChecklistTemplateItem[] = [
+        checklist(`evpm-t${sno}-instruction`, title),
+        yesNoRadio(visualId, 'Visual Check'),
     ];
-    const hasAction = Boolean(action);
-    const hasEvidence = Boolean(evidence);
-    if (hasAction) {
-        rows.push(yesNoRadio(observationId, observation));
-        rows.push(yesNoRadio(actionId, action as string, observationId));
-        if (hasEvidence) rows.push(evidenceRow(evidenceId, evidence as string, actionId, evidenceKind));
-    } else {
-        rows.push(yesNoRadio(observationId, observation));
-        if (hasEvidence) rows.push(evidenceRow(evidenceId, evidence as string, observationId, evidenceKind));
+    const trimmedRemarks = (remarks || '').trim();
+    if (trimmedRemarks) {
+        items.push(instructionRow(`evpm-t${sno}-remarks-ins`, trimmedRemarks, visualId));
     }
-    return rows;
+    if (photoRequired) {
+        items.push({
+            id: `evpm-t${sno}-media`,
+            label: 'Upload 3 photos',
+            type: 'media',
+            dataType: 'Media',
+            required: true,
+            showWhenFieldId: visualId,
+            showWhenEquals: 'Yes',
+            options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'],
+        });
+    }
+    items.push({
+        id: `evpm-t${sno}-remarks`,
+        label: 'Remarks',
+        type: 'text',
+        dataType: 'Short text',
+        required: false,
+        showWhenFieldId: visualId,
+        showWhenEquals: 'Yes',
+    });
+    return items;
 };
 
 export const PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST: ChecklistTemplateItem[] = [
     section('evpm-yellow-1', 'Electrical: LT/Main DB Panel (Public Charging)'),
-    checklist('evpm-t1-instruction', 'Check cables in the cable alley for cuts or discoloration.'),
-    yesNoRadio('evpm-t1-visual', 'Visual Check'),
-    instructionRow('evpm-t1-remarks', 'Remarks: If cuts or discoloration is found, replace it.'),
-    { id: 'evpm-t1-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t2-instruction', 'Ensure all dummy holes in the cable alley are properly sealed.'),
-    yesNoRadio('evpm-t2-visual', 'Visual Check'),
-    instructionRow('evpm-t2-remarks', 'Remarks: seal if open'),
-    { id: 'evpm-t2-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t3-instruction', 'Verify surge protection device functionality and look for warning indicators.'),
-    yesNoRadio('evpm-t3-visual', 'Visual Check'),
-    instructionRow('evpm-t3-remarks', 'Remarks: check with warning indicators'),
-    { id: 'evpm-t3-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t4-instruction', 'Confirm the absence of loose or temporary connections.'),
-    yesNoRadio('evpm-t4-visual', 'Visual Check'),
-    instructionRow('evpm-t4-remarks', 'Remarks: check for burns'),
-    checklist('evpm-t5-instruction', 'Ensure phase indication lamps are operational.'),
-    yesNoRadio('evpm-t5-visual', 'Visual Check'),
-    checklist('evpm-t6-instruction', 'Verify the multi-functional meter displays accurate readings.'),
-    yesNoRadio('evpm-t6-visual', 'Visual Check'),
-    instructionRow('evpm-t6-remarks', 'Remarks: verify with multimeter'),
-    checklist('evpm-t7-instruction', 'Confirm correct installation of insulating shrouds.'),
-    yesNoRadio('evpm-t7-visual', 'Visual Check'),
-    instructionRow('evpm-t7-remarks', 'Remarks: install if missing'),
-    checklist('evpm-t8-instruction', 'Check for signs of rodent presence near the panel.'),
-    yesNoRadio('evpm-t8-visual', 'Visual Check'),
-    checklist('evpm-t9-instruction', 'Ensure the internal area is free of dust and debris.'),
-    yesNoRadio('evpm-t9-visual', 'Visual Check'),
-    instructionRow('evpm-t9-remarks', 'Remarks: To be cleaned using blower when required'),
-    { id: 'evpm-t9-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t10-instruction', 'Inspect surroundings for signs of water accumulation.'),
-    yesNoRadio('evpm-t10-visual', 'Visual Check'),
-    instructionRow('evpm-t10-remarks', 'Remarks: check for water marks, click picture; issue to be resolved from source'),
-    { id: 'evpm-t10-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t11-instruction', 'Verify IS15652 compliance and ensure the insulation mat is undamaged.'),
-    yesNoRadio('evpm-t11-visual', 'Visual Check'),
-    instructionRow('evpm-t11-remarks', 'Remarks: Replace if damaged or stolen'),
-    { id: 'evpm-t11-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t13-instruction', 'Ensure cable glands are securely fitted, correctly sized, and free of gaps.'),
-    yesNoRadio('evpm-t13-visual', 'Visual Check'),
-    instructionRow('evpm-t13-remarks', 'Remarks: tighten if loose; replace if damaged'),
-    checklist('evpm-t14-instruction', 'Confirm the single line diagram (SLD) is displayed inside the panel door. (Single line diagram)'),
-    yesNoRadio('evpm-t14-visual', 'Visual Check'),
-    instructionRow('evpm-t14-remarks', 'Remarks: if no, paste the diagram'),
-    checklist('evpm-t15-instruction', 'Inspect terminal blocks and cable terminations for overheating or damage.'),
-    yesNoRadio('evpm-t15-visual', 'Visual Check'),
-    checklist('evpm-t16-instruction', 'Ensure the power distribution board (PDB) is clean internally and externally. (Power distribution board)'),
-    yesNoRadio('evpm-t16-visual', 'Visual Check'),
-    instructionRow('evpm-t16-remarks', 'Remarks: Clean using blower'),
-    { id: 'evpm-t16-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t17-instruction', 'Measure neutral-to-earth voltage and verify earth integrity.'),
-    yesNoRadio('evpm-t17-visual', 'Visual Check'),
-    instructionRow('evpm-t17-remarks', 'Remarks: Check using voltmeter or multimeter, write reading'),
-    checklist('evpm-t18-instruction', 'Record power factor, current, voltage, KW, KWH, and demand from the MFM (Multifunction meter)'),
-    yesNoRadio('evpm-t18-visual', 'Visual Check'),
-    instructionRow('evpm-t18-remarks', 'Remarks: Record reading'),
-    checklist('evpm-t19-instruction', 'No MCCB is in bypassed condition'),
-    yesNoRadio('evpm-t19-visual', 'Visual Check'),
-    instructionRow('evpm-t19-remarks', 'Remarks: Check with switching off MCCB'),
-    checklist('evpm-t20-instruction', 'ELR is functioning proper way ( Yes/No)'),
-    yesNoRadio('evpm-t20-visual', 'Visual Check'),
-    instructionRow('evpm-t20-remarks', 'Remarks: Check with test button'),
-    checklist('evpm-t21-instruction', 'Door is in closed condition and locked'),
-    yesNoRadio('evpm-t21-visual', 'Visual Check'),
-    instructionRow('evpm-t21-remarks', 'Remarks: no gaps, damage to be checked; report if found.'),
+    ...evInfraChecklist('1', 'Check cables in the cable alley for cuts or discoloration.', 'If cuts or discoloration is found, replace it.', true),
+    ...evInfraChecklist('2', 'Ensure all dummy holes in the cable alley are properly sealed.', 'seal if open', true),
+    ...evInfraChecklist('3', 'Verify surge protection device functionality and look for warning indicators.', 'check with warning indicators', true),
+    ...evInfraChecklist('4', 'Confirm the absence of loose or temporary connections.', 'check for burns'),
+    ...evInfraChecklist('5', 'Ensure phase indication lamps are operational.'),
+    ...evInfraChecklist('6', 'Verify the multi-functional meter displays accurate readings.', 'verify with multimeter'),
+    ...evInfraChecklist('7', 'Confirm correct installation of insulating shrouds.', 'install if missing'),
+    ...evInfraChecklist('8', 'Check for signs of rodent presence near the panel.'),
+    ...evInfraChecklist('9', 'Ensure the internal area is free of dust and debris.', 'To be cleaned using blower when required', true),
+    ...evInfraChecklist('10', 'Inspect surroundings for signs of water accumulation.', 'check for water marks, click picture; issue to be resolved from source', true),
+    ...evInfraChecklist('11', 'Verify IS15652 compliance and ensure the insulation mat is undamaged.', 'Replace if damaged or stolen', true),
+    ...evInfraChecklist('13', 'Ensure cable glands are securely fitted, correctly sized, and free of gaps.', 'tighten if loose; replace if damaged'),
+    ...evInfraChecklist('14', 'Confirm the single line diagram (SLD) is displayed inside the panel door. (Single line diagram)', 'if no, paste the diagram'),
+    ...evInfraChecklist('15', 'Inspect terminal blocks and cable terminations for overheating or damage.'),
+    ...evInfraChecklist('16', 'Ensure the power distribution board (PDB) is clean internally and externally. (Power distribution board)', 'Clean using blower', true),
+    ...evInfraChecklist('17', 'Measure neutral-to-earth voltage and verify earth integrity.', 'Check using voltmeter or multimeter, write reading'),
+    ...evInfraChecklist('18', 'Record power factor, current, voltage, KW, KWH, and demand from the MFM (Multifunction meter)', 'Record reading'),
+    ...evInfraChecklist('19', 'No MCCB is in bypassed condition', 'Check with switching off MCCB'),
+    ...evInfraChecklist('20', 'ELR is functioning proper way ( Yes/No)', 'Check with test button'),
+    ...evInfraChecklist('21', 'Door is in closed condition and locked', 'no gaps, damage to be checked; report if found.'),
+
     section('evpm-yellow-2', 'Electrical: Illumination Lights in Charger Locations'),
-    checklist('evpm-t22-instruction', 'All Lights are glowing (no insects trapped inside)'),
-    yesNoRadio('evpm-t22-visual', 'Visual Check'),
-    instructionRow('evpm-t22-remarks', 'Remarks: Check by turning lights on; clean and remove insects'),
-    { id: 'evpm-t22-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t23-instruction', 'Light fixtures are firmly fixed & not hanging'),
-    yesNoRadio('evpm-t23-visual', 'Visual Check'),
-    instructionRow('evpm-t23-remarks', 'Remarks: No light should be hanging or have loose fixture'),
-    { id: 'evpm-t23-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    ...evInfraChecklist('22', 'All Lights are glowing (no insects trapped inside)', 'Check by turning lights on; clean and remove insects', true),
+    ...evInfraChecklist('23', 'Light fixtures are firmly fixed & not hanging', 'No light should be hanging or have loose fixture', true),
+
     section('evpm-yellow-3', 'Electrical: Earth Pits & Earth Grid'),
-    checklist('evpm-t24-instruction', 'Earth pits are marked & are visible'),
-    yesNoRadio('evpm-t24-visual', 'Visual Check'),
-    instructionRow('evpm-t24-remarks', 'Remarks: Clean the pit cover if marking is not visible; mark using paint/marker if required'),
-    { id: 'evpm-t24-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    ...evInfraChecklist('24', 'Earth pits are marked & are visible', 'Clean the pit cover if marking is not visible; mark using paint/marker if required', true),
+
     section('evpm-yellow-4', 'Electrical: CCTV Camera'),
-    checklist('evpm-t25-instruction', 'All CCTV cameras are functional as per the monitor and record non working cameras'),
-    yesNoRadio('evpm-t25-visual', 'Visual Check'),
-    instructionRow('evpm-t25-remarks', 'Remarks: Check for any obstruction of view, dirt on lens etc (check for on light if available)'),
-    section('evpm-yellow-5', 'Charger Cabinet: EV Chargers (AC & DC) (Only Look, Listen & Feel Checks)- Record charger id wherever required'),
-    checklist('evpm-t26-instruction', 'Abnormal noise during operation noticed.'),
-    yesNoRadio('evpm-t26-visual', 'Visual Check'),
-    checklist('evpm-t27-instruction', 'All lights in the charger vicinity are glowing'),
-    yesNoRadio('evpm-t27-visual', 'Visual Check'),
-    instructionRow('evpm-t27-remarks', 'Remarks: clean if required'),
-    { id: 'evpm-t27-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t28-instruction', 'Damage observed on Supporting accessories (Guns, connector etc)'),
-    yesNoRadio('evpm-t28-visual', 'Visual Check'),
-    instructionRow('evpm-t28-remarks', 'Remarks: if yes; inform Ops team'),
-    { id: 'evpm-t28-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t29-instruction', 'Doors are locked & working and no damage observed'),
-    yesNoRadio('evpm-t29-visual', 'Visual Check'),
-    instructionRow('evpm-t29-remarks', 'Remarks: Also check error log for door open. Door locked sensor should not be bypassed'),
-    checklist('evpm-t30-instruction', 'Foundation bolts are tight'),
-    yesNoRadio('evpm-t30-visual', 'Visual Check'),
-    instructionRow('evpm-t30-remarks', 'Remarks: All bolts as per charger diagram should be tight; tighten if loose'),
-    checklist('evpm-t31-instruction', 'Emergency Push Button is working'),
-    yesNoRadio('evpm-t31-visual', 'Visual Check'),
-    instructionRow('evpm-t31-remarks', 'Remarks: Check and then release the button'),
+    ...evInfraChecklist('25', 'All CCTV cameras are functional as per the monitor and record non working cameras', 'Check for any obstruction of view, dirt on lens etc (check for on light if available)'),
+
+    section('evpm-yellow-5', 'Charger Cabinet: EV Chargers (AC & DC) (Only Look, Listen & Feel Checks)-  Record charger id wherever required'),
+    ...evInfraChecklist('26', 'Abnormal noise during operation noticed.'),
+    ...evInfraChecklist('27', 'All lights in the charger vicinity are glowing', 'clean if required', true),
+    ...evInfraChecklist('28', 'Damage observed on Supporting accessories (Guns, connector etc)', 'if yes; inform Ops team', true),
+    ...evInfraChecklist('29', 'Doors are locked & working and no damage observed', 'Also check error log for door open. Door locked sensor should not be bypassed'),
+    ...evInfraChecklist('30', 'Foundation bolts are tight', 'All bolts as per charger diagram should be tight; tighten if loose'),
+    ...evInfraChecklist('31', 'Emergency Push Button is working', 'Check and then release the button'),
+
     section('evpm-yellow-6', 'Housekeeping at Charger Surrounding, Parking'),
-    checklist('evpm-t32-instruction', 'All area is free of scrap/Flammable/unwanted materials'),
-    yesNoRadio('evpm-t32-visual', 'Visual Check'),
-    { id: 'evpm-t32-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t33-instruction', 'Signs of Paan Stains/ Cigarette / trash'),
-    yesNoRadio('evpm-t33-visual', 'Visual Check'),
-    { id: 'evpm-t33-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t34-instruction', 'Water leakage and Stagnation observed in any area'),
-    yesNoRadio('evpm-t34-visual', 'Visual Check'),
-    { id: 'evpm-t34-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t35-instruction', 'Entire area is neat & clean'),
-    yesNoRadio('evpm-t35-visual', 'Visual Check'),
-    instructionRow('evpm-t35-remarks', 'Remarks: Charger, wet cleaning of parking bay, canopy, pedestal, gun, cable, pdb, lights'),
-    { id: 'evpm-t35-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t36-instruction', 'Bird nest visible anywhere in the premises and traces of bird stay'),
-    yesNoRadio('evpm-t36-visual', 'Visual Check'),
-    instructionRow('evpm-t36-remarks', 'Remarks: Remove if found'),
-    { id: 'evpm-t36-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    ...evInfraChecklist('32', 'All area is free of scrap/Flammable/unwanted materials', undefined, true),
+    ...evInfraChecklist('33', 'Signs of Paan Stains/ Cigarette / trash', undefined, true),
+    ...evInfraChecklist('34', 'Water leakage and Stagnation observed in any area', undefined, true),
+    ...evInfraChecklist('35', 'Entire area is neat & clean', 'Charger, wet cleaning of parking bay, canopy, pedestal, gun, cable, pdb, lights', true),
+    ...evInfraChecklist('36', 'Bird nest visible anywhere in the premises and traces of bird stay', 'Remove if found', true),
+
     section('evpm-yellow-7', 'Health Safety & Environment-General Issues - Safety Equipments/ Environments'),
-    checklist('evpm-t37-instruction', 'All fire extinguishers are at the designated place as per SOP'),
-    yesNoRadio('evpm-t37-visual', 'Visual Check'),
-    instructionRow('evpm-t37-remarks', 'Remarks: Clean the pipe'),
-    { id: 'evpm-t37-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t38-instruction', 'Fire extinguisher are in charged condition and ready for use with Validity /Test certificates'),
-    yesNoRadio('evpm-t38-visual', 'Visual Check'),
-    instructionRow('evpm-t38-remarks', 'Remarks: check validy date is visible; re-write if fading'),
-    { id: 'evpm-t38-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    ...evInfraChecklist('37', 'All fire extinguishers are at the designated place as per SOP', 'Clean the pipe', true),
+    ...evInfraChecklist('38', 'Fire extinguisher are in charged condition and ready for use with Validity /Test certificates', 'check validy date is visible; re-write if fading', true),
+
     section('evpm-yellow-8', 'Civil Structures & Facilities - Charger Location'),
-    checklist('evpm-t39-instruction', 'Parking Slot free from pothole and damage'),
-    yesNoRadio('evpm-t39-visual', 'Visual Check'),
-    instructionRow('evpm-t39-remarks', 'Remarks: if found, inform and take picture'),
-    { id: 'evpm-t39-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t40-instruction', 'Canopy Provided is firmly fixed on the column, no loose bolts'),
-    yesNoRadio('evpm-t40-visual', 'Visual Check'),
-    instructionRow('evpm-t40-remarks', 'Remarks: Gentle push on the Canopy structure'),
-    checklist('evpm-t41-instruction', 'Bollard foundation is in good condition and is firmly fixed'),
-    yesNoRadio('evpm-t41-visual', 'Visual Check'),
-    instructionRow('evpm-t41-remarks', 'Remarks: check bolting and tighten if loose'),
-    { id: 'evpm-t41-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t42-instruction', 'Charger is firmly bolted and does not wobble'),
-    yesNoRadio('evpm-t42-visual', 'Visual Check'),
-    instructionRow('evpm-t42-remarks', 'Remarks: Gentle push on the charger'),
-    checklist('evpm-t43-instruction', 'Wheel Stopper is firmly fixed and not damaged'),
-    yesNoRadio('evpm-t43-visual', 'Visual Check'),
-    instructionRow('evpm-t43-remarks', 'Remarks: check bolting and tighten if loose'),
-    { id: 'evpm-t43-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    ...evInfraChecklist('39', 'Parking Slot free from pothole and damage', 'if found, inform and take picture', true),
+    ...evInfraChecklist('40', 'Canopy Provided is firmly fixed on the column, no loose bolts', 'Gentle push on the Canopy structure'),
+    ...evInfraChecklist('41', 'Bollard foundation is in good condition and is firmly fixed', 'check bolting and tighten if loose', true),
+    ...evInfraChecklist('42', 'Charger is firmly bolted and does not wobble', 'Gentle push on the charger'),
+    ...evInfraChecklist('43', 'Wheel Stopper is firmly fixed and not damaged', 'check bolting and tighten if loose', true),
+
     section('evpm-yellow-9', 'Mechanical (Structures/Facilities) - Charger Location & Panel Area'),
-    checklist('evpm-t44-instruction', 'Canopy Structure is rust free'),
-    yesNoRadio('evpm-t44-visual', 'Visual Check'),
-    instructionRow('evpm-t44-remarks', 'Remarks: Check all bolts and infra'),
-    { id: 'evpm-t44-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t45-instruction', 'PDB Structure is rust free'),
-    yesNoRadio('evpm-t45-visual', 'Visual Check'),
-    instructionRow('evpm-t45-remarks', 'Remarks: Check PDB and stand'),
-    { id: 'evpm-t45-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    ...evInfraChecklist('44', 'Canopy Structure is rust free', 'Check all bolts and infra', true),
+    ...evInfraChecklist('45', 'PDB Structure is rust free', 'Check PDB and stand', true),
+
     section('evpm-yellow-10', 'Signage'),
-    checklist('evpm-t46-instruction', 'Signages are intact,not damaged & fixed properly'),
-    yesNoRadio('evpm-t46-visual', 'Visual Check'),
-    { id: 'evpm-t46-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t47-instruction', 'No Fading of colour on Signages observed'),
-    yesNoRadio('evpm-t47-visual', 'Visual Check'),
-    { id: 'evpm-t47-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
-    checklist('evpm-t48-instruction', 'Charger Usage , DOs & DONTs, Customer Care number is available'),
-    yesNoRadio('evpm-t48-visual', 'Visual Check'),
-    { id: 'evpm-t48-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    ...evInfraChecklist('46', 'Signages are intact,not damaged & fixed properly', undefined, true),
+    ...evInfraChecklist('47', 'No Fading of colour on Signages observed', undefined, true),
+    ...evInfraChecklist('48', 'Charger Usage , DOs & DONTs, Customer Care number is available', undefined, true),
 ];
 
 export const PREVENTIVE_EV_INFRA_QUESTION_COUNT = PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST.filter(
@@ -528,81 +410,116 @@ export const PREVENTIVE_EV_CHARGER_QUESTION_COUNT = PREVENTIVE_EV_CHARGER_MONTHL
     (item) => item.type !== 'section_header' && item.type !== 'checklist_header' && !item.isReadOnly
 ).length;
 
+const htYardChecklist = (
+    sno: string,
+    title: string,
+    remarks?: string | string[],
+    photoRequired = false,
+    numericFields?: Array<{ id: string; label: string }>
+): ChecklistTemplateItem[] => {
+    const visualId = `htpm-t${sno}-visual`;
+    const items: ChecklistTemplateItem[] = [
+        checklist(`htpm-t${sno}-instruction`, title),
+        yesNoRadio(visualId, 'Visual Check'),
+    ];
+    if (remarks) {
+        const remarksArray = Array.isArray(remarks) ? remarks : [remarks];
+        remarksArray.forEach((rm, idx) => {
+            const trimmed = rm.trim();
+            if (trimmed) {
+                items.push(instructionRow(`htpm-t${sno}-remarks-ins${idx > 0 ? `-${idx + 1}` : ''}`, trimmed, visualId));
+            }
+        });
+    }
+    if (photoRequired) {
+        items.push({
+            id: `htpm-t${sno}-media`,
+            label: 'Upload 3 photos',
+            type: 'media',
+            dataType: 'Media',
+            required: true,
+            showWhenFieldId: visualId,
+            showWhenEquals: 'Yes',
+            options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'],
+        });
+    }
+    if (numericFields && numericFields.length > 0) {
+        numericFields.forEach((num) => {
+            items.push({
+                id: num.id,
+                label: num.label,
+                type: 'number',
+                dataType: 'Number',
+                required: false,
+                showWhenFieldId: visualId,
+                showWhenEquals: 'Yes',
+            });
+        });
+    }
+    items.push({
+        id: `htpm-t${sno}-remarks`,
+        label: 'Remarks',
+        type: 'text',
+        dataType: 'Short text',
+        required: false,
+        showWhenFieldId: visualId,
+        showWhenEquals: 'Yes',
+    });
+    return items;
+};
+
 export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
     section('htpm-yellow-1', 'HT / DP - INSTALLATION'),
-    checklist('htpm-t1-instruction', 'Check that all equipments-Lighting arrestor (LA\'s) Gang operated switch are properly opeartional'),
-    yesNoRadio('htpm-t1-visual', 'Visual Check'),
-    instructionRow('htpm-t1-remarks', 'Remarks: LA and GOS is operational with AB Switch ,No burnt mark and disclaration at termination'),
-    instructionRow('htpm-t1-remarks-2', 'Remarks: All LA should be healthy without physical damage'),
-    checklist('htpm-t2-instruction', 'Check that earthing resistance and termination are not corroded'),
-    yesNoRadio('htpm-t2-visual', 'Visual Check'),
-    instructionRow('htpm-t2-remarks', 'Remarks: ensure HT power supply is OFF before testing'),
-    { id: 'htpm-t2-ep1', label: 'EP-1 Value (Ohms)', type: 'number', dataType: 'Number', required: false },
-    { id: 'htpm-t2-ep2', label: 'EP-2 Value (Ohms)', type: 'number', dataType: 'Number', required: false },
+    ...htYardChecklist(
+        '1',
+        'Check that all equipments-Lighting arrestor (LA\'s) Gang operated switch are properly opeartional',
+        ['LA and GOS is operational with AB Switch ,No burnt mark and disclaration at termination', 'All LA should be healthy without physical damage']
+    ),
+    ...htYardChecklist(
+        '2',
+        'Check that earthing resistance and termination are not corroded',
+        'ensure HT power supply is OFF before testing',
+        false,
+        [
+            { id: 'htpm-t2-ep1', label: 'EP-1 Value (Ohms)' },
+            { id: 'htpm-t2-ep2', label: 'EP-2 Value (Ohms)' },
+        ]
+    ),
+
     section('htpm-yellow-2', 'RING MAIN UNIT'),
-    checklist('htpm-t3-instruction', 'RMU Panel and Switch gears are properly operational and double earthed.'),
-    yesNoRadio('htpm-t3-visual', 'Visual Check'),
-    instructionRow('htpm-t3-remarks', 'Remarks: Double and independent earthing for meter box'),
-    checklist('htpm-t4-instruction', 'Check that earthing resistance and termination are not corroded of RMU / VCB / Panel'),
-    yesNoRadio('htpm-t4-visual', 'Visual Check'),
-    instructionRow('htpm-t4-remarks', 'Remarks: ensure HT power supply is OFF before testing'),
-    checklist('htpm-t5-instruction', 'Check the tightness of all HT cable terminations at the Transformer, VCB/RMU ends.'),
-    yesNoRadio('htpm-t5-visual', 'Visual Check'),
-    instructionRow('htpm-t5-remarks', 'Remarks: Check for burn marks and tightness'),
-    checklist('htpm-t6-instruction', 'Discoloration or burn marks observed at the termination end'),
-    yesNoRadio('htpm-t6-visual', 'Visual Check'),
-    instructionRow('htpm-t6-remarks', 'Remarks: Damage on CCTV/ view block'),
-    checklist('htpm-t7-instruction', 'Incoming VCB is in working condition and handle is intact for both the Power Supplies if applicable'),
-    yesNoRadio('htpm-t7-visual', 'Visual Check'),
-    instructionRow('htpm-t7-remarks', 'Remarks: Operational checks'),
-    checklist('htpm-t8-instruction', 'Inspect for Physical Damage of any Civil Foundation/Fencing/gate in HT yard'),
-    yesNoRadio('htpm-t8-visual', 'Visual Check'),
-    instructionRow('htpm-t8-remarks', 'Remarks: Visual check'),
-    checklist('htpm-t9-instruction', 'Inspect security systems.'),
-    yesNoRadio('htpm-t9-visual', 'Visual Check'),
-    instructionRow('htpm-t9-remarks', 'Remarks: Damage on CCTV/ view block'),
-    checklist('htpm-t10-instruction', 'Ensure yard is free from waterlogging, vegetation, or debris.'),
-    yesNoRadio('htpm-t10-visual', 'Visual Check'),
-    instructionRow('htpm-t10-remarks', 'Remarks: Visual check'),
+    ...htYardChecklist('3', 'RMU Panel and Switch gears are properly operational and double earthed.', 'Double and independent earthing for meter box'),
+    ...htYardChecklist('4', 'Check that earthing resistance and termination are not corroded of RMU / VCB / Panel', 'ensure HT power supply is OFF before testing'),
+    ...htYardChecklist('5', 'Check the tightness of all HT cable terminations at the Transformer, VCB/RMU ends.', 'Check for burn marks and tightness'),
+    ...htYardChecklist('6', 'Discoloration or burn marks observed at the termination end', 'Damage on CCTV/ view block'),
+    ...htYardChecklist('7', 'Incoming VCB is in working condition and handle is intact for both the Power Supplies if applicable', 'Operational checks'),
+    ...htYardChecklist('8', 'Inspect for Physical Damage of any Civil Foundation/Fencing/gate in HT yard', 'Visual check'),
+    ...htYardChecklist('9', 'Inspect security systems.', 'Damage on CCTV/ view block'),
+    ...htYardChecklist('10', 'Ensure yard is free from waterlogging, vegetation, or debris.', 'Visual check'),
+
     section('htpm-yellow-3', 'SEB METER BOX AND HT Panel'),
-    checklist('htpm-t11-instruction', 'Lubrication to be applied in the parts of the VCB where it is engaged for establishing connection'),
-    yesNoRadio('htpm-t11-visual', 'Visual Check'),
-    instructionRow('htpm-t11-remarks', 'Remarks: Shutdown to be done before testing and to be restored after checking'),
-    checklist('htpm-t12-instruction', 'All setting to be verified as per the load applied with SEB and to be recorded'),
-    yesNoRadio('htpm-t12-visual', 'Visual Check'),
-    instructionRow('htpm-t12-remarks', 'Remarks: Shutdown to be done before testing and to be restored after checking'),
-    checklist('htpm-t13-instruction', 'Condition of SEB seal on meter box'),
-    yesNoRadio('htpm-t13-visual', 'Visual Check'),
-    instructionRow('htpm-t13-remarks', 'Remarks: Mention any damage'),
-    checklist('htpm-t14-instruction', 'Capture the HT meter reading'),
-    yesNoRadio('htpm-t14-visual', 'Visual Check'),
-    instructionRow('htpm-t14-remarks', 'Remarks: Required Photograph'),
-    { id: 'htpm-t14-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'] },
+    ...htYardChecklist('11', 'Lubrication to be applied in the parts of the VCB where it is engaged for establishing connection', 'Shutdown to be done before testing and to be restored after checking'),
+    ...htYardChecklist('12', 'All setting to be verified as per the load applied with SEB and to be recorded', 'Shutdown to be done before testing and to be restored after checking'),
+    ...htYardChecklist('13', 'Condition of SEB seal on meter box', 'Mention any damage'),
+    ...htYardChecklist('14', 'Capture the HT meter reading', 'Required Photograph', true),
+
     section('htpm-yellow-4', 'Transformer Oil Cooled / Air Cooled'),
-    checklist('htpm-t15-instruction', 'Check and Record the Winding Temperature Indicator'),
-    yesNoRadio('htpm-t15-visual', 'Visual Check'),
-    instructionRow('htpm-t15-remarks', 'Remarks: Temp as per the Indicator'),
-    checklist('htpm-t16-instruction', 'Check the Oil level in the conservator'),
-    yesNoRadio('htpm-t16-visual', 'Visual Check'),
-    instructionRow('htpm-t16-remarks', 'Remarks: Should be above the Half Level in the Sight glass and to be Topped up'),
-    checklist('htpm-t17-instruction', 'Check for any oil leakage in the transformer unit'),
-    yesNoRadio('htpm-t17-visual', 'Visual Check'),
-    instructionRow('htpm-t17-remarks', 'Remarks: No oil leakage should be there'),
-    checklist('htpm-t18-instruction', 'Check the breather for good silica gel condition'),
-    yesNoRadio('htpm-t18-visual', 'Visual Check'),
-    instructionRow('htpm-t18-remarks', 'Remarks: Colour should be blue or replace it'),
-    checklist('htpm-t19-instruction', 'Check the transformer neutral is solidly earthed & earthing electrode for transformer neutral.'),
-    yesNoRadio('htpm-t19-visual', 'Visual Check'),
-    instructionRow('htpm-t19-remarks', 'Remarks: 2 nos electodes / Earth Pit and Interconnected, Not rusted and in good condition with marking'),
-    { id: 'htpm-t19-nee1', label: 'NEE-1 Value (Ohms)', type: 'number', dataType: 'Number', required: false },
-    { id: 'htpm-t19-nee2', label: 'NEE-2 Value (Ohms)', type: 'number', dataType: 'Number', required: false },
-    checklist('htpm-t20-instruction', 'Check the statutory "Danger Notice"is Displayed'),
-    yesNoRadio('htpm-t20-visual', 'Visual Check'),
-    instructionRow('htpm-t20-remarks', 'Remarks: To be fixed on Fencing facing customer area near gate'),
-    checklist('htpm-t21-instruction', 'Oil filtration'),
-    yesNoRadio('htpm-t21-visual', 'Visual Check'),
-    checklist('htpm-t22-instruction', 'BDV Test'),
-    yesNoRadio('htpm-t22-visual', 'Visual Check'),
+    ...htYardChecklist('15', 'Check and Record the Winding Temperature Indicator', 'Temp as per the Indicator'),
+    ...htYardChecklist('16', 'Check the Oil level in the conservator', 'Should be above the Half Level in the Sight glass and to be Topped up'),
+    ...htYardChecklist('17', 'Check for any oil leakage in the transformer unit', 'No oil leakage should be there'),
+    ...htYardChecklist('18', 'Check the breather for good silica gel condition', 'Colour should be blue or replace it'),
+    ...htYardChecklist(
+        '19',
+        'Check the transformer neutral is solidly earthed & earthing electrode for transformer neutral.',
+        '2 nos electodes / Earth Pit and Interconnected, Not rusted and in good condition with marking',
+        false,
+        [
+            { id: 'htpm-t19-nee1', label: 'NEE-1 Value (Ohms)' },
+            { id: 'htpm-t19-nee2', label: 'NEE-2 Value (Ohms)' },
+        ]
+    ),
+    ...htYardChecklist('20', 'Check the statutory "Danger Notice"is Displayed', 'To be fixed on Fencing facing customer area near gate'),
+    ...htYardChecklist('21', 'Oil filtration', 'This would be on call basis and in coordination with DISCOM'),
+    ...htYardChecklist('22', 'BDV Test', 'This would be on call basis and in coordination with DISCOM'),
 ];
 
 export const PREVENTIVE_HT_YARD_QUESTION_COUNT = PREVENTIVE_HT_YARD_CHECKLIST.filter(
