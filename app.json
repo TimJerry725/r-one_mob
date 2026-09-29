@@ -2,7 +2,7 @@
   "expo": {
     "name": "r-one-mobV2",
     "slug": "r-one-mob",
-    "owner": "timjerry725",
+    "owner": "tim0725",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -70,7 +70,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "3fb4f46b-594f-48f7-9ff3-188ccfac367b"
+        "projectId": "d9e8a6d4-70a5-4bfa-9e0c-16d9ab78fb5a"
       }
     }
   }
