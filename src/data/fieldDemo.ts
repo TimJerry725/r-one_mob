@@ -786,7 +786,7 @@ export const resolveChecklistForWorkOrder = (
 export let WORK_ORDERS: WorkOrder[] = [
     // --- 4 Reactive Works ---
     {
-        id: 'wo-reac-01',
+        id: 'SW000',
         projectId: 'PJ001',
         title: 'Monthly PM for EV Infra',
         siteName: 'Pune Central Station',
@@ -819,7 +819,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         secondaryApprover: 'Andrea Meuschke',
     },
     {
-        id: 'wo-reac-02',
+        id: 'SW001',
         projectId: 'PJ001',
         title: 'Monthly PM for EV Charger',
         siteName: 'Shell Recharge',
@@ -852,7 +852,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         secondaryApprover: 'Marcus Aurelius',
     },
     {
-        id: 'wo-reac-03',
+        id: 'SW002',
         projectId: 'PJ001',
         title: 'Half yearly PM for HT Yard',
         siteName: 'Tesco Extra',
@@ -885,7 +885,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         secondaryApprover: 'Marcus Hale',
     },
     {
-        id: 'wo-reac-04',
+        id: 'SW003',
         projectId: 'PJ005',
         title: 'Monthly PM for EV Charger',
         siteName: 'Moto Services',
@@ -917,7 +917,7 @@ export let WORK_ORDERS: WorkOrder[] = [
 
     // --- 4 Preventive Works ---
     {
-        id: 'wo-pm-01',
+        id: 'PM-1000',
         projectId: 'PJ001',
         title: 'Monthly PM for EV Infra',
         siteName: 'Pune Central Station',
@@ -950,7 +950,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         secondaryApprover: 'Andrea Meuschke',
     },
     {
-        id: 'wo-pm-02',
+        id: 'PM-1001',
         projectId: 'PJ001',
         title: 'Monthly PM for EV Charger',
         siteName: 'Shell Recharge',
@@ -983,7 +983,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         secondaryApprover: 'Marcus Aurelius',
     },
     {
-        id: 'wo-pm-03',
+        id: 'PM-1002',
         projectId: 'PJ001',
         title: 'Half yearly PM for HT Yard',
         siteName: 'Tesco Extra',
@@ -1016,7 +1016,7 @@ export let WORK_ORDERS: WorkOrder[] = [
         secondaryApprover: 'Marcus Aurelius',
     },
     {
-        id: 'wo-pm-04',
+        id: 'PM-1003',
         projectId: 'PJ005',
         title: 'Monthly PM for EV Charger',
         siteName: 'Moto Services',
@@ -1116,7 +1116,7 @@ export const ASSETS: AssetRecord[] = [
         location: 'Pune Central Station',
         lastService: '18 Mar 2026',
         firmware: 'v4.6.2',
-        linkedWorkOrderId: 'wo-pm-01',
+        linkedWorkOrderId: 'PM-1000',
         pmAssignee: 'Tim',
         pmDurationMonths: 1,
     },
@@ -1129,7 +1129,7 @@ export const ASSETS: AssetRecord[] = [
         location: 'Shell Recharge',
         lastService: '15 Mar 2026',
         firmware: 'v4.6.2',
-        linkedWorkOrderId: 'wo-pm-02',
+        linkedWorkOrderId: 'PM-1001',
         pmAssignee: 'Tim',
         pmDurationMonths: 1,
     },
@@ -1142,7 +1142,7 @@ export const ASSETS: AssetRecord[] = [
         location: 'Tesco Extra',
         lastService: '11 Mar 2026',
         firmware: 'v4.6.0',
-        linkedWorkOrderId: 'wo-pm-03',
+        linkedWorkOrderId: 'PM-1002',
         pmAssignee: 'Arjun',
         pmDurationMonths: 6,
     },
@@ -1155,7 +1155,7 @@ export const ASSETS: AssetRecord[] = [
         location: 'Pune Central Station',
         lastService: '02 Feb 2026',
         firmware: 'v4.5.8',
-        linkedWorkOrderId: 'wo-reac-01',
+        linkedWorkOrderId: 'SW000',
     },
     {
         id: 'asset-5',
@@ -1166,7 +1166,7 @@ export const ASSETS: AssetRecord[] = [
         location: 'Shell Recharge',
         lastService: '22 Mar 2026',
         firmware: 'v3.2.1',
-        linkedWorkOrderId: 'wo-reac-02',
+        linkedWorkOrderId: 'SW001',
     },
     {
         id: 'asset-6',
@@ -1177,7 +1177,7 @@ export const ASSETS: AssetRecord[] = [
         location: 'Moto Services',
         lastService: '21 Mar 2026',
         firmware: 'v4.4.9',
-        linkedWorkOrderId: 'wo-pm-04',
+        linkedWorkOrderId: 'PM-1003',
     },
     {
         id: 'asset-7',
@@ -1188,7 +1188,7 @@ export const ASSETS: AssetRecord[] = [
         location: 'Moto Services',
         lastService: '10 Feb 2026',
         firmware: 'v4.4.9',
-        linkedWorkOrderId: 'wo-reac-04',
+        linkedWorkOrderId: 'SW003',
     },
     {
         id: 'asset-8',
@@ -1199,7 +1199,7 @@ export const ASSETS: AssetRecord[] = [
         location: 'Pune Central Station',
         lastService: '18 Mar 2026',
         firmware: 'v4.6.2',
-        linkedWorkOrderId: 'wo-reac-01',
+        linkedWorkOrderId: 'SW000',
     },
     {
         id: 'asset-9',
@@ -1210,7 +1210,7 @@ export const ASSETS: AssetRecord[] = [
         location: 'Shell Recharge',
         lastService: '18 Mar 2026',
         firmware: 'v2.1.0',
-        linkedWorkOrderId: 'wo-pm-02',
+        linkedWorkOrderId: 'PM-1001',
     },
 ];
 
@@ -1231,8 +1231,8 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
             { id: 'alert-3', title: 'Irregular power delivery', priority: 'Medium', status: 'Open', date: '08 Oct 2024' },
         ],
         workHistory: [
-            { id: 'work-1', title: 'Monthly PM for EV Infra', date: '09 Dec 2024', status: 'Working', linkedWorkOrderId: 'wo-pm-01' },
-            { id: 'work-2', title: 'Monthly PM for EV Infra', date: '11 Dec 2024', status: 'Working', linkedWorkOrderId: 'wo-reac-01' },
+            { id: 'work-1', title: 'Monthly PM for EV Infra', date: '09 Dec 2024', status: 'Working', linkedWorkOrderId: 'PM-1000' },
+            { id: 'work-2', title: 'Monthly PM for EV Infra', date: '11 Dec 2024', status: 'Working', linkedWorkOrderId: 'SW000' },
             { id: 'work-3', title: 'Power module replacement', date: '13 Aug 2024', status: 'Closed' },
         ],
         realtimeEvents: [
@@ -1256,8 +1256,8 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
             { id: 'alert-5', title: 'Door sensor warning', priority: 'Medium', status: 'Open', date: '05 Apr 2026' },
         ],
         workHistory: [
-            { id: 'work-4', title: 'Monthly PM for EV Charger', date: '02 Feb 2026', status: 'Working', linkedWorkOrderId: 'wo-pm-02' },
-            { id: 'work-5', title: 'Monthly PM for EV Charger', date: '18 Jan 2026', status: 'Working', linkedWorkOrderId: 'wo-reac-02' },
+            { id: 'work-4', title: 'Monthly PM for EV Charger', date: '02 Feb 2026', status: 'Working', linkedWorkOrderId: 'PM-1001' },
+            { id: 'work-5', title: 'Monthly PM for EV Charger', date: '18 Jan 2026', status: 'Working', linkedWorkOrderId: 'SW001' },
         ],
         realtimeEvents: [
             { id: 'rt-4', realTime: '06 Apr 2026 09:45 AM', receivedTime: '06 Apr 2026 09:46 AM', recordId: '12014544-res-11' },
@@ -1278,8 +1278,8 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
             { id: 'alert-6', title: 'Cable wear warning', priority: 'Medium', status: 'Open', date: '04 Apr 2026' },
         ],
         workHistory: [
-            { id: 'work-6', title: 'Half yearly PM for HT Yard', date: '11 Mar 2026', status: 'Assigned', linkedWorkOrderId: 'wo-pm-03' },
-            { id: 'work-7', title: 'Half yearly PM for HT Yard', date: '12 Dec 2025', status: 'Assigned', linkedWorkOrderId: 'wo-reac-03' },
+            { id: 'work-6', title: 'Half yearly PM for HT Yard', date: '11 Mar 2026', status: 'Assigned', linkedWorkOrderId: 'PM-1002' },
+            { id: 'work-7', title: 'Half yearly PM for HT Yard', date: '12 Dec 2025', status: 'Assigned', linkedWorkOrderId: 'SW002' },
         ],
         realtimeEvents: [
             { id: 'rt-6', realTime: '05 Apr 2026 11:02 AM', receivedTime: '05 Apr 2026 11:02 AM', recordId: '11887644-res-21' },
@@ -1301,8 +1301,8 @@ export const ASSET_VISION_DETAILS: Record<string, AssetVisionDetail> = {
             { id: 'alert-8', title: 'Network packet loss', priority: 'High', status: 'Assigned', date: '06 Apr 2026' },
         ],
         workHistory: [
-            { id: 'work-8', title: 'Monthly PM for EV Charger', date: '21 Mar 2026', status: 'Under Review', linkedWorkOrderId: 'wo-pm-04' },
-            { id: 'work-9', title: 'Monthly PM for EV Charger', date: '14 Feb 2026', status: 'Completed', linkedWorkOrderId: 'wo-reac-04' },
+            { id: 'work-8', title: 'Monthly PM for EV Charger', date: '21 Mar 2026', status: 'Under Review', linkedWorkOrderId: 'PM-1003' },
+            { id: 'work-9', title: 'Monthly PM for EV Charger', date: '14 Feb 2026', status: 'Completed', linkedWorkOrderId: 'SW003' },
         ],
         realtimeEvents: [
             { id: 'rt-8', realTime: '07 Apr 2026 06:18 AM', receivedTime: '07 Apr 2026 06:19 AM', recordId: '13008721-res-31' },

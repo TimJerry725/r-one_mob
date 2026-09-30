@@ -342,12 +342,12 @@ export const ProjectDetailScreen = () => {
     }, [route.params?.stationFilter, route.params?.typeFilter, route.params?.projectFilter]);
 
     const calculateSmartRouteScore = (item: WorkOrder): number => {
-        if (item.id === 'wo-reac-01') return 3000000;
+        if (item.id === 'SW000') return 3000000;
         if (isAdmin && item.id === 'wo-steam-cbe-01') return 2000000;
-        if (item.id === 'wo-pm-01') return 1000000;
-        if (item.id === 'wo-pm-02') return 999500;
-        if (item.id === 'wo-pm-03') return 999000;
-        if (item.id === 'wo-pm-04') return 998500;
+        if (item.id === 'PM-1000') return 1000000;
+        if (item.id === 'PM-1001') return 999500;
+        if (item.id === 'PM-1002') return 999000;
+        if (item.id === 'PM-1003') return 998500;
         let score = 0;
         
         // 1. Station Business Impact (Highest Priority)

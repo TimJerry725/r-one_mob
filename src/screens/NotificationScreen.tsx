@@ -11,7 +11,7 @@ const INITIAL_NOTIFICATIONS = [
     {
         id: '1',
         type: 'Reactive',
-        workOrderId: 'wo-reac-01',
+        workOrderId: 'SW000',
         title: 'Reactive Work Assigned',
         description: 'Monthly PM for EV Infra at Pune Central Station is assigned to you.',
         timestamp: 'Today, 08:30 AM',
@@ -21,7 +21,7 @@ const INITIAL_NOTIFICATIONS = [
     {
         id: '2',
         type: 'Preventive',
-        workOrderId: 'wo-pm-02',
+        workOrderId: 'PM-1001',
         title: 'Preventive PM Scheduled',
         description: 'Monthly PM for EV Charger scheduled today at Shell Recharge (CP-100239, CP-100240).',
         timestamp: 'Today, 07:15 AM',
@@ -31,7 +31,7 @@ const INITIAL_NOTIFICATIONS = [
     {
         id: '3',
         type: 'Reactive',
-        workOrderId: 'wo-reac-02',
+        workOrderId: 'SW001',
         title: 'Reactive Work Assigned',
         description: 'Monthly PM for EV Charger requested at Shell Recharge due to inverter alert.',
         timestamp: 'Yesterday, 06:45 PM',
@@ -41,7 +41,7 @@ const INITIAL_NOTIFICATIONS = [
     {
         id: '4',
         type: 'Preventive',
-        workOrderId: 'wo-pm-01',
+        workOrderId: 'PM-1000',
         title: 'Monthly PM Inspection Due',
         description: 'Monthly PM for EV Infra checklist due for completion at Pune Central Station.',
         timestamp: 'Yesterday, 02:20 PM',
@@ -51,7 +51,7 @@ const INITIAL_NOTIFICATIONS = [
     {
         id: '5',
         type: 'Preventive',
-        workOrderId: 'wo-pm-03',
+        workOrderId: 'PM-1002',
         title: 'Preventive Work Assigned',
         description: 'Half yearly PM for HT Yard assigned at Tesco Extra.',
         timestamp: '27 Mar 2026, 11:10 AM',
@@ -61,7 +61,7 @@ const INITIAL_NOTIFICATIONS = [
     {
         id: '6',
         type: 'Reactive',
-        workOrderId: 'wo-reac-03',
+        workOrderId: 'SW002',
         title: 'Reactive Work Assigned',
         description: 'Half yearly PM for HT Yard assigned at Tesco Extra.',
         timestamp: '26 Mar 2026, 04:30 PM',
@@ -71,7 +71,7 @@ const INITIAL_NOTIFICATIONS = [
     {
         id: '7',
         type: 'Reactive',
-        workOrderId: 'wo-reac-04',
+        workOrderId: 'SW003',
         title: 'Reactive Work Completed',
         description: 'Monthly PM for EV Charger completed at Moto Services (CP-100555).',
         timestamp: '25 Mar 2026, 09:15 AM',
