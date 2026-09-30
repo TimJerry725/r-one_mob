@@ -1508,83 +1508,26 @@ export const TaskDetailScreen = () => {
                             </View>
                             <View style={styles.geoFenceCopy}>
                                 <Text style={[styles.geoFenceTitle, { color: isDark ? '#FFB74D' : '#8A5800' }]}>
-                                    Location check (Pune Central Station)
+                                    Location check
                                 </Text>
                                 <Text style={[styles.geoFenceMessage, { color: isDark ? colors.text : '#6B4A00' }]}>
-                                    Geofencing is enabled. You are not at or near Pune Central Station. Checklist & status actions are disabled until you arrive on site.
-                                </Text>
-                            </View>
-                            <View style={{ alignItems: 'center', gap: 6 }}>
-                                <TouchableOpacity
-                                    style={{
-                                        paddingVertical: 5,
-                                        paddingHorizontal: 8,
-                                        borderRadius: 6,
-                                        backgroundColor: isDark ? 'rgba(255, 183, 77, 0.25)' : '#FFE082',
-                                    }}
-                                    onPress={() => setIsNearSite(true)}
-                                >
-                                    <Text style={{ fontSize: 10, fontWeight: '700', color: isDark ? '#FFB74D' : '#8A5800' }}>
-                                        Simulate Arrived
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={{ padding: 2 }}
-                                    onPress={() => {
-                                        const lat = workOrder.latitude;
-                                        const lon = workOrder.longitude;
-                                        if (!lat || !lon) return;
-                                        const url = Platform.select({
-                                            ios: `maps:?daddr=${lat},${lon}`,
-                                            default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,
-                                        });
-                                        if (url) Linking.openURL(url);
-                                    }}
-                                >
-                                    <Ionicons name="navigate-outline" size={18} color={isDark ? '#FFB74D' : '#A66A00'} />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    ) : null}
-
-                    {isGeoFenceStation && isNearSite ? (
-                        <View
-                            style={[
-                                styles.geoFenceWarning,
-                                {
-                                    backgroundColor: isDark ? 'rgba(46, 125, 50, 0.14)' : '#E8F5E9',
-                                    borderColor: isDark ? '#81C784' : '#2E7D32',
-                                },
-                            ]}
-                        >
-                            <View
-                                style={[
-                                    styles.geoFenceIcon,
-                                    { backgroundColor: isDark ? 'rgba(46, 125, 50, 0.2)' : '#C8E6C9' },
-                                ]}
-                            >
-                                <Ionicons name="checkmark-circle" size={20} color={isDark ? '#81C784' : '#2E7D32'} />
-                            </View>
-                            <View style={styles.geoFenceCopy}>
-                                <Text style={[styles.geoFenceTitle, { color: isDark ? '#81C784' : '#1B5E20' }]}>
-                                    Geofence Verified (On-Site)
-                                </Text>
-                                <Text style={[styles.geoFenceMessage, { color: isDark ? colors.text : '#1B5E20' }]}>
-                                    You are within Pune Central Station boundary. Checklist actions are unlocked.
+                                    You are not at or near this work location. You can view work and post comments, but checklist & status actions are disabled until you arrive on site.
                                 </Text>
                             </View>
                             <TouchableOpacity
-                                style={{
-                                    paddingVertical: 5,
-                                    paddingHorizontal: 8,
-                                    borderRadius: 6,
-                                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E0E0E0',
+                                style={{ padding: 4 }}
+                                onPress={() => {
+                                    const lat = workOrder.latitude;
+                                    const lon = workOrder.longitude;
+                                    if (!lat || !lon) return;
+                                    const url = Platform.select({
+                                        ios: `maps:?daddr=${lat},${lon}`,
+                                        default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,
+                                    });
+                                    if (url) Linking.openURL(url);
                                 }}
-                                onPress={() => setIsNearSite(false)}
                             >
-                                <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary }}>
-                                    Test Away
-                                </Text>
+                                <Ionicons name="navigate-outline" size={24} color={isDark ? '#FFB74D' : '#A66A00'} />
                             </TouchableOpacity>
                         </View>
                     ) : null}
