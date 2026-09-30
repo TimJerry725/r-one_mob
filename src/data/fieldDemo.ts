@@ -132,7 +132,6 @@ const instructionRow = (id: string, content: string, showWhenFieldId?: string): 
         dataType: 'None',
         required: false,
         isReadOnly: true,
-        defaultValue: lbl,
         ...(showWhenFieldId ? { showWhenFieldId, showWhenEquals: 'Yes' } : {}),
     };
 };
@@ -207,16 +206,18 @@ const evInfraChecklist = (
     if (trimmedRemarks) {
         items.push(instructionRow(`evpm-t${sno}-remarks-ins`, trimmedRemarks, visualId));
     }
-    items.push({
-        id: `evpm-t${sno}-media`,
-        label: 'Upload 3 photos',
-        type: 'media',
-        dataType: 'Media',
-        required: true,
-        showWhenFieldId: visualId,
-        showWhenEquals: 'Yes',
-        options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'],
-    });
+    if (photoRequired) {
+        items.push({
+            id: `evpm-t${sno}-media`,
+            label: 'Upload 3 photos',
+            type: 'media',
+            dataType: 'Media',
+            required: true,
+            showWhenFieldId: visualId,
+            showWhenEquals: 'Yes',
+            options: ['Photo 1', 'Photo 2', 'Photo 3'],
+        });
+    }
     items.push({
         id: `evpm-t${sno}-remarks`,
         label: 'Remarks',
@@ -302,108 +303,79 @@ export const PREVENTIVE_EV_INFRA_QUESTION_COUNT = PREVENTIVE_EV_INFRA_MONTHLY_CH
     (item) => item.type !== 'section_header' && item.type !== 'checklist_header' && !item.isReadOnly
 ).length;
 
+const evChargerChecklist = (
+    sno: string,
+    title: string,
+    remarks?: string | string[],
+    photoRequired = false,
+    numericFields?: string[]
+): ChecklistTemplateItem[] => {
+    const visualId = `evch-t${sno}-visual`;
+    const items: ChecklistTemplateItem[] = [
+        checklist(`evch-t${sno}-instruction`, title),
+        yesNoRadio(visualId, 'Visual Check'),
+    ];
+    if (remarks) {
+        const remarksArray = Array.isArray(remarks) ? remarks : [remarks];
+        remarksArray.forEach((rm, idx) => {
+            const trimmed = rm.trim();
+            if (trimmed) {
+                items.push(instructionRow(`evch-t${sno}-remarks-ins${idx > 0 ? `-${idx + 1}` : ''}`, trimmed, visualId));
+            }
+        });
+    }
+    if (photoRequired) {
+        items.push({
+            id: `evch-t${sno}-media`,
+            label: 'Upload 3 photos',
+            type: 'media',
+            dataType: 'Media',
+            required: true,
+            showWhenFieldId: visualId,
+            showWhenEquals: 'Yes',
+            options: ['Photo 1', 'Photo 2', 'Photo 3'],
+        });
+    }
+    if (numericFields && numericFields.length > 0) {
+        items.push({
+            id: `evch-t${sno}-nums`,
+            label: 'Record Values',
+            type: 'number',
+            dataType: 'Number',
+            required: false,
+            showWhenFieldId: visualId,
+            showWhenEquals: 'Yes',
+            options: numericFields,
+        });
+    }
+    items.push({
+        id: `evch-t${sno}-remarks`,
+        label: 'Remarks',
+        type: 'text',
+        dataType: 'Short text',
+        required: false,
+        showWhenFieldId: visualId,
+        showWhenEquals: 'Yes',
+    });
+    return items;
+};
+
 export const PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST: ChecklistTemplateItem[] = [
     section('evch-yellow-1', 'EV Charger'),
-
-    // 1. Check cables for cuts or discoloration
-    checklist('evch-t1-instruction', 'Check cables for cuts or discoloration'),
-    yesNoRadio('evch-t1-visual', 'Visual Check'),
-    instructionRow('evch-t1-remarks-ins', 'Remarks: Check for cuts, cracks or discoloration at cable ends and sleeves.', 'evch-t1-visual'),
-    { id: 'evch-t1-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t1-visual', showWhenEquals: 'Yes', options: ['Overview of cable condition', 'Close-up of connector sleeve', 'Terminations'] },
-    { id: 'evch-t1-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t1-visual', showWhenEquals: 'Yes' },
-
-    // 2. MCB/MCCB is not burnt and working
-    checklist('evch-t2-instruction', 'MCB/MCCB is not burnt and working'),
-    yesNoRadio('evch-t2-visual', 'Visual Check'),
-    instructionRow('evch-t2-remarks-ins', 'Remarks: switch off and turn back on', 'evch-t2-visual'),
-    { id: 'evch-t2-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t2-visual', showWhenEquals: 'Yes', options: ['Overview of breaker', 'Close-up of contacts', 'Panel surround'] },
-    { id: 'evch-t2-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t2-visual', showWhenEquals: 'Yes' },
-
-    // 3. Air Filter Cleaning
-    checklist('evch-t3-instruction', 'Air Filter Cleaning'),
-    yesNoRadio('evch-t3-visual', 'Visual Check'),
-    instructionRow('evch-t3-remarks-ins', 'Remarks: Clean the air filters periodically to avoid dust accumulation and maintain proper airflow.', 'evch-t3-visual'),
-    { id: 'evch-t3-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t3-visual', showWhenEquals: 'Yes', options: ['Filter before cleaning', 'Filter after cleaning', 'Airflow vent'] },
-    { id: 'evch-t3-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t3-visual', showWhenEquals: 'Yes' },
-
-    // 4. Exhaust is working and clean(if visible)
-    checklist('evch-t4-instruction', 'Exhaust is working and clean(if visible)'),
-    yesNoRadio('evch-t4-visual', 'Visual Check'),
-    instructionRow('evch-t4-remarks-ins', 'Remarks: clean with blower/cloth', 'evch-t4-visual'),
-    { id: 'evch-t4-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t4-visual', showWhenEquals: 'Yes', options: ['Exhaust fan overview', 'Blades clean condition', 'Vent louvers'] },
-    { id: 'evch-t4-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t4-visual', showWhenEquals: 'Yes' },
-
-    // 5. No signs of rodents
-    checklist('evch-t5-instruction', 'No signs of rodents'),
-    yesNoRadio('evch-t5-visual', 'Visual Check'),
-    instructionRow('evch-t5-remarks-ins', 'Remarks: Remove if found any', 'evch-t5-visual'),
-    { id: 'evch-t5-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t5-visual', showWhenEquals: 'Yes', options: ['Bottom gland plate', 'Internal wire conduits', 'Surrounding floor'] },
-    { id: 'evch-t5-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t5-visual', showWhenEquals: 'Yes' },
-
-    // 6. Charger is clean from inside
-    checklist('evch-t6-instruction', 'Charger is clean from inside'),
-    yesNoRadio('evch-t6-visual', 'Visual Check'),
-    instructionRow('evch-t6-remarks-ins', 'Remarks: clean with blower', 'evch-t6-visual'),
-    { id: 'evch-t6-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t6-visual', showWhenEquals: 'Yes', options: ['Internal cabinet before', 'Internal cabinet after', 'Module bay'] },
-    { id: 'evch-t6-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t6-visual', showWhenEquals: 'Yes' },
-
-    // 7. Charger is clean from outside
-    checklist('evch-t7-instruction', 'Charger is clean from outside'),
-    yesNoRadio('evch-t7-visual', 'Visual Check'),
-    instructionRow('evch-t7-remarks-ins', 'Remarks: clean with wet cloth wherever possible (only panels and connector cable)', 'evch-t7-visual'),
-    { id: 'evch-t7-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t7-visual', showWhenEquals: 'Yes', options: ['Front panel', 'Side panels & holster', 'Connector cables clean'] },
-    { id: 'evch-t7-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t7-visual', showWhenEquals: 'Yes' },
-
-    // 8. HMI screen is clan with no dust
-    checklist('evch-t8-instruction', 'HMI screen is clan with no dust'),
-    yesNoRadio('evch-t8-visual', 'Visual Check'),
-    instructionRow('evch-t8-remarks-ins', 'Remarks: Clean with dry cloth', 'evch-t8-visual'),
-    { id: 'evch-t8-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t8-visual', showWhenEquals: 'Yes', options: ['HMI screen display', 'Touch area clean', 'Enclosure bezel'] },
-    { id: 'evch-t8-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t8-visual', showWhenEquals: 'Yes' },
-
-    // 9. Emergency button is working and clean
-    checklist('evch-t9-instruction', 'Emergency button is working and clean'),
-    yesNoRadio('evch-t9-visual', 'Visual Check'),
-    instructionRow('evch-t9-remarks-ins', 'Remarks: check by pushing and releasing, clean with dry cloth', 'evch-t9-visual'),
-    { id: 'evch-t9-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t9-visual', showWhenEquals: 'Yes', options: ['EPO button released', 'EPO button pressed test', 'EPO label visible'] },
-    { id: 'evch-t9-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t9-visual', showWhenEquals: 'Yes' },
-
-    // 10. Input and Earthing Voltage Validation
-    checklist('evch-t10-instruction', 'Input and Earthing Voltage Validation'),
-    yesNoRadio('evch-t10-visual', 'Visual Check'),
-    instructionRow('evch-t10-remarks-ins', 'Remarks: Verify input voltage levels and ensure N-E voltage should be maintained < 03 Volts. Check earthing voltage', 'evch-t10-visual'),
-    { id: 'evch-t10-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t10-visual', showWhenEquals: 'Yes', options: ['Multimeter input voltage', 'N-E voltage reading', 'Earthing busbar'] },
-    { id: 'evch-t10-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t10-visual', showWhenEquals: 'Yes' },
-
-    // 11. Earthing Resistance Check
-    checklist('evch-t11-instruction', 'Earthing Resistance Check'),
-    yesNoRadio('evch-t11-visual', 'Visual Check'),
-    instructionRow('evch-t11-remarks-ins', 'Remarks: Measure and maintain earthing resistance < 05 Ω(ohms) regularly to ensure effective grounding.', 'evch-t11-visual'),
-    { id: 'evch-t11-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t11-visual', showWhenEquals: 'Yes', options: ['Earth tester connected', 'Pit 1 test reading', 'Pit 2 test reading'] },
-    { id: 'evch-t11-ep1', label: 'EP-1 Value (Ohms)', type: 'number', dataType: 'Number', required: false, showWhenFieldId: 'evch-t11-visual', showWhenEquals: 'Yes' },
-    { id: 'evch-t11-ep2', label: 'EP-2 Value (Ohms)', type: 'number', dataType: 'Number', required: false, showWhenFieldId: 'evch-t11-visual', showWhenEquals: 'Yes' },
-    { id: 'evch-t11-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t11-visual', showWhenEquals: 'Yes' },
-
-    // 12. Gun & Vehicle Inlet Cleaning
-    checklist('evch-t12-instruction', 'Gun & Vehicle Inlet Cleaning'),
-    yesNoRadio('evch-t12-visual', 'Visual Check'),
-    instructionRow('evch-t12-remarks-ins', 'Remarks: Clean the charging gun and vehicle inlet terminals regularly to avoid contamination and ensure a secure connection.', 'evch-t12-visual'),
-    { id: 'evch-t12-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t12-visual', showWhenEquals: 'Yes', options: ['Gun A pins clean', 'Gun B pins clean', 'Holster clean'] },
-    { id: 'evch-t12-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t12-visual', showWhenEquals: 'Yes' },
-
-    // 13. Physical Verification of Gun and Contact Points
-    checklist('evch-t13-instruction', 'Physical Verification of Gun and Contact Points'),
-    yesNoRadio('evch-t13-visual', 'Visual Check'),
-    instructionRow('evch-t13-remarks-ins', 'Remarks: Inspect the charging gun and contact points for physical damage or wear', 'evch-t13-visual'),
-    { id: 'evch-t13-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t13-visual', showWhenEquals: 'Yes', options: ['Gun terminal pins', 'Latch mechanism', 'Cable strain relief'] },
-    { id: 'evch-t13-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t13-visual', showWhenEquals: 'Yes' },
-
-    // 14. Verification and Monitoring of Critical Alarms
-    checklist('evch-t14-instruction', 'Verification and Monitoring of Critical Alarms'),
-    yesNoRadio('evch-t14-visual', 'Visual Check'),
-    instructionRow('evch-t14-remarks-ins', 'Remarks: Regularly verify and monitor critical alarms related to EPO pressed, earthing faults, or any input-related faults.', 'evch-t14-visual'),
-    { id: 'evch-t14-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, showWhenFieldId: 'evch-t14-visual', showWhenEquals: 'Yes', options: ['Alarm log screen', 'System healthy status', 'Active warning lights'] },
-    { id: 'evch-t14-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false, showWhenFieldId: 'evch-t14-visual', showWhenEquals: 'Yes' },
+    ...evChargerChecklist('1', 'Check cables for cuts or discoloration'),
+    ...evChargerChecklist('2', 'MCB/MCCB is not burnt and working', 'switch off and turn back on'),
+    ...evChargerChecklist('3', 'Air Filter Cleaning', 'Clean the air filters periodically to avoid dust accumulation and maintain proper airflow.', true),
+    ...evChargerChecklist('4', 'Exhaust is working and clean(if visible)', 'clean with blower/cloth', true),
+    ...evChargerChecklist('5', 'No signs of rodents', 'Remove if found any'),
+    ...evChargerChecklist('6', 'Charger is clean from inside', 'clean with blower', true),
+    ...evChargerChecklist('7', 'Charger is clean from outside', 'clean with wet cloth wherever possible (only panels and connector cable)', true),
+    ...evChargerChecklist('8', 'HMI screen is clan with no dust', 'Clean with dry cloth'),
+    ...evChargerChecklist('9', 'Emergency button is working and clean', 'check by pushing and releasing, clean with dry cloth'),
+    ...evChargerChecklist('10', 'Input and Earthing Voltage Validation', 'Verify input voltage levels and ensure N-E voltage should be maintained < 03 Volts. Check earthing voltage', true),
+    ...evChargerChecklist('11', 'Earthing Resistance Check', 'Measure and maintain earthing resistance < 05 Ω(ohms) regularly to ensure effective grounding.', true, ['EP-1 Value (Ohms)', 'EP-2 Value (Ohms)']),
+    ...evChargerChecklist('12', 'Gun & Vehicle Inlet Cleaning', 'Clean the charging gun and vehicle inlet terminals regularly to avoid contamination and ensure a secure connection.', true),
+    ...evChargerChecklist('13', 'Physical Verification of Gun and Contact Points', 'Inspect the charging gun and contact points for physical damage or wear'),
+    ...evChargerChecklist('14', 'Verification and Monitoring of Critical Alarms', 'Regularly verify and monitor critical alarms related to EPO pressed, earthing faults, or any input-related faults.', true),
 ];
 
 export const PREVENTIVE_EV_CHARGER_QUESTION_COUNT = PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST.filter(
@@ -415,7 +387,7 @@ const htYardChecklist = (
     title: string,
     remarks?: string | string[],
     photoRequired = false,
-    numericFields?: Array<{ id: string; label: string }>
+    numericFields?: string[]
 ): ChecklistTemplateItem[] => {
     const visualId = `htpm-t${sno}-visual`;
     const items: ChecklistTemplateItem[] = [
@@ -431,27 +403,28 @@ const htYardChecklist = (
             }
         });
     }
-    items.push({
-        id: `htpm-t${sno}-media`,
-        label: 'Upload 3 photos',
-        type: 'media',
-        dataType: 'Media',
-        required: true,
-        showWhenFieldId: visualId,
-        showWhenEquals: 'Yes',
-        options: ['Overview of inspection area', 'Close-up of equipment condition', 'Surrounding area / accessories'],
-    });
+    if (photoRequired) {
+        items.push({
+            id: `htpm-t${sno}-media`,
+            label: 'Upload 3 photos',
+            type: 'media',
+            dataType: 'Media',
+            required: true,
+            showWhenFieldId: visualId,
+            showWhenEquals: 'Yes',
+            options: ['Photo 1', 'Photo 2', 'Photo 3'],
+        });
+    }
     if (numericFields && numericFields.length > 0) {
-        numericFields.forEach((num) => {
-            items.push({
-                id: num.id,
-                label: num.label,
-                type: 'number',
-                dataType: 'Number',
-                required: false,
-                showWhenFieldId: visualId,
-                showWhenEquals: 'Yes',
-            });
+        items.push({
+            id: `htpm-t${sno}-nums`,
+            label: 'Record Values',
+            type: 'number',
+            dataType: 'Number',
+            required: false,
+            showWhenFieldId: visualId,
+            showWhenEquals: 'Yes',
+            options: numericFields,
         });
     }
     items.push({
@@ -470,7 +443,7 @@ export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
     section('htpm-yellow-1', 'HT / DP - INSTALLATION'),
     ...htYardChecklist(
         '1',
-        'Check that all equipments-Lighting arrestor (LA\'s) Gang operated switch are properly opeartional',
+        "Check that all equipments-Lighting arrestor (LA's) Gang operated switch are properly opeartional",
         ['LA and GOS is operational with AB Switch ,No burnt mark and disclaration at termination', 'All LA should be healthy without physical damage']
     ),
     ...htYardChecklist(
@@ -478,10 +451,7 @@ export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
         'Check that earthing resistance and termination are not corroded',
         'ensure HT power supply is OFF before testing',
         false,
-        [
-            { id: 'htpm-t2-ep1', label: 'EP-1 Value (Ohms)' },
-            { id: 'htpm-t2-ep2', label: 'EP-2 Value (Ohms)' },
-        ]
+        ['EP-1 Value (Ohms)', 'EP-2 Value (Ohms)']
     ),
 
     section('htpm-yellow-2', 'RING MAIN UNIT'),
@@ -510,10 +480,7 @@ export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
         'Check the transformer neutral is solidly earthed & earthing electrode for transformer neutral.',
         '2 nos electodes / Earth Pit and Interconnected, Not rusted and in good condition with marking',
         false,
-        [
-            { id: 'htpm-t19-nee1', label: 'NEE-1 Value (Ohms)' },
-            { id: 'htpm-t19-nee2', label: 'NEE-2 Value (Ohms)' },
-        ]
+        ['NEE-1 Value (Ohms)', 'NEE-2 Value (Ohms)']
     ),
     ...htYardChecklist('20', 'Check the statutory "Danger Notice"is Displayed', 'To be fixed on Fencing facing customer area near gate'),
     ...htYardChecklist('21', 'Oil filtration', 'This would be on call basis and in coordination with DISCOM'),

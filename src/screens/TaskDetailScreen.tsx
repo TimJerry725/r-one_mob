@@ -1625,7 +1625,7 @@ export const TaskDetailScreen = () => {
                                                         ]}
                                                     >
                                                         {/* Field Header */}
-                                                        <View style={styles.formFieldHeader}>
+                                                        <View style={[styles.formFieldHeader, (item.type === 'none' || item.dataType === 'None' || (item.dataType || '').toLowerCase() === 'none') && (!item.options || item.options.length === 0) ? { marginBottom: 2 } : null]}>
                                                             {/* Left: number + label + required star */}
                                                             <View style={styles.formFieldLabelWrapper}>
                                                                 <View style={styles.formFieldLabelRow}>
@@ -1795,7 +1795,7 @@ export const TaskDetailScreen = () => {
                                                                             onChangeText={(value) => updateItem(item.id, value)}
                                                                         />
                                                                     </View>
-                                                                ) : item.isReadOnly || item.type === 'textarea' || item.dataType === 'Long text' ? (
+                                                                ) : (item.isReadOnly && item.type !== 'none' && item.dataType !== 'None' && (item.dataType || '').toLowerCase() !== 'none') || item.type === 'textarea' || item.dataType === 'Long text' ? (
                                                                     item.isReadOnly ? (
                                                                         <Text style={[FONTS.body, { color: colors.textSecondary, fontSize: 13, lineHeight: 19, fontStyle: 'italic', marginTop: 2 }]}>
                                                                             {String(item.value ?? item.defaultValue ?? item.label ?? '')}
@@ -2241,7 +2241,7 @@ export const TaskDetailScreen = () => {
                                                                         value={String(item.value ?? '')}
                                                                         onChangeText={(value) => updateItem(item.id, value)}
                                                                     />
-                                                                ) : item.isReadOnly || item.type === 'textarea' || item.dataType === 'Long text' ? (
+                                                                ) : (item.isReadOnly && (item.dataType || '').toLowerCase() !== 'none') || item.type === 'textarea' || item.dataType === 'Long text' ? (
                                                                     item.isReadOnly ? (
                                                                         <Text style={[styles.instructionText, isFillOnlyChecklist && styles.instructionTextCompact, { color: colors.textSecondary }]}>
                                                                             {String(item.value ?? item.defaultValue ?? item.label ?? '')}
