@@ -37,13 +37,6 @@ import { WORK_ORDERS, PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST, PREVENTIVE_EV_INFRA
 
 const MOCK_PM_WORKS_LIST = [
     {
-        id: 'PM-1000',
-        cpid: 'CPID-KN-01',
-        title: 'Monthly PM for EV Infra',
-        dueDate: 'Today, 09:00 - 12:00',
-        frequency: 'Monthly',
-    },
-    {
         id: 'PM-1001',
         cpid: 'CP-100239',
         title: 'Monthly PM for EV Charger',
@@ -56,6 +49,13 @@ const MOCK_PM_WORKS_LIST = [
         title: 'Half yearly PM for HT Yard',
         dueDate: '28 Aug 2026',
         frequency: 'Half Yearly',
+    },
+    {
+        id: 'PM-1000',
+        cpid: 'CPID-KN-01',
+        title: 'Monthly PM for EV Infra',
+        dueDate: 'Today, 09:00 - 12:00',
+        frequency: 'Monthly',
     },
     {
         id: 'PM-9012',
