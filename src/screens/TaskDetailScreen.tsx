@@ -1636,27 +1636,25 @@ export const TaskDetailScreen = () => {
                                                         <View style={[styles.formFieldHeader, (item.type === 'none' || item.dataType === 'None' || (item.dataType || '').toLowerCase() === 'none') && (!item.options || item.options.length === 0) ? { marginBottom: 2 } : null]}>
                                                             {/* Left: number + label + required star */}
                                                             <View style={styles.formFieldLabelWrapper}>
-                                                                <View style={styles.formFieldLabelRow}>
+                                                                <Text
+                                                                    style={[
+                                                                        styles.formFieldLabel,
+                                                                        {
+                                                                            color: isNA ? colors.textSecondary : colors.text,
+                                                                            textDecorationLine: isNA ? 'line-through' : 'none',
+                                                                        },
+                                                                    ]}
+                                                                >
                                                                     {num ? (
                                                                         <Text style={[styles.formFieldNumber, { color: colors.textSecondary }]}>
-                                                                            {num}.
+                                                                            {num}.{' '}
                                                                         </Text>
                                                                     ) : null}
-                                                                    <Text
-                                                                        style={[
-                                                                            styles.formFieldLabel,
-                                                                            {
-                                                                                color: isNA ? colors.textSecondary : colors.text,
-                                                                                textDecorationLine: isNA ? 'line-through' : 'none',
-                                                                            },
-                                                                        ]}
-                                                                    >
-                                                                        {item.label}
-                                                                    </Text>
-                                                                    {isFieldRequired && !isNA && (
-                                                                        <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 13.5 }}>*</Text>
-                                                                    )}
-                                                                </View>
+                                                                    {item.label}
+                                                                    {isFieldRequired && !isNA ? (
+                                                                        <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 13.5 }}> *</Text>
+                                                                    ) : null}
+                                                                </Text>
                                                             </View>
 
                                                             {/* Right Side: type chip + checkmark + Action Menu */}
@@ -1724,13 +1722,13 @@ export const TaskDetailScreen = () => {
                                                                                         ) : (
                                                                                             <View style={{ alignItems: 'center', justifyContent: 'center', padding: 8 }}>
                                                                                                 <Ionicons name={isDoc ? 'document-text-outline' : 'camera-outline'} size={24} color={colors.primary} />
-                                                                                                <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, fontSize: 11, textAlign: 'center' }]} numberOfLines={2}>
+                                                                                                <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, fontSize: 11, textAlign: 'center' }]}>
                                                                                                     {slotValue || (isDoc ? 'Upload Doc' : 'Add Photo')}
                                                                                                 </Text>
                                                                                             </View>
                                                                                         )}
                                                                                     </TouchableOpacity>
-                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, fontSize: 11, textAlign: 'center' }]} numberOfLines={1}>
+                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, fontSize: 11, textAlign: 'center' }]}>
                                                                                         {remark || `Attachment ${idx + 1}`}
                                                                                     </Text>
                                                                                 </View>
@@ -2163,13 +2161,13 @@ export const TaskDetailScreen = () => {
                                                                                         ) : (
                                                                                             <>
                                                                                                 <FontAwesome name={isDoc ? 'file-text-o' : 'paperclip'} size={18} color={colors.primary} />
-                                                                                                <Text style={[styles.captureButtonText, { color: colors.text, marginTop: 6, fontSize: 11 }]} numberOfLines={2}>
+                                                                                                <Text style={[styles.captureButtonText, { color: colors.text, marginTop: 6, fontSize: 11 }]}>
                                                                                                     {slotValue || (isDoc ? 'Add document' : 'Add attachment')}
                                                                                                 </Text>
                                                                                             </>
                                                                                         )}
                                                                                     </TouchableOpacity>
-                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 6, lineHeight: 16 }]} numberOfLines={2}>
+                                                                                    <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 6, lineHeight: 16 }]}>
                                                                                         {remark || ((item.options?.length || 0) <= 1 ? 'Remarks' : `Remarks ${idx + 1}`)}
                                                                                     </Text>
                                                                                 </View>
@@ -2435,7 +2433,7 @@ export const TaskDetailScreen = () => {
                                                                             style={styles.formSectionHeaderLeft}
                                                                         >
                                                                             <View style={{ flex: 1 }}>
-                                                                                <Text style={[styles.formSectionTitle, { color: colors.text }]} numberOfLines={2}>
+                                                                                <Text style={[styles.formSectionTitle, { color: colors.text }]}>
                                                                                     {sectionBlock.section.label}
                                                                                 </Text>
                                                                             </View>
@@ -2499,12 +2497,12 @@ export const TaskDetailScreen = () => {
                                                                                             onPress={() => toggleChecklistExpanded(block.checklist.id)}
                                                                                             style={styles.formGroupBannerLeft}
                                                                                         >
-                                                                                            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                                                                                                <Text style={[styles.formGroupTitle, { color: colors.text }]} numberOfLines={2}>
+                                                                                            <View style={{ flex: 1 }}>
+                                                                                                <Text style={[styles.formGroupTitle, { color: colors.text }]}>
                                                                                                     {num ? `${num}. ` : ''}{block.checklist.label}
-                                                                                                </Text>
-                                                                                                <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }}>
-                                                                                                    ({blockTasks.length} {blockTasks.length === 1 ? 'task' : 'tasks'})
+                                                                                                    <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }}>
+                                                                                                        {'  '}({blockTasks.length} {blockTasks.length === 1 ? 'task' : 'tasks'})
+                                                                                                    </Text>
                                                                                                 </Text>
                                                                                             </View>
                                                                                         </TouchableOpacity>
@@ -2553,7 +2551,7 @@ export const TaskDetailScreen = () => {
                                                             }}
                                                             style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
                                                         >
-                                                            <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
+                                                            <Text style={[styles.sectionHeaderText, { color: colors.primary, flex: 1, paddingRight: 8 }]}>
                                                                 {item.label}
                                                             </Text>
                                                             {isFillOnlyChecklist && (
@@ -2583,7 +2581,7 @@ export const TaskDetailScreen = () => {
                                                         key={item.id}
                                                         style={[styles.checklistHeader, { borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: openMenuId === item.id ? 100 : 1 }]}
                                                     >
-                                                        <Text style={[styles.checklistHeaderText, { color: colors.text, flex: 1 }]} numberOfLines={3}>
+                                                        <Text style={[styles.checklistHeaderText, { color: colors.text, flex: 1 }]}>
                                                             {num ? `${num}. ` : ''}{item.label}
                                                             {nestCount ? `  (${nestCount} ${nestCount === 1 ? 'task' : 'tasks'})` : ''}
                                                         </Text>
@@ -3123,12 +3121,11 @@ export const TaskDetailScreen = () => {
                                                 {locText ? (
                                                     <Text
                                                         style={[FONTS.caption, { color: colors.textSecondary, marginBottom: 2, fontSize: 11 }]}
-                                                        numberOfLines={1}
                                                     >
                                                         {locText}
                                                     </Text>
                                                 ) : null}
-                                                <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 14 }]} numberOfLines={2}>
+                                                <Text style={[FONTS.bodyStrong, { color: colors.text, fontSize: 14 }]}>
                                                     {taskNum ? `${taskNum}. ` : ''}{t.label || (t as any).title || 'Mandatory Task'}
                                                 </Text>
                                                 <Text style={[FONTS.caption, { color: colors.danger, marginTop: 2, fontSize: 11 }]}>
