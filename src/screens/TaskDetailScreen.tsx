@@ -480,7 +480,7 @@ export const TaskDetailScreen = () => {
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
     const isOffSite = isGeoFenceStation && !isNearSite;
-    const isChecklistDisabled = isUnderReview || workStatus === 'Completed';
+    const isChecklistDisabled = isUnderReview || workStatus === 'Completed' || isOffSite;
     const isGeoFenceWarningVisible = isOffSite;
     const isPreventiveOrService = true;
     const isAssignedPending = workStatus === 'Assigned' || workStatus === 'Unassigned';
@@ -1039,6 +1039,10 @@ export const TaskDetailScreen = () => {
     };
 
     const updateItem = (id: string, value: any) => {
+        if (isOffSite || isChecklistDisabled) {
+            Alert.alert('Not at site', 'You can view this work, but actions are disabled until you are near the location.');
+            return;
+        }
         if (workStatus === 'Assigned' || workStatus === 'Unassigned') {
             workOrder.status = 'Working';
             setWorkStatus('Working');
@@ -1564,7 +1568,14 @@ export const TaskDetailScreen = () => {
                                 </View>
                             ) : (
                                 <>
-                                    <View style={[styles.listColumn, isFillOnlyChecklist && styles.listColumnCompact]}>
+                                    <View
+                                        style={[
+                                            styles.listColumn,
+                                            isFillOnlyChecklist && styles.listColumnCompact,
+                                            isOffSite && { opacity: 0.65 },
+                                        ]}
+                                        pointerEvents={isOffSite ? 'none' : 'auto'}
+                                    >
                                         {(() => {
                                             const renderTaskCard = (item: ChecklistStateItem) => {
                                             // Conditional visibility: hide if dependent condition not met
