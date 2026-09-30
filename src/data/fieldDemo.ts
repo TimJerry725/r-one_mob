@@ -271,7 +271,7 @@ export const PREVENTIVE_EV_INFRA_MONTHLY_CHECKLIST: ChecklistTemplateItem[] = [
     ...evInfraChecklist('30', 'Foundation bolts are tight', 'All bolts as per charger diagram should be tight; tighten if loose'),
     ...evInfraChecklist('31', 'Emergency Push Button is working', 'Check and then release the button'),
 
-    section('evpm-yellow-6', 'Housekeeping at Charger Surrounding, Parking'),
+    section('evpm-yellow-6', 'Housekeeping at  Charger Surrounding, Parking'),
     ...evInfraChecklist('32', 'All area is free of scrap/Flammable/unwanted materials', undefined, true),
     ...evInfraChecklist('33', 'Signs of Paan Stains/ Cigarette / trash', undefined, true),
     ...evInfraChecklist('34', 'Water leakage and Stagnation observed in any area', undefined, true),
