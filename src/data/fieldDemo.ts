@@ -117,21 +117,18 @@ export type ActivityItem = {
     time: string;
 };
 
-const instructionLabel = (content: string) => {
-    const trimmed = content.trim();
-    if (/^remarks:/i.test(trimmed) || /^instruction:/i.test(trimmed)) return trimmed;
-    return `Remarks: ${trimmed}`;
+const cleanInstructionLabel = (content: string) => {
+    return content.trim().replace(/^remarks:\s*/i, '').replace(/^instruction:\s*/i, '').trim();
 };
 
 const instructionRow = (id: string, content: string, showWhenFieldId?: string): ChecklistTemplateItem => {
-    const lbl = instructionLabel(content);
+    const lbl = cleanInstructionLabel(content);
     return {
         id,
         label: lbl,
-        type: 'none',
-        dataType: 'None',
+        type: 'text',
+        dataType: 'Short text',
         required: false,
-        isReadOnly: true,
         ...(showWhenFieldId ? { showWhenFieldId, showWhenEquals: 'Yes' } : {}),
     };
 };
@@ -152,36 +149,31 @@ export const REACTIVE_FAULT_CHECKLIST: ChecklistTemplateItem[] = [
     section('react-sec-1', 'Reactive Fault & Diagnostics'),
     checklist('react-t1-instruction', 'Initial Fault & Alarm Inspection'),
     yesNoRadio('react-t1-visual', 'Visual Check'),
-    instructionRow('react-t1-remarks', 'Remarks: Inspect HMI screen, warning LEDs, and physical enclosure for visible damage.'),
+    instructionRow('react-t1-remarks', 'Inspect HMI screen, warning LEDs, and physical enclosure for visible damage.'),
     { id: 'react-t1-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Overview of fault area', 'Close-up of error screen', 'Surrounding area'] },
-    { id: 'react-t1-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false },
 
     checklist('react-t2-instruction', 'Connector & Cable Diagnostics'),
     yesNoRadio('react-t2-visual', 'Visual Check'),
-    instructionRow('react-t2-remarks', 'Remarks: Inspect charging cable, connector latch, and pins for damage or burn marks.'),
+    instructionRow('react-t2-remarks', 'Inspect charging cable, connector latch, and pins for damage or burn marks.'),
     { id: 'react-t2-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Connector pins', 'Cable sleeve', 'Lock mechanism'] },
-    { id: 'react-t2-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false },
 
     section('react-sec-2', 'Electrical & Earthing Diagnostics'),
     checklist('react-t3-instruction', 'Electrical & Earthing Measurement'),
     yesNoRadio('react-t3-visual', 'Visual Check'),
-    instructionRow('react-t3-remarks', 'Remarks: Verify input supply voltage and Neutral-Earth voltage (< 3V).'),
+    instructionRow('react-t3-remarks', 'Verify input supply voltage and Neutral-Earth voltage (< 3V).'),
     { id: 'react-t3-voltage', label: 'Three-phase input voltage measurements', type: 'three_phase_voltage', dataType: '3 phase voltage', required: true },
     { id: 'react-t3-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Multimeter screen', 'Busbar terminals', 'Earthing pit'] },
-    { id: 'react-t3-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false },
 
     section('react-sec-3', 'Component Repair & Verification'),
     checklist('react-t4-instruction', 'Component Repair / Replacement Verification'),
     yesNoRadio('react-t4-visual', 'Visual Check'),
-    instructionRow('react-t4-remarks', 'Remarks: Replace blown fuse, damaged gun latch, or loose terminal connections as required.'),
+    instructionRow('react-t4-remarks', 'Replace blown fuse, damaged gun latch, or loose terminal connections as required.'),
     { id: 'react-t4-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Old component removed', 'New component installed', 'Wiring completed'] },
-    { id: 'react-t4-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false },
 
     checklist('react-t5-instruction', 'Post-Repair Test & Operational Sign-off'),
     yesNoRadio('react-t5-visual', 'Visual Check'),
-    instructionRow('react-t5-remarks', 'Remarks: Initiate 5-minute test charging session and confirm normal operation.'),
+    instructionRow('react-t5-remarks', 'Initiate 5-minute test charging session and confirm normal operation.'),
     { id: 'react-t5-media', label: 'Upload 3 photos', type: 'media', dataType: 'Media', required: true, options: ['Active charging HMI screen', 'Restored charger enclosure', 'Site area cleared'] },
-    { id: 'react-t5-input-remarks', label: 'Remarks', type: 'text', dataType: 'Short text', required: false },
 ];
 
 export const REACTIVE_FAULT_QUESTION_COUNT = REACTIVE_FAULT_CHECKLIST.filter(
@@ -216,13 +208,6 @@ const evInfraChecklist = (
             options: ['Photo 1', 'Photo 2', 'Photo 3'],
         });
     }
-    items.push({
-        id: `evpm-t${sno}-remarks`,
-        label: 'Remarks',
-        type: 'text',
-        dataType: 'Short text',
-        required: false,
-    });
     return items;
 };
 
@@ -341,13 +326,6 @@ const evChargerChecklist = (
             options: numericFields,
         });
     }
-    items.push({
-        id: `evch-t${sno}-remarks`,
-        label: 'Remarks',
-        type: 'text',
-        dataType: 'Short text',
-        required: false,
-    });
     return items;
 };
 
@@ -414,13 +392,6 @@ const htYardChecklist = (
             options: numericFields,
         });
     }
-    items.push({
-        id: `htpm-t${sno}-remarks`,
-        label: 'Remarks',
-        type: 'text',
-        dataType: 'Short text',
-        required: false,
-    });
     return items;
 };
 

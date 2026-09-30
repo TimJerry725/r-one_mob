@@ -311,7 +311,7 @@ const getChecklistPlaceholder = (item: ChecklistStateItem) => {
         case 'not_applicable':
             return 'Enter N/A if not applicable';
         default:
-            return 'Add measured values or notes';
+            return 'Enter remarks...';
     }
 };
 
@@ -351,7 +351,7 @@ const MultiResponseEntryItem: React.FC<{
                 <TextInput
                     keyboardType={isNum ? 'numeric' : 'default'}
                     editable={!isUnderReview}
-                    placeholder={isDate ? 'YYYY-MM-DD' : (isNum ? 'Enter number' : 'Enter text...')}
+                    placeholder={isDate ? 'YYYY-MM-DD' : (isNum ? 'Enter number' : 'Enter remarks...')}
                     placeholderTextColor={colors.textSecondary}
                     style={[styles.formInputSingle, { color: colors.text, backgroundColor: colors.surfaceHighlight, borderColor: responses[0] ? colors.primary : colors.border }]}
                     value={responses[0] || ''}
