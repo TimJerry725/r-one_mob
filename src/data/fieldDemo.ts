@@ -195,7 +195,7 @@ const evInfraChecklist = (
     sno: string,
     title: string,
     remarks?: string,
-    photoRequired = false
+    photoRequired = true
 ): ChecklistTemplateItem[] => {
     const visualId = `evpm-t${sno}-visual`;
     const items: ChecklistTemplateItem[] = [
@@ -206,7 +206,7 @@ const evInfraChecklist = (
     if (trimmedRemarks) {
         items.push(instructionRow(`evpm-t${sno}-remarks-ins`, trimmedRemarks, visualId));
     }
-    if (photoRequired) {
+    if (photoRequired !== false) {
         items.push({
             id: `evpm-t${sno}-media`,
             label: 'Upload 3 photos',
@@ -307,8 +307,9 @@ const evChargerChecklist = (
     sno: string,
     title: string,
     remarks?: string | string[],
-    photoRequired = false,
-    numericFields?: string[]
+    photoRequired = true,
+    numericFields?: string[],
+    photoOptions: string[] = ['Photo 1', 'Photo 2', 'Photo 3']
 ): ChecklistTemplateItem[] => {
     const visualId = `evch-t${sno}-visual`;
     const items: ChecklistTemplateItem[] = [
@@ -324,7 +325,7 @@ const evChargerChecklist = (
             }
         });
     }
-    if (photoRequired) {
+    if (photoRequired !== false) {
         items.push({
             id: `evch-t${sno}-media`,
             label: 'Upload 3 photos',
@@ -333,7 +334,7 @@ const evChargerChecklist = (
             required: true,
             showWhenFieldId: visualId,
             showWhenEquals: 'Yes',
-            options: ['Photo 1', 'Photo 2', 'Photo 3'],
+            options: photoOptions,
         });
     }
     if (numericFields && numericFields.length > 0) {
@@ -362,20 +363,20 @@ const evChargerChecklist = (
 
 export const PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST: ChecklistTemplateItem[] = [
     section('evch-yellow-1', 'EV Charger'),
-    ...evChargerChecklist('1', 'Check cables for cuts or discoloration'),
-    ...evChargerChecklist('2', 'MCB/MCCB is not burnt and working', 'switch off and turn back on'),
-    ...evChargerChecklist('3', 'Air Filter Cleaning', 'Clean the air filters periodically to avoid dust accumulation and maintain proper airflow.', true),
-    ...evChargerChecklist('4', 'Exhaust is working and clean(if visible)', 'clean with blower/cloth', true),
-    ...evChargerChecklist('5', 'No signs of rodents', 'Remove if found any'),
-    ...evChargerChecklist('6', 'Charger is clean from inside', 'clean with blower', true),
-    ...evChargerChecklist('7', 'Charger is clean from outside', 'clean with wet cloth wherever possible (only panels and connector cable)', true),
-    ...evChargerChecklist('8', 'HMI screen is clan with no dust', 'Clean with dry cloth'),
-    ...evChargerChecklist('9', 'Emergency button is working and clean', 'check by pushing and releasing, clean with dry cloth'),
-    ...evChargerChecklist('10', 'Input and Earthing Voltage Validation', 'Verify input voltage levels and ensure N-E voltage should be maintained < 03 Volts. Check earthing voltage', true),
-    ...evChargerChecklist('11', 'Earthing Resistance Check', 'Measure and maintain earthing resistance < 05 Ω(ohms) regularly to ensure effective grounding.', true, ['EP-1 Value (Ohms)', 'EP-2 Value (Ohms)']),
-    ...evChargerChecklist('12', 'Gun & Vehicle Inlet Cleaning', 'Clean the charging gun and vehicle inlet terminals regularly to avoid contamination and ensure a secure connection.', true),
-    ...evChargerChecklist('13', 'Physical Verification of Gun and Contact Points', 'Inspect the charging gun and contact points for physical damage or wear'),
-    ...evChargerChecklist('14', 'Verification and Monitoring of Critical Alarms', 'Regularly verify and monitor critical alarms related to EPO pressed, earthing faults, or any input-related faults.', true),
+    ...evChargerChecklist('1', 'Check cables for cuts or discoloration', 'Check for cuts, cracks or discoloration at cable ends and sleeves.', true, undefined, ['Overview of cable condition', 'Close-up of connector sleeve', 'Terminations']),
+    ...evChargerChecklist('2', 'MCB/MCCB is not burnt and working', 'switch off and turn back on', true, undefined, ['Overview of breaker', 'Close-up of contacts', 'Panel surround']),
+    ...evChargerChecklist('3', 'Air Filter Cleaning', 'Clean the air filters periodically to avoid dust accumulation and maintain proper airflow.', true, undefined, ['Filter before cleaning', 'Filter after cleaning', 'Airflow vent']),
+    ...evChargerChecklist('4', 'Exhaust is working and clean(if visible)', 'clean with blower/cloth', true, undefined, ['Exhaust fan overview', 'Blades clean condition', 'Vent louvers']),
+    ...evChargerChecklist('5', 'No signs of rodents', 'Remove if found any', true, undefined, ['Bottom gland plate', 'Internal wire conduits', 'Surrounding floor']),
+    ...evChargerChecklist('6', 'Charger is clean from inside', 'clean with blower', true, undefined, ['Internal cabinet before', 'Internal cabinet after', 'Module bay']),
+    ...evChargerChecklist('7', 'Charger is clean from outside', 'clean with wet cloth wherever possible (only panels and connector cable)', true, undefined, ['Front panel', 'Side panels & holster', 'Connector cables clean']),
+    ...evChargerChecklist('8', 'HMI screen is clan with no dust', 'Clean with dry cloth', true, undefined, ['HMI screen display', 'Touch area clean', 'Enclosure bezel']),
+    ...evChargerChecklist('9', 'Emergency button is working and clean', 'check by pushing and releasing, clean with dry cloth', true, undefined, ['EPO button released', 'EPO button pressed test', 'EPO label visible']),
+    ...evChargerChecklist('10', 'Input and Earthing Voltage Validation', 'Verify input voltage levels and ensure N-E voltage should be maintained < 03 Volts. Check earthing voltage', true, undefined, ['Multimeter input voltage', 'N-E voltage reading', 'Earthing busbar']),
+    ...evChargerChecklist('11', 'Earthing Resistance Check', 'Measure and maintain earthing resistance < 05 Ω(ohms) regularly to ensure effective grounding.', true, ['EP-1 Value (Ohms)', 'EP-2 Value (Ohms)'], ['Earth tester connected', 'Pit 1 test reading', 'Pit 2 test reading']),
+    ...evChargerChecklist('12', 'Gun & Vehicle Inlet Cleaning', 'Clean the charging gun and vehicle inlet terminals regularly to avoid contamination and ensure a secure connection.', true, undefined, ['Gun A pins clean', 'Gun B pins clean', 'Holster clean']),
+    ...evChargerChecklist('13', 'Physical Verification of Gun and Contact Points', 'Inspect the charging gun and contact points for physical damage or wear', true, undefined, ['Gun terminal pins', 'Latch mechanism', 'Cable strain relief']),
+    ...evChargerChecklist('14', 'Verification and Monitoring of Critical Alarms', 'Regularly verify and monitor critical alarms related to EPO pressed, earthing faults, or any input-related faults.', true, undefined, ['Alarm log screen', 'System healthy status', 'Active warning lights']),
 ];
 
 export const PREVENTIVE_EV_CHARGER_QUESTION_COUNT = PREVENTIVE_EV_CHARGER_MONTHLY_CHECKLIST.filter(
@@ -386,7 +387,7 @@ const htYardChecklist = (
     sno: string,
     title: string,
     remarks?: string | string[],
-    photoRequired = false,
+    photoRequired = true,
     numericFields?: string[]
 ): ChecklistTemplateItem[] => {
     const visualId = `htpm-t${sno}-visual`;
@@ -403,7 +404,7 @@ const htYardChecklist = (
             }
         });
     }
-    if (photoRequired) {
+    if (photoRequired !== false) {
         items.push({
             id: `htpm-t${sno}-media`,
             label: 'Upload 3 photos',
@@ -450,7 +451,7 @@ export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
         '2',
         'Check that earthing resistance and termination are not corroded',
         'ensure HT power supply is OFF before testing',
-        false,
+        true,
         ['EP-1 Value (Ohms)', 'EP-2 Value (Ohms)']
     ),
 
@@ -479,7 +480,7 @@ export const PREVENTIVE_HT_YARD_CHECKLIST: ChecklistTemplateItem[] = [
         '19',
         'Check the transformer neutral is solidly earthed & earthing electrode for transformer neutral.',
         '2 nos electodes / Earth Pit and Interconnected, Not rusted and in good condition with marking',
-        false,
+        true,
         ['NEE-1 Value (Ohms)', 'NEE-2 Value (Ohms)']
     ),
     ...htYardChecklist('20', 'Check the statutory "Danger Notice"is Displayed', 'To be fixed on Fencing facing customer area near gate'),
