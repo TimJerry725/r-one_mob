@@ -322,9 +322,9 @@ const MultiResponseEntryItem: React.FC<{
     item: ChecklistStateItem;
     colors: any;
     updateItem: (id: string, value: any) => void;
-    setItems: React.Dispatch<React.SetStateAction<ChecklistStateItem[]>>;
+    setItems?: React.Dispatch<React.SetStateAction<ChecklistStateItem[]>>;
     isUnderReview?: boolean;
-}> = ({ item, colors, updateItem, setItems, isUnderReview }) => {
+}> = ({ item, colors, updateItem, isUnderReview }) => {
     const isNum = item.type === 'number' || item.dataType === 'Number';
     const isDate = item.type === 'date' || item.dataType === 'Date';
 
@@ -334,48 +334,13 @@ const MultiResponseEntryItem: React.FC<{
             ? Object.values(item.value).map(String)
             : [String(item.value ?? '')]);
 
-    const remarks: string[] = (item.options && item.options.length > 0) ? item.options : [''];
-    const maxEntries = Math.max(responses.length, remarks.length, 1);
+    const maxEntries = (item.options && item.options.length > 0) ? item.options.length : 1;
 
     const updateResponseAt = (idx: number, newVal: string) => {
         const nextRes = [...responses];
         while (nextRes.length < maxEntries) nextRes.push('');
         nextRes[idx] = newVal;
         updateItem(item.id, nextRes.length === 1 ? nextRes[0] : nextRes);
-    };
-
-    const updateRemarkAt = (idx: number, newRemark: string) => {
-        const nextRem = [...remarks];
-        while (nextRem.length < maxEntries) nextRem.push('');
-        nextRem[idx] = newRemark;
-        setItems(curr => curr.map(i => i.id === item.id ? { ...i, options: nextRem } : i));
-    };
-
-    const addAnotherSlot = () => {
-        if (maxEntries >= 4) return;
-        const nextRes = [...responses];
-        while (nextRes.length < maxEntries) nextRes.push('');
-        nextRes.push('');
-
-        const nextRem = [...remarks];
-        while (nextRem.length < maxEntries) nextRem.push('');
-        nextRem.push('');
-
-        setItems(curr => curr.map(i => i.id === item.id ? {
-            ...i,
-            value: nextRes,
-            options: nextRem
-        } : i));
-    };
-
-    const removeSlot = (idx: number) => {
-        const nextRes = responses.filter((_, i) => i !== idx);
-        const nextRem = remarks.filter((_, i) => i !== idx);
-        setItems(curr => curr.map(i => i.id === item.id ? {
-            ...i,
-            value: nextRes.length === 1 ? nextRes[0] : nextRes,
-            options: nextRem.length > 0 ? nextRem : ['']
-        } : i));
     };
 
     const hasMultipleOptions = Boolean(item.options && item.options.length > 1);
@@ -400,7 +365,6 @@ const MultiResponseEntryItem: React.FC<{
         <View style={{ gap: 8, marginTop: 4 }}>
             {Array.from({ length: maxEntries }).map((_, idx) => {
                 const resVal = responses[idx] || '';
-                const remVal = remarks[idx] || '';
                 const optionLabel = (item.options && item.options[idx]) ? item.options[idx] : null;
 
                 return (
@@ -420,43 +384,10 @@ const MultiResponseEntryItem: React.FC<{
                                 value={resVal}
                                 onChangeText={(val) => updateResponseAt(idx, val)}
                             />
-                            {!optionLabel && (
-                                <TextInput
-                                    editable={!isUnderReview}
-                                    placeholder={`Remarks ${idx + 1}`}
-                                    placeholderTextColor={colors.textSecondary}
-                                    style={[styles.formInputSingle, { flex: 1, color: colors.text, backgroundColor: colors.surfaceHighlight, borderColor: remVal ? colors.primary : colors.border }]}
-                                    value={remVal}
-                                    onChangeText={(val) => updateRemarkAt(idx, val)}
-                                />
-                            )}
-                            {maxEntries > 1 && !isUnderReview && (
-                                <TouchableOpacity onPress={() => removeSlot(idx)} style={{ padding: 4 }}>
-                                    <FontAwesome name="trash-o" size={18} color={colors.danger} />
-                                </TouchableOpacity>
-                            )}
                         </View>
                     </View>
                 );
             })}
-
-            {maxEntries < ((item.type === 'photo' || item.type === 'media' || item.dataType === 'Media') ? 20 : 4) && !isUnderReview && (
-                <TouchableOpacity
-                    onPress={addAnotherSlot}
-                    style={{
-                        backgroundColor: colors.primary + '12',
-                        borderWidth: 1,
-                        borderColor: colors.primary + '30',
-                        paddingVertical: 10,
-                        borderRadius: 8,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginTop: 4,
-                    }}
-                >
-                    <Text style={[FONTS.bodyStrong, { color: colors.primary, fontSize: 13 }]}>+ Add Another Slot</Text>
-                </TouchableOpacity>
-            )}
         </View>
     );
 };
