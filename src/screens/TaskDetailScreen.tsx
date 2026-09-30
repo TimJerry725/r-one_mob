@@ -517,17 +517,13 @@ export const TaskDetailScreen = () => {
         const numbers = new Map<string, string>();
         if (hasChecklistHeaders) {
             let checklistCount = 0;
-            let taskIndexInChecklist = 0;
             items.forEach((item) => {
                 if (item.type === 'section_header') return;
                 if (item.type === 'checklist_header') {
                     checklistCount += 1;
                     numbers.set(item.id, String(checklistCount));
-                    taskIndexInChecklist = 0;
                     return;
                 }
-                taskIndexInChecklist += 1;
-                numbers.set(item.id, String(taskIndexInChecklist));
             });
         } else {
             let n = 0;
