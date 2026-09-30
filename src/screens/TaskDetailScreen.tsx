@@ -3082,21 +3082,11 @@ export const TaskDetailScreen = () => {
                                 })}
                             </ScrollView>
 
-                            <Text style={[FONTS.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 8 }]}>
-                                {isAllowNotApplicable ? (
-                                    <>
-                                        Please complete all required tasks or mark them as <Text style={{ fontWeight: '700', color: colors.text }}>Not Applicable (N/A)</Text> before marking as complete.
-                                    </>
-                                ) : (
-                                    'Please complete all required tasks before marking as complete.'
-                                )}
-                            </Text>
-
                             <TouchableOpacity
-                                style={[styles.confirmBtn, { backgroundColor: colors.primary, width: '100%', height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }]}
+                                style={[styles.confirmBtn, { backgroundColor: colors.primary, width: '100%', height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 4 }]}
                                 onPress={() => setMandatoryErrorModalVisible(false)}
                             >
-                                <Text style={[styles.confirmBtnText, { color: colors.white, fontSize: 16, fontWeight: '700' }]}>Got it, complete tasks</Text>
+                                <Text style={[styles.confirmBtnText, { color: colors.white, fontSize: 16, fontWeight: '700' }]}>Return to tasks</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
