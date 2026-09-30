@@ -515,21 +515,33 @@ export const TaskDetailScreen = () => {
 
     const taskNumbers = useMemo(() => {
         const numbers = new Map<string, string>();
-        let n = 0;
-        items.forEach((item) => {
-            if (item.type === 'section_header') {
-                n = 0;
-                return;
-            }
-            if (hasChecklistHeaders) {
-                if (item.type !== 'checklist_header') return;
-            } else if (item.type === 'checklist_header') {
-                return;
-            }
-            if (!isItemVisible(item)) return;
-            n += 1;
-            numbers.set(item.id, String(n));
-        });
+        if (hasChecklistHeaders) {
+            let checklistCount = 0;
+            let taskIndexInChecklist = 0;
+            items.forEach((item) => {
+                if (item.type === 'section_header') return;
+                if (item.type === 'checklist_header') {
+                    checklistCount += 1;
+                    numbers.set(item.id, String(checklistCount));
+                    taskIndexInChecklist = 0;
+                    return;
+                }
+                taskIndexInChecklist += 1;
+                numbers.set(item.id, String(taskIndexInChecklist));
+            });
+        } else {
+            let n = 0;
+            items.forEach((item) => {
+                if (item.type === 'section_header') {
+                    n = 0;
+                    return;
+                }
+                if (item.type === 'checklist_header') return;
+                if (!isItemVisible(item)) return;
+                n += 1;
+                numbers.set(item.id, String(n));
+            });
+        }
         return numbers;
     }, [items, hasChecklistHeaders]);
     const sectionTaskCounts = useMemo(() => {
@@ -2491,9 +2503,12 @@ export const TaskDetailScreen = () => {
                                                                                             onPress={() => toggleChecklistExpanded(block.checklist.id)}
                                                                                             style={styles.formGroupBannerLeft}
                                                                                         >
-                                                                                            <View style={{ flex: 1 }}>
+                                                                                            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                                                                                                 <Text style={[styles.formGroupTitle, { color: colors.text }]} numberOfLines={2}>
-                                                                                                    {block.checklist.label}
+                                                                                                    {num ? `${num}. ` : ''}{block.checklist.label}
+                                                                                                </Text>
+                                                                                                <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }}>
+                                                                                                    ({blockTasks.length} {blockTasks.length === 1 ? 'task' : 'tasks'})
                                                                                                 </Text>
                                                                                             </View>
                                                                                         </TouchableOpacity>
