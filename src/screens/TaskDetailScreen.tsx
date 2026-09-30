@@ -474,7 +474,7 @@ export const TaskDetailScreen = () => {
     const siteNameLower = (workOrder.siteName || '').toLowerCase();
     const titleLower = (workOrder.title || '').toLowerCase();
     const isGeoFenceStation =
-        workOrder.id === 'wo-102' ||
+        workOrder.id === 'wo-geofence-demo' ||
         siteNameLower.includes('mumbai highway') ||
         titleLower.includes('connector fault');
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
