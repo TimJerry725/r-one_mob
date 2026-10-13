@@ -34,12 +34,8 @@ export const LoginScreen = () => {
         setSession({
             email,
             displayName: getDisplayName(email),
-            role: 'field',
         });
-        navigation.reset({
-            index: 0,
-            routes: [{ name: 'MainTabs' }],
-        });
+        navigation.navigate('RoleSelection');
     };
 
     return (

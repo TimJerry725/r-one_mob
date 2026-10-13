@@ -20,13 +20,21 @@ export const RoleSelectionScreen = () => {
                         <Logo width={140} height={34} />
                     </View>
                     <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-                        <Text style={[styles.title, { color: colors.text }]}>Field Team Portal</Text>
+                        <Text style={[styles.title, { color: colors.text }]}>Select Your Role</Text>
                         <View style={styles.buttonContainer}>
                             <NeonButton
                                 title="Field Team"
                                 onPress={() => {
                                     setSession({ role: 'field' });
                                     navigation.navigate('MainTabs');
+                                }}
+                                style={styles.button}
+                            />
+                            <NeonButton
+                                title="Admin/Central Team"
+                                onPress={() => {
+                                    setSession({ role: 'admin' });
+                                    navigation.navigate('AdminTeam');
                                 }}
                                 style={styles.button}
                             />

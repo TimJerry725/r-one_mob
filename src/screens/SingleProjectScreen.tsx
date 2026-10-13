@@ -41,7 +41,7 @@ export const SingleProjectScreen = () => {
             id: 'pact-1',
             type: 'status',
             title: 'Project Initialized',
-            detail: 'Field team dispatched Pune Central Station DC installation.',
+            detail: 'Central team dispatched Pune Central Station DC installation.',
             time: '2 hours ago',
         },
     ]);
