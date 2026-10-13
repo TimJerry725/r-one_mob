@@ -324,7 +324,8 @@ const MultiResponseEntryItem: React.FC<{
     updateItem: (id: string, value: any) => void;
     setItems?: React.Dispatch<React.SetStateAction<ChecklistStateItem[]>>;
     isUnderReview?: boolean;
-}> = ({ item, colors, updateItem, isUnderReview }) => {
+    isAdmin?: boolean;
+}> = ({ item, colors, updateItem, setItems, isUnderReview, isAdmin }) => {
     const isNum = item.type === 'number' || item.dataType === 'Number';
     const isDate = item.type === 'date' || item.dataType === 'Date';
 
@@ -334,7 +335,10 @@ const MultiResponseEntryItem: React.FC<{
             ? Object.values(item.value).map(String)
             : [String(item.value ?? '')]);
 
-    const maxEntries = (item.options && item.options.length > 0) ? item.options.length : 1;
+    const remarks: string[] = (item.options && item.options.length > 0) ? item.options : [''];
+    const maxEntries = isAdmin
+        ? Math.max(responses.length, remarks.length, 1)
+        : ((item.options && item.options.length > 0) ? item.options.length : 1);
 
     const updateResponseAt = (idx: number, newVal: string) => {
         const nextRes = [...responses];
@@ -343,9 +347,45 @@ const MultiResponseEntryItem: React.FC<{
         updateItem(item.id, nextRes.length === 1 ? nextRes[0] : nextRes);
     };
 
+    const updateRemarkAt = (idx: number, newRemark: string) => {
+        if (!setItems) return;
+        const nextRem = [...remarks];
+        while (nextRem.length < maxEntries) nextRem.push('');
+        nextRem[idx] = newRemark;
+        setItems(curr => curr.map(i => i.id === item.id ? { ...i, options: nextRem } : i));
+    };
+
+    const addAnotherSlot = () => {
+        if (!setItems || maxEntries >= 4) return;
+        const nextRes = [...responses];
+        while (nextRes.length < maxEntries) nextRes.push('');
+        nextRes.push('');
+
+        const nextRem = [...remarks];
+        while (nextRem.length < maxEntries) nextRem.push('');
+        nextRem.push('');
+
+        setItems(curr => curr.map(i => i.id === item.id ? {
+            ...i,
+            value: nextRes,
+            options: nextRem
+        } : i));
+    };
+
+    const removeSlot = (idx: number) => {
+        if (!setItems) return;
+        const nextRes = responses.filter((_, i) => i !== idx);
+        const nextRem = remarks.filter((_, i) => i !== idx);
+        setItems(curr => curr.map(i => i.id === item.id ? {
+            ...i,
+            value: nextRes.length === 1 ? nextRes[0] : nextRes,
+            options: nextRem.length > 0 ? nextRem : ['']
+        } : i));
+    };
+
     const hasMultipleOptions = Boolean(item.options && item.options.length > 1);
 
-    if (!hasMultipleOptions && maxEntries === 1) {
+    if (!hasMultipleOptions && maxEntries === 1 && !isAdmin) {
         return (
             <View style={{ marginTop: 4 }}>
                 <TextInput
@@ -365,6 +405,7 @@ const MultiResponseEntryItem: React.FC<{
         <View style={{ gap: 8, marginTop: 4 }}>
             {Array.from({ length: maxEntries }).map((_, idx) => {
                 const resVal = responses[idx] || '';
+                const remVal = remarks[idx] || '';
                 const optionLabel = (item.options && item.options[idx]) ? item.options[idx] : null;
 
                 return (
@@ -384,10 +425,43 @@ const MultiResponseEntryItem: React.FC<{
                                 value={resVal}
                                 onChangeText={(val) => updateResponseAt(idx, val)}
                             />
+                            {isAdmin && !optionLabel && (
+                                <TextInput
+                                    editable={!isUnderReview}
+                                    placeholder={`Remarks ${idx + 1}`}
+                                    placeholderTextColor={colors.textSecondary}
+                                    style={[styles.formInputSingle, { flex: 1, color: colors.text, backgroundColor: colors.surfaceHighlight, borderColor: remVal ? colors.primary : colors.border }]}
+                                    value={remVal}
+                                    onChangeText={(val) => updateRemarkAt(idx, val)}
+                                />
+                            )}
+                            {isAdmin && maxEntries > 1 && !isUnderReview && (
+                                <TouchableOpacity onPress={() => removeSlot(idx)} style={{ padding: 4 }}>
+                                    <FontAwesome name="trash-o" size={18} color={colors.danger} />
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 );
             })}
+
+            {isAdmin && maxEntries < ((item.type === 'photo' || item.type === 'media' || item.dataType === 'Media') ? 20 : 4) && !isUnderReview && (
+                <TouchableOpacity
+                    onPress={addAnotherSlot}
+                    style={{
+                        backgroundColor: colors.primary + '12',
+                        borderWidth: 1,
+                        borderColor: colors.primary + '30',
+                        paddingVertical: 10,
+                        borderRadius: 8,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginTop: 4,
+                    }}
+                >
+                    <Text style={[FONTS.bodyStrong, { color: colors.primary, fontSize: 13 }]}>+ Add Another Slot</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
@@ -397,7 +471,8 @@ export const TaskDetailScreen = () => {
     const route = useRoute<any>();
     const insets = useSafeAreaInsets();
     const { colors, isDark } = useTheme();
-    const { dutyStatus } = useSession();
+    const { dutyStatus, role } = useSession();
+    const isAdmin = Boolean(route.params?.isAdmin || role === 'admin');
     const workOrder = getWorkOrderById(route.params?.taskId);
     const typeColors = getServiceTypeColors(workOrder.type, isDark);
     const [workStatus, setWorkStatus] = useState(workOrder.status);
@@ -410,7 +485,7 @@ export const TaskDetailScreen = () => {
         workOrder.id === 'PM-1000';
     const [isNearSite, setIsNearSite] = useState<boolean>(() => !isGeoFenceStation);
     const isUnderReview = workStatus === 'Under Review';
-    const isOffSite = isGeoFenceStation && !isNearSite;
+    const isOffSite = !isAdmin && isGeoFenceStation && !isNearSite;
     const isChecklistDisabled = isUnderReview || workStatus === 'Completed' || isOffSite;
     const isGeoFenceWarningVisible = isOffSite;
     const isPreventiveOrService = true;
@@ -639,6 +714,29 @@ export const TaskDetailScreen = () => {
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
     const [workInfoModalVisible, setWorkInfoModalVisible] = useState(false);
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [editedNotes, setEditedNotes] = useState(workOrder.notes || '');
+    const [editedStartTime, setEditedStartTime] = useState(new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toISOString().slice(0, 10));
+    const [editedEndTime, setEditedEndTime] = useState(new Date(workOrder.targetTime).toISOString().slice(0, 10));
+    const [editedPrimaryApprover, setEditedPrimaryApprover] = useState(workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius');
+    const [editedSecondaryApprover, setEditedSecondaryApprover] = useState(workOrder.secondaryApprover || 'Andrea Meuschke');
+
+    const handleSaveDetails = () => {
+        workOrder.notes = editedNotes;
+        workOrder.primaryApprover = editedPrimaryApprover;
+        workOrder.secondaryApprover = editedSecondaryApprover;
+        workOrder.approver = editedPrimaryApprover;
+        workOrder.technicians = assignees;
+        const startTime = new Date(editedStartTime).getTime();
+        if (!isNaN(startTime)) {
+            workOrder.targetStartTime = startTime;
+        }
+        const endTime = new Date(editedEndTime).getTime();
+        if (!isNaN(endTime)) {
+            workOrder.targetTime = endTime;
+        }
+        setIsEditingDetails(false);
+    };
 
     const startEditTask = (task: ChecklistStateItem) => {
         setEditingTask(task);
@@ -1603,6 +1701,58 @@ export const TaskDetailScreen = () => {
                                                                         </Text>
                                                                     </View>
                                                                 ) : null}
+                                                                {isAdmin && !isChecklistDisabled && (
+                                                                    <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 120 : 1 }}>
+                                                                        <TouchableOpacity
+                                                                            onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                                                                            style={styles.fieldMenuTrigger}
+                                                                        >
+                                                                            <Ionicons name="ellipsis-vertical" size={17} color={colors.textSecondary} />
+                                                                        </TouchableOpacity>
+                                                                        {openMenuId === item.id && (
+                                                                            <View style={[styles.fieldActionPopover, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                                                <TouchableOpacity
+                                                                                    style={styles.fieldActionPopoverItem}
+                                                                                    onPress={() => {
+                                                                                        setOpenMenuId(null);
+                                                                                        startEditTask(item);
+                                                                                    }}
+                                                                                >
+                                                                                    <FontAwesome name="pencil" size={14} color={colors.primary} />
+                                                                                    <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>Edit</Text>
+                                                                                </TouchableOpacity>
+                                                                                {isAllowNotApplicable && (
+                                                                                    <TouchableOpacity
+                                                                                        style={styles.fieldActionPopoverItem}
+                                                                                        onPress={() => {
+                                                                                            setOpenMenuId(null);
+                                                                                            toggleTaskApplicable(item.id);
+                                                                                        }}
+                                                                                    >
+                                                                                        <FontAwesome
+                                                                                            name={isNA ? 'check-circle-o' : 'ban'}
+                                                                                            size={14}
+                                                                                            color={isNA ? colors.primary : colors.textSecondary}
+                                                                                        />
+                                                                                        <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]} numberOfLines={1}>
+                                                                                            {isNA ? 'Applicable' : 'Not Applicable'}
+                                                                                        </Text>
+                                                                                    </TouchableOpacity>
+                                                                                )}
+                                                                                <TouchableOpacity
+                                                                                    style={styles.fieldActionPopoverItem}
+                                                                                    onPress={() => {
+                                                                                        setOpenMenuId(null);
+                                                                                        deleteTask(item.id);
+                                                                                    }}
+                                                                                >
+                                                                                    <FontAwesome name="trash-o" size={14} color={colors.danger} />
+                                                                                    <Text style={[FONTS.body, { color: colors.danger, fontSize: 13 }]}>Delete</Text>
+                                                                                </TouchableOpacity>
+                                                                            </View>
+                                                                        )}
+                                                                    </View>
+                                                                )}
                                                             </View>
                                                         </View>
 
@@ -1966,6 +2116,7 @@ export const TaskDetailScreen = () => {
                                                                         updateItem={updateItem}
                                                                         setItems={setItems}
                                                                         isUnderReview={isChecklistDisabled}
+                                                                        isAdmin={isAdmin}
                                                                     />
                                                                 ) : (
                                                                     <TextInput
@@ -2041,6 +2192,60 @@ export const TaskDetailScreen = () => {
                                                                      </View>
                                                                  )}
                                                              </View>
+                                                             {isAdmin && !isChecklistDisabled && (
+                                                                 <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 10 : 1, marginLeft: 8 }}>
+                                                                     <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
+                                                                         <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
+                                                                     </TouchableOpacity>
+                                                                     {openMenuId === item.id && (
+                                                                         <View style={{
+                                                                             position: 'absolute',
+                                                                             top: 30,
+                                                                             right: 0,
+                                                                             backgroundColor: colors.surfaceHighlight,
+                                                                             borderRadius: 8,
+                                                                             paddingVertical: 8,
+                                                                             paddingHorizontal: 12,
+                                                                             width: 150,
+                                                                             shadowColor: '#000',
+                                                                             shadowOffset: { width: 0, height: 2 },
+                                                                             shadowOpacity: 0.15,
+                                                                             shadowRadius: 4,
+                                                                             elevation: 4,
+                                                                             zIndex: 100
+                                                                         }}>
+                                                                              <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
+                                                                                  <FontAwesome name="pencil" size={16} color={colors.primary} />
+                                                                                  <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                              </TouchableOpacity>
+
+                                                                              {isAllowNotApplicable && (
+                                                                                  <TouchableOpacity
+                                                                                      style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                                                                                      onPress={() => {
+                                                                                          setOpenMenuId(null);
+                                                                                          toggleTaskApplicable(item.id);
+                                                                                      }}
+                                                                                  >
+                                                                                      <FontAwesome
+                                                                                          name={item.type === 'not_applicable' || item.isNotApplicable ? "check-circle-o" : "ban"}
+                                                                                          size={16}
+                                                                                          color={item.type === 'not_applicable' || item.isNotApplicable ? colors.primary : colors.textSecondary}
+                                                                                      />
+                                                                                      <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]} numberOfLines={1}>
+                                                                                          {item.type === 'not_applicable' || item.isNotApplicable ? "Applicable" : "Not Applicable"}
+                                                                                      </Text>
+                                                                                  </TouchableOpacity>
+                                                                              )}
+
+                                                                              <TouchableOpacity style={{ paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
+                                                                                  <FontAwesome name="trash-o" size={16} color={colors.danger} />
+                                                                                  <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
+                                                                              </TouchableOpacity>
+                                                                         </View>
+                                                                     )}
+                                                                 </View>
+                                                             )}
                                                         </View>
                                                     </View>
 
@@ -2379,6 +2584,41 @@ export const TaskDetailScreen = () => {
                                                                                     color={colors.textSecondary}
                                                                                 />
                                                                             </TouchableOpacity>
+                                                                            {isAdmin && !isChecklistDisabled && (
+                                                                                <View style={{ position: 'relative', zIndex: openMenuId === sectionBlock.section.id ? 110 : 1 }}>
+                                                                                    <TouchableOpacity
+                                                                                        onPress={() => setOpenMenuId(openMenuId === sectionBlock.section.id ? null : sectionBlock.section.id)}
+                                                                                        style={{ padding: 4 }}
+                                                                                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+                                                                                    >
+                                                                                        <Ionicons name="ellipsis-vertical" size={17} color={colors.textSecondary} />
+                                                                                    </TouchableOpacity>
+                                                                                    {openMenuId === sectionBlock.section.id && (
+                                                                                        <View style={[styles.fieldActionPopover, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                                                            <TouchableOpacity
+                                                                                                style={styles.fieldActionPopoverItem}
+                                                                                                onPress={() => {
+                                                                                                    setOpenMenuId(null);
+                                                                                                    startEditTask(sectionBlock.section);
+                                                                                                }}
+                                                                                            >
+                                                                                                <FontAwesome name="pencil" size={14} color={colors.primary} />
+                                                                                                <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>Edit Section</Text>
+                                                                                            </TouchableOpacity>
+                                                                                            <TouchableOpacity
+                                                                                                style={styles.fieldActionPopoverItem}
+                                                                                                onPress={() => {
+                                                                                                    setOpenMenuId(null);
+                                                                                                    deleteTask(sectionBlock.section.id);
+                                                                                                }}
+                                                                                            >
+                                                                                                <FontAwesome name="trash-o" size={14} color={colors.danger} />
+                                                                                                <Text style={[FONTS.body, { color: colors.danger, fontSize: 13 }]}>Delete</Text>
+                                                                                            </TouchableOpacity>
+                                                                                        </View>
+                                                                                    )}
+                                                                                </View>
+                                                                            )}
                                                                         </View>
                                                                     </View>
                                                                 </>
@@ -2448,6 +2688,40 @@ export const TaskDetailScreen = () => {
                                                                                                     color={colors.textSecondary}
                                                                                                 />
                                                                                             </TouchableOpacity>
+                                                                                            {isAdmin && !isChecklistDisabled && (
+                                                                                                <View style={{ position: 'relative', zIndex: openMenuId === block.checklist.id ? 110 : 1 }}>
+                                                                                                    <TouchableOpacity
+                                                                                                        onPress={() => setOpenMenuId(openMenuId === block.checklist.id ? null : block.checklist.id)}
+                                                                                                        style={{ padding: 4 }}
+                                                                                                    >
+                                                                                                        <Ionicons name="ellipsis-vertical" size={16} color={colors.textSecondary} />
+                                                                                                    </TouchableOpacity>
+                                                                                                    {openMenuId === block.checklist.id && (
+                                                                                                        <View style={[styles.fieldActionPopover, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
+                                                                                                            <TouchableOpacity
+                                                                                                                style={styles.fieldActionPopoverItem}
+                                                                                                                onPress={() => {
+                                                                                                                    setOpenMenuId(null);
+                                                                                                                    startEditTask(block.checklist);
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                <FontAwesome name="pencil" size={14} color={colors.primary} />
+                                                                                                                <Text style={[FONTS.body, { color: colors.text, fontSize: 13 }]}>Edit</Text>
+                                                                                                            </TouchableOpacity>
+                                                                                                            <TouchableOpacity
+                                                                                                                style={styles.fieldActionPopoverItem}
+                                                                                                                onPress={() => {
+                                                                                                                    setOpenMenuId(null);
+                                                                                                                    deleteTask(block.checklist.id);
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                <FontAwesome name="trash-o" size={14} color={colors.danger} />
+                                                                                                                <Text style={[FONTS.body, { color: colors.danger, fontSize: 13 }]}>Delete</Text>
+                                                                                                            </TouchableOpacity>
+                                                                                                        </View>
+                                                                                                    )}
+                                                                                                </View>
+                                                                                            )}
                                                                                         </View>
                                                                                     </View>
                                                                                 )}
@@ -2496,6 +2770,41 @@ export const TaskDetailScreen = () => {
                                                                 </View>
                                                             )}
                                                         </TouchableOpacity>
+
+                                                        {isAdmin && !isChecklistDisabled && (
+                                                            <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 110 : 1, marginLeft: 8 }}>
+                                                                <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
+                                                                    <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
+                                                                </TouchableOpacity>
+                                                                {openMenuId === item.id && (
+                                                                    <View style={{
+                                                                        position: 'absolute',
+                                                                        top: 30,
+                                                                        right: 0,
+                                                                        backgroundColor: colors.surfaceHighlight,
+                                                                        borderRadius: 8,
+                                                                        paddingVertical: 8,
+                                                                        paddingHorizontal: 12,
+                                                                        width: 140,
+                                                                        shadowColor: '#000',
+                                                                        shadowOffset: { width: 0, height: 2 },
+                                                                        shadowOpacity: 0.15,
+                                                                        shadowRadius: 4,
+                                                                        elevation: 4,
+                                                                        zIndex: 120
+                                                                    }}>
+                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
+                                                                            <FontAwesome name="pencil" size={16} color={colors.primary} />
+                                                                            <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                        </TouchableOpacity>
+                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
+                                                                            <FontAwesome name="trash-o" size={16} color={colors.danger} />
+                                                                            <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
+                                                                        </TouchableOpacity>
+                                                                    </View>
+                                                                )}
+                                                            </View>
+                                                        )}
                                                     </View>
                                                 );
                                             }
@@ -2516,6 +2825,41 @@ export const TaskDetailScreen = () => {
                                                             {num ? `${num}. ` : ''}{item.label}
                                                             {nestCount ? `  (${nestCount} ${nestCount === 1 ? 'task' : 'tasks'})` : ''}
                                                         </Text>
+
+                                                        {isAdmin && !isChecklistDisabled && (
+                                                            <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 110 : 1, marginLeft: 8 }}>
+                                                                <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} style={{ padding: 4 }}>
+                                                                    <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
+                                                                </TouchableOpacity>
+                                                                {openMenuId === item.id && (
+                                                                    <View style={{
+                                                                        position: 'absolute',
+                                                                        top: 30,
+                                                                        right: 0,
+                                                                        backgroundColor: colors.surfaceHighlight,
+                                                                        borderRadius: 8,
+                                                                        paddingVertical: 8,
+                                                                        paddingHorizontal: 12,
+                                                                        width: 140,
+                                                                        shadowColor: '#000',
+                                                                        shadowOffset: { width: 0, height: 2 },
+                                                                        shadowOpacity: 0.15,
+                                                                        shadowRadius: 4,
+                                                                        elevation: 4,
+                                                                        zIndex: 120
+                                                                    }}>
+                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); startEditTask(item); }}>
+                                                                            <FontAwesome name="pencil" size={16} color={colors.primary} />
+                                                                            <Text style={[FONTS.body, { color: colors.text }]}>Edit</Text>
+                                                                        </TouchableOpacity>
+                                                                        <TouchableOpacity style={{ paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }} onPress={() => { setOpenMenuId(null); deleteTask(item.id); }}>
+                                                                            <FontAwesome name="trash-o" size={16} color={colors.danger} />
+                                                                            <Text style={[FONTS.body, { color: colors.danger }]}>Delete</Text>
+                                                                        </TouchableOpacity>
+                                                                    </View>
+                                                                )}
+                                                            </View>
+                                                        )}
                                                     </View>
                                                 );
                                             }
@@ -2865,6 +3209,31 @@ export const TaskDetailScreen = () => {
                     );
                 })()}
 
+                {isAdmin && activeTab === 'Tasks' && !isChecklistDisabled && (
+                    <TouchableOpacity
+                        style={[
+                            styles.fab, 
+                            { 
+                                backgroundColor: colors.primary, 
+                                shadowColor: colors.shadow || '#000', 
+                                zIndex: 100,
+                                bottom: Math.max(insets.bottom, 16) + 74,
+                            }
+                        ]}
+                        activeOpacity={0.85}
+                        onPress={() => {
+                            setNewTaskLabel('');
+                            setNewTaskSectionId('');
+                            setNewTaskChecklistId('');
+                            setNewDataType('Short text');
+                            setNewTaskOptions([]);
+                            setAddTaskModalVisible(true);
+                        }}
+                    >
+                        <Ionicons name="add" size={30} color={colors.white} />
+                    </TouchableOpacity>
+                )}
+
                 {activeTab === 'Activities' && (
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -3184,6 +3553,41 @@ export const TaskDetailScreen = () => {
                     </View>
                 </Modal>
 
+                <Modal visible={deleteConfirmModalVisible} transparent animationType="fade">
+                    <View style={styles.popupOverlay}>
+                        <View style={[styles.popupModal, { backgroundColor: colors.surface }]}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                <FontAwesome name="trash-o" size={24} color={colors.danger} />
+                                <Text style={[styles.confirmTitle, { color: colors.text, marginBottom: 0 }]}>
+                                    Delete Task?
+                                </Text>
+                            </View>
+                            <Text style={[styles.confirmMessage, { color: colors.textSecondary }]}>
+                                Are you sure you want to delete this task? This action cannot be undone.
+                            </Text>
+
+                            <View style={styles.confirmActions}>
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                    onPress={() => {
+                                        setDeleteConfirmModalVisible(false);
+                                        setTaskToDelete(null);
+                                    }}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.text }]}>Cancel</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.confirmBtn, { backgroundColor: colors.danger }]}
+                                    onPress={handleConfirmDelete}
+                                >
+                                    <Text style={[styles.confirmBtnText, { color: colors.white }]}>Delete</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
                 <Modal visible={completionModalVisible} transparent animationType="slide" statusBarTranslucent>
                     <View style={styles.modalOverlay}>
                         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setCompletionModalVisible(false)} />
@@ -3479,6 +3883,264 @@ export const TaskDetailScreen = () => {
                     </View>
                 </Modal>
 
+                <Modal
+                    visible={editTaskModalVisible}
+                    transparent
+                    animationType="slide"
+                    statusBarTranslucent
+                    onRequestClose={() => setEditTaskModalVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setEditTaskModalVisible(false)} />
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                            style={{ width: '100%', justifyContent: 'flex-end' }}
+                        >
+                            <View
+                                style={{
+                                    width: '100%',
+                                    backgroundColor: colors.surface,
+                                    borderTopLeftRadius: 24,
+                                    borderTopRightRadius: 24,
+                                    borderBottomLeftRadius: 0,
+                                    borderBottomRightRadius: 0,
+                                    paddingHorizontal: 20,
+                                    paddingTop: 20,
+                                    paddingBottom: Math.max(insets.bottom + 16, 24),
+                                    maxHeight: 620,
+                                    gap: 16,
+                                }}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Text style={[FONTS.h3, { color: colors.text }]}>Edit Task</Text>
+                                    <TouchableOpacity onPress={() => setEditTaskModalVisible(false)} style={{ padding: 4 }}>
+                                        <Ionicons name="close" size={24} color={colors.text} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <ScrollView contentContainerStyle={{ gap: 14, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
+                                    <View>
+                                        <Text style={[FONTS.label, { color: colors.textSecondary, marginBottom: 6 }]}>Task Title / Question</Text>
+                                        <TextInput
+                                            style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                            value={editTaskLabel}
+                                            onChangeText={setEditTaskLabel}
+                                            placeholder="Enter task description"
+                                            placeholderTextColor={colors.textSecondary}
+                                        />
+                                    </View>
+
+                                    <View style={{ zIndex: 100 }}>
+                                        <PopoverDropdown
+                                            label="Data Type"
+                                            placeholder="Select data type"
+                                            options={getSelectorOptions('dataType').options}
+                                            value={editDataType}
+                                            onSelect={(val) => setEditDataType(val as any)}
+                                            placement="top"
+                                        />
+                                    </View>
+
+                                    {['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(editDataType) && (
+                                        <View style={{ gap: 8 }}>
+                                            <Text style={[FONTS.label, { color: colors.textSecondary }]}>Options</Text>
+                                            {editTaskOptions.map((option, idx) => (
+                                                <View key={`${option}-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 10 }}>
+                                                    <Text style={[FONTS.body, { color: colors.text }]}>{option}</Text>
+                                                    <TouchableOpacity onPress={() => setEditTaskOptions(editTaskOptions.filter((_, i) => i !== idx))}>
+                                                        <Ionicons name="close-circle" size={20} color={colors.danger} />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))}
+                                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                <TextInput
+                                                    style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
+                                                    placeholder="Add option..."
+                                                    placeholderTextColor={colors.textSecondary}
+                                                    value={newEditOption}
+                                                    onChangeText={setNewEditOption}
+                                                    onSubmitEditing={() => {
+                                                        if (newEditOption.trim() && !editTaskOptions.includes(newEditOption.trim())) {
+                                                            setEditTaskOptions([...editTaskOptions, newEditOption.trim()]);
+                                                            setNewEditOption('');
+                                                        }
+                                                    }}
+                                                />
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        if (newEditOption.trim() && !editTaskOptions.includes(newEditOption.trim())) {
+                                                            setEditTaskOptions([...editTaskOptions, newEditOption.trim()]);
+                                                            setNewEditOption('');
+                                                        }
+                                                    }}
+                                                    style={{ backgroundColor: colors.primary, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    <Ionicons name="add" size={24} color="#FFF" />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    )}
+                                </ScrollView>
+
+                                <View style={{ flexDirection: 'row', gap: 12, paddingTop: 8 }}>
+                                    <TouchableOpacity
+                                        onPress={() => setEditTaskModalVisible(false)}
+                                        style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}
+                                    >
+                                        <Text style={[FONTS.bodyStrong, { color: colors.text }]}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={saveEditTask}
+                                        style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
+                                    >
+                                        <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Save Changes</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </KeyboardAvoidingView>
+                    </View>
+                </Modal>
+
+                <Modal
+                    visible={addTaskModalVisible}
+                    transparent
+                    animationType="slide"
+                    statusBarTranslucent
+                    onRequestClose={() => setAddTaskModalVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setAddTaskModalVisible(false)} />
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                            style={{ width: '100%', justifyContent: 'flex-end' }}
+                        >
+                            <View
+                                style={{
+                                    width: '100%',
+                                    backgroundColor: colors.surface,
+                                    borderTopLeftRadius: 24,
+                                    borderTopRightRadius: 24,
+                                    borderBottomLeftRadius: 0,
+                                    borderBottomRightRadius: 0,
+                                    paddingHorizontal: 20,
+                                    paddingTop: 20,
+                                    paddingBottom: Math.max(insets.bottom + 16, 24),
+                                    maxHeight: 650,
+                                    gap: 16,
+                                }}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Text style={[FONTS.h3, { color: colors.text }]}>Add New Task</Text>
+                                    <TouchableOpacity onPress={() => setAddTaskModalVisible(false)} style={{ padding: 4 }}>
+                                        <Ionicons name="close" size={24} color={colors.text} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 16, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
+                                    <View style={{ gap: 6 }}>
+                                        <Text style={[FONTS.label, { color: colors.textSecondary }]}>Task Title / Question</Text>
+                                        <TextInput
+                                            style={[styles.inputSingle, getInputShellStyle(colors), { color: colors.text }]}
+                                            placeholder="Enter task title or question..."
+                                            placeholderTextColor={colors.textSecondary}
+                                            value={newTaskLabel}
+                                            onChangeText={setNewTaskLabel}
+                                        />
+                                    </View>
+
+                                    <View style={{ gap: 6, zIndex: 1200 }}>
+                                        <PopoverDropdown
+                                            label="Section (Optional)"
+                                            placeholder="Select section (optional)..."
+                                            options={sectionDropdownOptions}
+                                            value={newTaskSectionId}
+                                            onSelect={handleSelectNewTaskSection}
+                                            placement="bottom"
+                                        />
+                                    </View>
+
+                                    <View style={{ gap: 6, zIndex: 1100 }}>
+                                        <PopoverDropdown
+                                            label="Checklist (Optional)"
+                                            placeholder="Select checklist (optional)..."
+                                            options={checklistDropdownOptions}
+                                            value={newTaskChecklistId}
+                                            onSelect={handleSelectNewTaskChecklist}
+                                            placement="bottom"
+                                        />
+                                    </View>
+
+                                    <View style={{ gap: 6, zIndex: 1000 }}>
+                                        <PopoverDropdown
+                                            label="Data Type"
+                                            placeholder="Select data type..."
+                                            options={DATA_TYPES.map(dt => ({ label: dt, value: dt }))}
+                                            value={newDataType}
+                                            onSelect={(val) => setNewDataType(val as any)}
+                                            placement="top"
+                                        />
+                                    </View>
+
+                                    {['Multiple Choice', 'Radio button', 'Dropdown', 'Checkbox'].includes(newDataType) && (
+                                        <View style={{ gap: 8 }}>
+                                            <Text style={[FONTS.label, { color: colors.textSecondary }]}>Options</Text>
+                                            {newTaskOptions.map((option, idx) => (
+                                                <View key={`${option}-${idx}`} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceHighlight, padding: 12, borderRadius: 10 }}>
+                                                    <Text style={[FONTS.body, { color: colors.text }]}>{option}</Text>
+                                                    <TouchableOpacity onPress={() => setNewTaskOptions(newTaskOptions.filter((_, i) => i !== idx))}>
+                                                        <Ionicons name="close-circle" size={20} color={colors.danger} />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))}
+                                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                <TextInput
+                                                    style={[styles.inputSingle, getInputShellStyle(colors), { flex: 1, color: colors.text }]}
+                                                    placeholder="Add option..."
+                                                    placeholderTextColor={colors.textSecondary}
+                                                    value={addNewTaskOptionInput}
+                                                    onChangeText={setAddNewTaskOptionInput}
+                                                    onSubmitEditing={() => {
+                                                        if (addNewTaskOptionInput.trim() && !newTaskOptions.includes(addNewTaskOptionInput.trim())) {
+                                                            setNewTaskOptions([...newTaskOptions, addNewTaskOptionInput.trim()]);
+                                                            setAddNewTaskOptionInput('');
+                                                        }
+                                                    }}
+                                                />
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        if (addNewTaskOptionInput.trim() && !newTaskOptions.includes(addNewTaskOptionInput.trim())) {
+                                                            setNewTaskOptions([...newTaskOptions, addNewTaskOptionInput.trim()]);
+                                                            setAddNewTaskOptionInput('');
+                                                        }
+                                                    }}
+                                                    style={{ backgroundColor: colors.primary, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    <Ionicons name="add" size={24} color="#FFF" />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    )}
+                                </ScrollView>
+
+                                <View style={{ flexDirection: 'row', gap: 12, paddingTop: 8 }}>
+                                    <TouchableOpacity
+                                        onPress={() => setAddTaskModalVisible(false)}
+                                        style={{ flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}
+                                    >
+                                        <Text style={[FONTS.bodyStrong, { color: colors.text }]}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleAddNewTask}
+                                        style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
+                                    >
+                                        <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Add Task</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </KeyboardAvoidingView>
+                    </View>
+                </Modal>
+
                 {/* Work Details Info Modal */}
                 <Modal
                     visible={workInfoModalVisible}
@@ -3518,7 +4180,7 @@ export const TaskDetailScreen = () => {
                                         </View>
                                         <View style={{ flex: 1 }}>
                                             <Text numberOfLines={1} style={[FONTS.h3, { color: colors.text }]}>
-                                                Work Details
+                                                {isEditingDetails ? 'Edit Work Details' : 'Work Details'}
                                             </Text>
                                             <Text style={[FONTS.caption, { color: colors.textSecondary }]}>
                                                 {workOrder.id} • {workOrder.projectId}
@@ -3526,8 +4188,20 @@ export const TaskDetailScreen = () => {
                                         </View>
                                     </View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                        {isAdmin && !isEditingDetails && (
+                                            <TouchableOpacity
+                                                onPress={() => setIsEditingDetails(true)}
+                                                style={[styles.infoModalBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
+                                                accessibilityLabel="Edit work details"
+                                            >
+                                                <Ionicons name="pencil" size={15} color={colors.primary} />
+                                            </TouchableOpacity>
+                                        )}
                                         <TouchableOpacity
-                                            onPress={() => setWorkInfoModalVisible(false)}
+                                            onPress={() => {
+                                                setIsEditingDetails(false);
+                                                setWorkInfoModalVisible(false);
+                                            }}
                                             style={[styles.infoModalBtn, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}
                                             accessibilityLabel="Close"
                                         >
@@ -3541,7 +4215,132 @@ export const TaskDetailScreen = () => {
                                     contentContainerStyle={{ gap: 14, paddingBottom: 28 }}
                                     showsVerticalScrollIndicator={true}
                                 >
-                                    {/* 1. Station & Charge Points (Top) */}
+                                    {isEditingDetails ? (
+                                        <View style={{ gap: 14, zIndex: 1000 }}>
+                                            {/* Approvers Dropdowns */}
+                                            <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Approvals</Text>
+                                            <View style={{ flexDirection: 'row', gap: 10, zIndex: 1010 }}>
+                                                <View style={{ flex: 1, zIndex: 1010 }}>
+                                                    <PopoverDropdown
+                                                        label="Primary Approver"
+                                                        placeholder="Select primary approver..."
+                                                        options={getSelectorOptions('assignees').options}
+                                                        value={editedPrimaryApprover}
+                                                        onSelect={(val) => setEditedPrimaryApprover(val as string)}
+                                                        isMulti={false}
+                                                    />
+                                                </View>
+                                                <View style={{ flex: 1, zIndex: 1009 }}>
+                                                    <PopoverDropdown
+                                                        label="Secondary Approver"
+                                                        placeholder="Select secondary approver..."
+                                                        options={getSelectorOptions('assignees').options}
+                                                        value={editedSecondaryApprover}
+                                                        onSelect={(val) => setEditedSecondaryApprover(val as string)}
+                                                        isMulti={false}
+                                                    />
+                                                </View>
+                                            </View>
+
+                                            {/* Lead & Assignees Dropdowns */}
+                                            <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Assignees & Lead</Text>
+                                            <View style={{ flexDirection: 'row', gap: 10, zIndex: 1000 }}>
+                                                <View style={{ flex: 1, zIndex: 1000 }}>
+                                                    <PopoverDropdown
+                                                        label="Lead"
+                                                        placeholder="Select lead..."
+                                                        options={getSelectorOptions('assignees').options}
+                                                        value={assignees.length > 0 ? assignees[0] : ''}
+                                                        onSelect={(val) => {
+                                                            const newLead = val as string;
+                                                            if (newLead) {
+                                                                setAssignees([newLead, ...assignees.slice(1).filter(a => a !== newLead)]);
+                                                            } else if (assignees.length > 0) {
+                                                                setAssignees(assignees.slice(1));
+                                                            }
+                                                        }}
+                                                        isMulti={false}
+                                                    />
+                                                </View>
+                                                <View style={{ flex: 1, zIndex: 999 }}>
+                                                    <PopoverDropdown
+                                                        label="Assignees"
+                                                        placeholder="Select assignees..."
+                                                        options={getSelectorOptions('assignees').options}
+                                                        value={assignees.length > 0 ? assignees.slice(1) : []}
+                                                        onSelect={(val) => {
+                                                            const otherAssignees = val as string[];
+                                                            const lead = assignees.length > 0 ? assignees[0] : null;
+                                                            if (lead) {
+                                                                setAssignees([lead, ...otherAssignees.filter(a => a !== lead)]);
+                                                            } else {
+                                                                setAssignees(otherAssignees);
+                                                            }
+                                                        }}
+                                                        isMulti={true}
+                                                    />
+                                                </View>
+                                            </View>
+
+                                            {/* Description Input */}
+                                            <View style={{ gap: 6 }}>
+                                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Description</Text>
+                                                <TextInput
+                                                    style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, padding: 10, minHeight: 70, textAlignVertical: 'top' }, FONTS.body]}
+                                                    value={editedNotes}
+                                                    onChangeText={setEditedNotes}
+                                                    multiline
+                                                    placeholder="Enter work description..."
+                                                    placeholderTextColor={colors.textSecondary}
+                                                />
+                                            </View>
+
+                                            {/* Date Inputs */}
+                                            <View style={{ gap: 6 }}>
+                                                <Text style={[styles.heroSubLabel, { color: colors.textSecondary }]}>Target Dates (YYYY-MM-DD)</Text>
+                                                <View style={{ flexDirection: 'row', gap: 10 }}>
+                                                    <View style={{ flex: 1, gap: 4 }}>
+                                                        <Text style={[FONTS.caption, { color: colors.textSecondary }]}>Start Date</Text>
+                                                        <TextInput
+                                                            style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 }, FONTS.body]}
+                                                            value={editedStartTime}
+                                                            onChangeText={setEditedStartTime}
+                                                            placeholder="YYYY-MM-DD"
+                                                            placeholderTextColor={colors.textSecondary}
+                                                        />
+                                                    </View>
+                                                    <View style={{ flex: 1, gap: 4 }}>
+                                                        <Text style={[FONTS.caption, { color: colors.textSecondary }]}>End Date</Text>
+                                                        <TextInput
+                                                            style={[{ color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 }, FONTS.body]}
+                                                            value={editedEndTime}
+                                                            onChangeText={setEditedEndTime}
+                                                            placeholder="YYYY-MM-DD"
+                                                            placeholderTextColor={colors.textSecondary}
+                                                        />
+                                                    </View>
+                                                </View>
+                                            </View>
+
+                                            {/* Save & Cancel Buttons */}
+                                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+                                                <TouchableOpacity
+                                                    onPress={() => setIsEditingDetails(false)}
+                                                    style={{ flex: 1, height: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    <Text style={[FONTS.bodyStrong, { color: colors.text }]}>Cancel</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    onPress={handleSaveDetails}
+                                                    style={{ flex: 1, height: 44, borderRadius: 10, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    <Text style={[FONTS.bodyStrong, { color: '#FFF' }]}>Save Changes</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ) : (
+                                        <>
+                                            {/* 1. Station & Charge Points (Top) */}
                                     <View style={[styles.infoSectionCard, { backgroundColor: colors.surfaceHighlight, borderColor: colors.border }]}>
                                                 <Text style={[styles.infoSectionTitle, { color: colors.text }]}>Station & Assets</Text>
                                                 <View style={styles.infoRow}>
@@ -3610,7 +4409,7 @@ export const TaskDetailScreen = () => {
                                                 <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8, gap: 4 }}>
                                                     <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Description</Text>
                                                     <Text style={[{ color: colors.text, lineHeight: 20 }, FONTS.body]}>
-                                                        {workOrder.notes || 'No description provided for this work order.'}
+                                                        {editedNotes || workOrder.notes || 'No description provided for this work order.'}
                                                     </Text>
                                                 </View>
                                             </View>
@@ -3630,7 +4429,7 @@ export const TaskDetailScreen = () => {
                                                             <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Primary Approver</Text>
                                                         </View>
                                                         <Text style={[styles.infoValue, { color: colors.text, fontWeight: '700' }]}>
-                                                            {workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}
+                                                            {editedPrimaryApprover || workOrder.primaryApprover || workOrder.approver || 'Marcus Aurelius'}
                                                         </Text>
                                                     </View>
                                                     <View style={styles.infoRow}>
@@ -3639,7 +4438,7 @@ export const TaskDetailScreen = () => {
                                                             <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Secondary Approver</Text>
                                                         </View>
                                                         <Text style={[styles.infoValue, { color: colors.text, fontWeight: '600' }]}>
-                                                            {workOrder.secondaryApprover || 'Andrea Meuschke'}
+                                                            {editedSecondaryApprover || workOrder.secondaryApprover || 'Andrea Meuschke'}
                                                         </Text>
                                                     </View>
                                                 </View>
@@ -3721,16 +4520,18 @@ export const TaskDetailScreen = () => {
                                                 <View style={styles.infoRow}>
                                                     <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Start Date</Text>
                                                     <Text style={[styles.infoValue, { color: colors.text }]}>
-                                                        {new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        {editedStartTime || new Date(workOrder.targetStartTime || (workOrder.targetTime - 24 * 60 * 60 * 1000)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                     </Text>
                                                 </View>
                                                 <View style={styles.infoRow}>
                                                     <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Target / Due Date</Text>
                                                     <Text style={[styles.infoValue, { color: colors.text }]}>
-                                                        {new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        {editedEndTime || new Date(workOrder.targetTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                     </Text>
                                                 </View>
                                             </View>
+                                        </>
+                                    )}
                                 </ScrollView>
                             </View>
                         </KeyboardAvoidingView>

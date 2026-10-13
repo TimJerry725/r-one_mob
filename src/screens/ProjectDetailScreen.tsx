@@ -724,7 +724,7 @@ export const ProjectDetailScreen = () => {
                                     item={item}
                                     colors={colors}
                                     isDark={isDark}
-                                    onOpen={() => navigation.navigate('TaskDetails', { taskId: item.id })}
+                                    onOpen={() => navigation.navigate('TaskDetails', { taskId: item.id, isAdmin })}
                                 />
                             ))}
 
